@@ -73,7 +73,11 @@ public class ECCVCGPayments implements PaymentRule
 			
 			auction.computeWinnerDetermination(allocatedAvailabilitiesPerGood, realizationsOfAvailabilitiesPerGood);
 			AllocationEC allocation = (AllocationEC)auction.getAllocation();
-			double expectedReducedSW = allocation.getExpectedWelfare();
+			
+			double expectedReducedSW = 0.;
+			if(allocation.getNumberOfAllocatedAuctioneers() > 0)
+				expectedReducedSW = allocation.getExpectedWelfare();
+			
 			_logger.debug("P" + i + ": WDP: allocate to " + (auction.getAllocation().getNumberOfAllocatedAuctioneers() > 0 ? auction.getAllocation().getBiddersInvolved(0).toString() : "none") + ". E[sw]=" + expectedReducedSW);
 			
 			
@@ -83,7 +87,7 @@ public class ECCVCGPayments implements PaymentRule
 			for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
 			{
 				int bidderId = _allocation.getBiddersInvolved(0).get(j);
-				int itsAllocatedAtom = _allocation.getAllocatedBundlesByIndex(0).get(j);
+				int itsAllocatedAtom = _allocation.getAllocatedBundlesOfTrade(0).get(j);
 				AtomicBid allocatedBundle = _bids.get( bidderId-1 ).getAtom( itsAllocatedAtom );
 				
 				double realizedMarginalAvailability = _allocation.getRealizedRV(0, j);

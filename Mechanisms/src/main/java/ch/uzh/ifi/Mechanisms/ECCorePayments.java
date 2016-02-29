@@ -129,7 +129,7 @@ public class ECCorePayments implements PaymentRule
 		for(int i = 0; i < _allocation.getBiddersInvolved(0).size(); ++i)
 		{
 			int itsId =  _allocation.getBiddersInvolved(0).get(i);
-			int itsAllocatedBundleIdx = _allocation.getAllocatedBundlesByIndex(0).get(i);
+			int itsAllocatedBundleIdx = _allocation.getAllocatedBundlesOfTrade(0).get(i);
 			AtomicBid itsAllocatedBundle = _bids.get( itsId - 1).getAtom( itsAllocatedBundleIdx );
 			double expectedValue = itsAllocatedBundle.getValue() * computeExpectedMarginalAvailability(itsAllocatedBundle);
 			
@@ -222,7 +222,7 @@ public class ECCorePayments implements PaymentRule
 					_logger.debug("Costs" + _costs.toString());
 					for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
 					{
-						_logger.debug("Bidder id=" + _allocation.getBiddersInvolved(0).get(j) + " got its " + _allocation.getAllocatedBundlesByIndex(0).get(j));
+						_logger.debug("Bidder id=" + _allocation.getBiddersInvolved(0).get(j) + " got its " + _allocation.getAllocatedBundlesOfTrade(0).get(j));
 						_logger.debug("Realization " + j + ": " + _allocation.getRealizedRV(0, j));
 					}
 					_logger.debug("EC-VCG: " + ecvcgPayments.toString());
@@ -326,7 +326,7 @@ public class ECCorePayments implements PaymentRule
 		for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
 		{
 			int agentId = _allocation.getBiddersInvolved(0).get(j);
-			int itsAllocatedAtom = _allocation.getAllocatedBundlesByIndex(0).get(j);
+			int itsAllocatedAtom = _allocation.getAllocatedBundlesOfTrade(0).get(j);
 			AtomicBid allocatedBundle = _bids.get( agentId-1 ).getAtom( itsAllocatedAtom );
 					
 			double value = allocatedBundle.getValue();

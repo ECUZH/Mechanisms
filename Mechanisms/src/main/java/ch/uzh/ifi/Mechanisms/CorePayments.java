@@ -77,7 +77,7 @@ public class CorePayments implements PaymentRule
 		{
 			int allocatedBidderId = _allocation.getBiddersInvolved(0).get(i);
 			int itsIdx = allocatedBidderId - 1;
-			int itsAllocatedAtom = _allocation.getAllocatedBundlesByIndex(0).get(i);
+			int itsAllocatedAtom = _allocation.getAllocatedBundlesOfTrade(0).get(i);
 			double itsValue = _bids.get(itsIdx).getAtom(itsAllocatedAtom ).getValue();
 					
 			if( vcg.get(i) > itsValue +	TOL )
@@ -177,7 +177,7 @@ public class CorePayments implements PaymentRule
 		{
 			int bidderId = _allocation.getBiddersInvolved(0).get(j);
 			Type t = _bids.get(bidderId-1); 
-			int allocatedBundleIdx = _allocation.getAllocatedBundlesByIndex(0).get(j);
+			int allocatedBundleIdx = _allocation.getAllocatedBundlesOfTrade(0).get(j);
 			AtomicBid bundle = t.getAtom(allocatedBundleIdx);
 			double value = bundle.getValue();
 

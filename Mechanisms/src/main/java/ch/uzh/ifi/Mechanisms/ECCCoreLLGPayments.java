@@ -67,7 +67,7 @@ public class ECCCoreLLGPayments implements PaymentRule
 		for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
 		{
 			int bidderId = _allocation.getBiddersInvolved(0).get(j);				
-			int itsAllocatedAtom = _allocation.getAllocatedBundlesByIndex(0).get(j);
+			int itsAllocatedAtom = _allocation.getAllocatedBundlesOfTrade(0).get(j);
 			AtomicBid allocatedBundle = _bids.get( bidderId-1 ).getAtom( itsAllocatedAtom );
 			
 			for(int k = 0; k < allocatedBundle.getInterestingSet().size(); ++k)
@@ -90,7 +90,7 @@ public class ECCCoreLLGPayments implements PaymentRule
 		for(int i = 0; i < allocatedAgentsIds.size(); ++i)
 		{
 			int allocatedAgentId = _allocation.getBiddersInvolved(0).get(i);
-			int allocatedAtomIdx = _allocation.getAllocatedBundlesByIndex(0).get(i);
+			int allocatedAtomIdx = _allocation.getAllocatedBundlesOfTrade(0).get(i);
 			AtomicBid allocatedAtom = _bids.get(allocatedAgentId - 1).getAtom(allocatedAtomIdx);
 			A += allocatedAtom.computeCost(_costs) * _allocation.getRealizedRV(0, i);
 			

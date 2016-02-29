@@ -26,7 +26,7 @@ public class SecondPricePayments implements PaymentRule
 	public List<Double> computePayments() throws Exception 
 	{
 		List<Double> payments = new LinkedList<Double>();
-		ComplexSemanticWebType allocatedPlan = (ComplexSemanticWebType)( _plans.get(0).getAtom( _allocation.getAllocatedBundlesByIndex(_allocation.getAuctioneerIndexById(1)).get(0)) );
+		ComplexSemanticWebType allocatedPlan = (ComplexSemanticWebType)( _plans.get(0).getAtom( _allocation.getAllocatedBundlesOfTrade(_allocation.getAuctioneerIndexById(1)).get(0)) );
 					
 		for(int i = 0; i < allocatedPlan.getAllocatedSellers().size(); ++i)
 			payments.add( allocatedPlan.getPayment( allocatedPlan.getAllocatedSellers().get(i) ) );

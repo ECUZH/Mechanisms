@@ -23,7 +23,7 @@ public class ProbabilisticVCGPayments implements PaymentRule
 	public List<Double> computePayments() throws Exception 
 	{
 		List<Double> payments = new LinkedList<Double>();
-		SemanticWebType allocatedPlan = (SemanticWebType)( _plans.get(0).getAtom( _allocation.getAllocatedBundlesByIndex(_allocation.getAuctioneerIndexById(1)).get(0)) );
+		SemanticWebType allocatedPlan = (SemanticWebType)( _plans.get(0).getAtom( _allocation.getAllocatedBundlesOfTrade(_allocation.getAuctioneerIndexById(1)).get(0)) );
 		
 		for(int i = 0; i < allocatedPlan.getNumberOfSellers(); ++i)
 		{

@@ -42,7 +42,7 @@ public class ProbabilisticCorePayments implements PaymentRule
 		_solverClient = new SolverClient();
 		
 		List<Double> payments = new LinkedList<Double>();
-		SemanticWebType allocatedPlan = (SemanticWebType)(_plans.get(0).getAtom( _allocation.getAllocatedBundlesByIndex(_allocation.getAuctioneerIndexById(1)).get(0)));
+		SemanticWebType allocatedPlan = (SemanticWebType)(_plans.get(0).getAtom( _allocation.getAllocatedBundlesOfTrade(_allocation.getAuctioneerIndexById(1)).get(0)));
 		
 		//1. Compute exp.-VCG payments
 		ProbabilisticVCGPayments vcgRule = new ProbabilisticVCGPayments(_allocation, _plans, _numberOfSellers);

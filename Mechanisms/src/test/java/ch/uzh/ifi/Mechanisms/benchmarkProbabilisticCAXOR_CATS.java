@@ -128,7 +128,7 @@ public class benchmarkProbabilisticCAXOR_CATS
 						for(int q = 0; q < numberOfAllocatedAgents; ++q)
 						{
 							int allocatedBidderId = allocation.getBiddersInvolved(0).get(q);
-							int allocatedBundleIdx = allocation.getAllocatedBundlesByIndex(0).get(q);
+							int allocatedBundleIdx = allocation.getAllocatedBundlesOfTrade(0).get(q);
 							double value = bids.get(allocatedBidderId-1).getAtom(allocatedBundleIdx).getValue() / shadingFactor;
 							double realizedAvailability = allocation.getRealizedRV(0, q);
 							if( value*realizedAvailability - payments[q] < 0 )

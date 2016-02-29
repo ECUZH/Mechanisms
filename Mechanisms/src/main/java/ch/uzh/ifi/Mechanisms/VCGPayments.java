@@ -71,7 +71,7 @@ public class VCGPayments implements PaymentRule
 			{
 				int bidderId = _allocation.getBiddersInvolved(0).get(j);
 				
-				int itsAllocatedAtom = _allocation.getAllocatedBundlesByIndex(0).get(j);
+				int itsAllocatedAtom = _allocation.getAllocatedBundlesOfTrade(0).get(j);
 				AtomicBid allocatedBundle = _bids.get( bidderId-1 ).getAtom( itsAllocatedAtom );
 				double cost  = computeCost( allocatedBundle );
 				if(bidderId != allocatedAgentId)

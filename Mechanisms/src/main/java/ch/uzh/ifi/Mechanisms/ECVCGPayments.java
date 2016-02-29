@@ -67,7 +67,7 @@ public class ECVCGPayments implements PaymentRule
 			
 			//2. Compute the SW with agent i not taking its value into account
 			double expectedDecreasedSW = _allocation.getExpectedWelfare();
-			int allocatedAtomIdx = _allocation.getAllocatedBundlesByIndex(0).get(i);
+			int allocatedAtomIdx = _allocation.getAllocatedBundlesOfTrade(0).get(i);
 			AtomicBid allocatedAtom = _bids.get(allocatedAgentId - 1).getAtom(allocatedAtomIdx);
 			
 			expectedDecreasedSW -= allocatedAtom.getValue() * auction.computeExpectedMarginalAvailability(allocatedAtom, null, null);

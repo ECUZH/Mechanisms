@@ -116,9 +116,9 @@ public class testProbabilisticCAXOR {
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
 			assertTrue( allocation.getBiddersInvolved(0).get(1) == 2 );
 			
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		//First bidder gets its first bid
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 0 );		//Second bidder gets its first bid		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 2 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		//First bidder gets its first bid
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 0 );		//Second bidder gets its first bid		
 			
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 1) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 1) - (1.-secondaryReductionCoef)) < 1e-6) );
@@ -251,9 +251,9 @@ public class testProbabilisticCAXOR {
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
 			assertTrue( allocation.getBiddersInvolved(0).get(1) == 2 );
 			
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		//First bidder gets its first bid
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 0 );		//Second bidder gets its first bid		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 2 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		//First bidder gets its first bid
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 0 );		//Second bidder gets its first bid		
 			
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 1) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 1) - (1.-secondaryReductionCoef)) < 1e-6) );
@@ -375,9 +375,9 @@ public class testProbabilisticCAXOR {
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
 			assertTrue( allocation.getBiddersInvolved(0).get(1) == 2 );
 			
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		//First bidder gets its first bid
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 0 );		//Second bidder gets its first bid		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 2 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		//First bidder gets its first bid
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 0 );		//Second bidder gets its first bid		
 			
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 1) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 1) - (1.-secondaryReductionCoef)) < 1e-6) );
@@ -495,8 +495,8 @@ public class testProbabilisticCAXOR {
 			
 			//Get allocated buyers involved in the trade 
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 3 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 1 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 1 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
 			
 			assertTrue( allocation.getRealizedRV(0, 0) == 0.7);
@@ -619,8 +619,8 @@ public class testProbabilisticCAXOR {
 			
 			//Get allocated buyers involved in the trade 
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 3 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 1 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 1 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
 			
 			double[] payments = auction.getPayments();
@@ -737,8 +737,8 @@ public class testProbabilisticCAXOR {
 			
 			//Get allocated buyers involved in the trade 
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 3 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 1 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 1 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
 			
 			double[] payments = auction.getPayments();
@@ -854,9 +854,9 @@ public class testProbabilisticCAXOR {
 			//Get allocated buyers involved in the trade 
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
 			assertTrue( allocation.getBiddersInvolved(0).get(1) == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 0 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 2 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 0 );
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
 			
 			double[] payments = auction.getPayments();
@@ -978,9 +978,9 @@ public class testProbabilisticCAXOR {
 			//Get allocated buyers involved in the trade 
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
 			assertTrue( allocation.getBiddersInvolved(0).get(1) == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 0 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 2 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 0 );
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
 			
 			double[] payments = auction.getPayments();
@@ -1101,9 +1101,9 @@ public class testProbabilisticCAXOR {
 			//Get allocated buyers involved in the trade 
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
 			assertTrue( allocation.getBiddersInvolved(0).get(1) == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 0 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 2 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 0 );
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
 			
 			double[] payments = auction.getPayments();
@@ -1226,8 +1226,8 @@ public class testProbabilisticCAXOR {
 			
 			//Get allocated buyers involved in the trade 
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 1 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 1 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		
 			
 			double[] payments = auction.getPayments();
 			assertTrue( payments.length == 1);
@@ -1352,8 +1352,8 @@ public class testProbabilisticCAXOR {
 			
 			//Get allocated buyers involved in the trade 
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 1 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 1 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		
 			
 			double[] payments = auction.getPayments();
 			assertTrue( payments.length == 1);
@@ -1479,9 +1479,9 @@ public class testProbabilisticCAXOR {
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
 			assertTrue( allocation.getBiddersInvolved(0).get(1) == 2 );
 			
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		//First bidder gets its first bid
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 0 );		//Second bidder gets its first bid		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 2 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		//First bidder gets its first bid
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 0 );		//Second bidder gets its first bid		
 			
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 1) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 1) - (1.-secondaryReductionCoef)) < 1e-6) );
@@ -1589,8 +1589,8 @@ public class testProbabilisticCAXOR {
 			
 			//Get allocated buyers involved in the trade 
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 3 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 1 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 1 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
 			
 			double[] payments = auction.getPayments();
@@ -1697,9 +1697,9 @@ public class testProbabilisticCAXOR {
 			//Get allocated buyers involved in the trade 
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
 			assertTrue( allocation.getBiddersInvolved(0).get(1) == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 0 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 2 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 0 );
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
 			
 			double[] payments = auction.getPayments();
@@ -1807,9 +1807,9 @@ public class testProbabilisticCAXOR {
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
 			assertTrue( allocation.getBiddersInvolved(0).get(1) == 2 );
 			
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		//First bidder gets its first bid
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 0 );		//Second bidder gets its first bid		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 2 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		//First bidder gets its first bid
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 0 );		//Second bidder gets its first bid		
 			
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 1) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 1) - (1.-secondaryReductionCoef)) < 1e-6) );
@@ -1939,9 +1939,9 @@ public class testProbabilisticCAXOR {
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
 			assertTrue( allocation.getBiddersInvolved(0).get(1) == 2 );
 			
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		//First bidder gets its first bid
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 0 );		//Second bidder gets its first bid		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 2 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		//First bidder gets its first bid
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 0 );		//Second bidder gets its first bid		
 			
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
 			assertTrue( (Math.abs(allocation.getRealizedRV(0, 1) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 1) - (1.-secondaryReductionCoef)) < 1e-6) );
@@ -2057,9 +2057,9 @@ public class testProbabilisticCAXOR {
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
 			assertTrue( allocation.getBiddersInvolved(0).get(1) == 2 );
 			
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		//First bidder gets its first bid
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 0 );		//Second bidder gets its first bid		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 2 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		//First bidder gets its first bid
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 0 );		//Second bidder gets its first bid		
 			
 			double[] payments = auction.getPayments();
 			assertTrue( payments.length == 2);
@@ -2191,9 +2191,9 @@ public class testProbabilisticCAXOR {
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
 			assertTrue( allocation.getBiddersInvolved(0).get(1) == 2 );
 			
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		//First bidder gets its first bid
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 0 );		//Second bidder gets its first bid		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 2 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		//First bidder gets its first bid
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 0 );		//Second bidder gets its first bid		
 			
 			double[] payments = auction.getPayments();
 			assertTrue( payments.length == 2);
@@ -2322,9 +2322,9 @@ public class testProbabilisticCAXOR {
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
 			assertTrue( allocation.getBiddersInvolved(0).get(1) == 2 );
 			
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		//First bidder gets its first bid
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 0 );		//Second bidder gets its first bid		
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 2 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );		//First bidder gets its first bid
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 0 );		//Second bidder gets its first bid		
 			
 			double[] payments = auction.getPayments();
 			assertTrue( payments.length == 2);
@@ -2362,144 +2362,7 @@ public class testProbabilisticCAXOR {
 			e.printStackTrace(); 
 		}
 	}
-	
-	/*
-	 * EC-CORE for LLG domain with uncertainty and dependent availabilities of goods.
-	 * Test the Constraints Generation algorithm. A single blocking coalition.
-	 */
-	@Test
-	public void testECCORE_LLG_ConstraintGeneration() throws IloException
-	{
-		IloCplex cplexSolver = new IloCplex();
-		List<Integer> items = new LinkedList<Integer>();
-		items.add(1);
-		items.add(2);
 		
-		double marginalValueL1 = 0.1;
-		double marginalValueL2 = 0.2;
-		double marginalValueG  = 0.3;
-		
-		//Local bidder
-		List<Integer> bundle = new LinkedList<Integer>();
-		bundle.add( items.get(0) );
-		AtomicBid atom11 = new AtomicBid(1, bundle, marginalValueL1);
-		CombinatorialType t1 = new CombinatorialType();
-		t1.addAtomicBid(atom11);
-
-		//Local bidder
-		bundle = new LinkedList<Integer>();
-		bundle.add( items.get(1) );
-		AtomicBid atom21 = new AtomicBid(2, bundle, marginalValueL2);
-		CombinatorialType t2 = new CombinatorialType();
-		t2.addAtomicBid(atom21);
-		
-		//Global bidder
-		bundle = new LinkedList<Integer>();
-		bundle.add( items.get(0) );
-		bundle.add( items.get(1) );
-		AtomicBid atom31 = new AtomicBid(3, bundle, marginalValueG);
-		CombinatorialType t3 = new CombinatorialType();
-		t3.addAtomicBid(atom31);
-		
-		List<Type> bids = new LinkedList<Type>();
-		bids.add(t1);
-		bids.add(t2);
-		bids.add(t3);
-		
-		List<Double> costs = new LinkedList<Double>();
-		costs.add(0.05);
-		costs.add(0.1);
-		
-		GridGenerator generator = new GridGenerator(1, 2);
-		generator.setSeed(0);
-		generator.buildProximityGraph();
-		Graph grid = generator.getGrid();
-		
-		assertTrue(grid.getVertices().size() == 2);
-		assertTrue(grid.getAdjacencyLists().size() == 2);
-		assertTrue(grid.getAdjacencyLists().get(0).size() == 1);
-		assertTrue(grid.getAdjacencyLists().get(0).get(0)._v.getID()==2);
-		assertTrue(grid.getAdjacencyLists().get(1).size() == 1);
-		assertTrue(grid.getAdjacencyLists().get(1).get(0)._v.getID()==1);
-		
-		double primaryReductionCoef = 0.3;
-		double secondaryReductionCoef = 0.2;
-		JointProbabilityMass jpmf = new JointProbabilityMass( grid );
-		jpmf.setNumberOfSamples(1000000);
-		jpmf.setNumberOfBombsToThrow(1);
-		
-		IBombingStrategy b = new FocusedBombingStrategy(grid, 1, primaryReductionCoef, secondaryReductionCoef);
-		List<IBombingStrategy> bombs = new LinkedList<IBombingStrategy>();
-		bombs.add(b);
-		
-		List<Double> probDistribution = new LinkedList<Double>();
-		probDistribution.add(1.);
-		
-		jpmf.setBombs(bombs, probDistribution);
-		jpmf.update();
-		
-		ProbabilisticCAXOR auction = new ProbabilisticCAXOR( bids.size(), items.size(), bids, costs, jpmf);
-		auction.setSolver(cplexSolver);
-		auction.setPaymentRule("EC-CORE");
-		auction.setSeed(0);
-		try
-		{
-			auction.solveIt();
-			AllocationEC allocation = (AllocationEC)auction.getAllocation();
-			assertTrue(allocation.getNumberOfAllocatedAuctioneers() == 1);
-			//System.out.println("Test sw = " + allocation.getExpectedWelfare() );
-			assertTrue(Math.abs( allocation.getExpectedWelfare() - 0.1125 ) < 1e-4);
-			assertTrue( allocation.getBiddersInvolved(0).size() == 2 );
-			
-			//Get allocated buyers involved in the trade 
-			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
-			assertTrue( allocation.getBiddersInvolved(0).get(1) == 2 );
-			
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );		//First bidder gets its first bid
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 0 );		//Second bidder gets its first bid		
-			
-			assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
-			assertTrue( (Math.abs(allocation.getRealizedRV(0, 1) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 1) - (1.-secondaryReductionCoef)) < 1e-6) );
-			
-			double[] payments = auction.getPayments();
-			assertTrue( payments.length == 2);
-			
-			//System.out.println("payments[0]="+payments[0] + " payments[1]=" + payments[1]);
-			//System.out.println(">> " + allocation.getRealizedRV(0, 0) + " p[0]="+payments[0] + " p[1]="+payments[1]);
-			if( allocation.getRealizedRV(0, 0) == 0.7 )
-			{
-				double vcgPayments[] = {0.065, 0.1475};
-				assertTrue( payments[0] >= vcgPayments[0] );
-				assertTrue( payments[1] >= vcgPayments[1] );
-				assertTrue( Math.abs( payments[0] + payments[1] - 0.22 ) < 1e-4);
-				
-				//System.out.println("Payments: " + payments[0] + " " + payments[1]);
-				assertTrue( Math.abs(payments[0] - 0.07) < 1e-4 );
-				assertTrue( Math.abs(payments[1] - 0.15) < 1e-4 );
-			}
-			else if( allocation.getRealizedRV(0, 0) == 0.8 )
-			{
-				double vcgPayments[] = {0.07, 0.1375};
-				assertTrue( payments[0] >= vcgPayments[0] );
-				assertTrue( payments[1] >= vcgPayments[1] );
-				assertTrue( Math.abs( payments[0] + payments[1] - 0.215 ) < 1e-4);
-				
-				assertTrue( Math.abs(payments[0] - 0.07375) < 1e-4 );
-				assertTrue( Math.abs(payments[1] - 0.14124) < 1e-4 );
-			}
-			
-			assertTrue( allocation.isAllocated(0) );
-			assertTrue( allocation.isAllocated(1) );
-			assertTrue( allocation.isAllocated(2) );
-			assertTrue(!allocation.isAllocated(3) );
-		}
-		catch (Exception e)
-		{ 
-			e.printStackTrace(); 
-		}
-	}
-	
 	/*
 	 * EC-CORE for LLG domain with uncertainty and dependent availabilities of goods.
 	 * Test the Constraints Generation algorithm. A single blocking coalition.
@@ -2597,8 +2460,8 @@ public class testProbabilisticCAXOR {
 				assertTrue( allocation.getBiddersInvolved(0).size() == 1);
 				assertTrue( allocation.getBiddersInvolved(0).get(0) == 3 );
 				
-				assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 1 );
-				assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );
+				assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 1 );
+				assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );
 				
 				assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
 				
@@ -2622,13 +2485,13 @@ public class testProbabilisticCAXOR {
 		assertTrue(false); 	//PaymentException must be thrown
 	}
 	
-	/*
-	 * EC-CORE for LLG domain with uncertainty and dependent availabilities of goods.
+	/**
+	 * ECC-CORE for LLG domain with uncertainty and dependent availabilities of goods.
 	 * Test the Constraints Generation algorithm. A single blocking coalition.
 	 * A single local winning bidder.
 	 */
 	@Test
-	public void testECCORE_LLG2_ConstraintGeneration() throws Exception 
+	public void testECCCORE_LLG2_ConstraintGeneration() throws Exception 
 	{
 		IloCplex cplexSolver = new IloCplex();
 		List<Integer> items = new LinkedList<Integer>();
@@ -2640,35 +2503,26 @@ public class testProbabilisticCAXOR {
 		double marginalValueG  = 0.9067;
 		
 		//Local bidder
-		List<Integer> bundle = new LinkedList<Integer>();
-		bundle.add( items.get(0) );
+		List<Integer> bundle = Arrays.asList( items.get(0) );
 		AtomicBid atom11 = new AtomicBid(1, bundle, marginalValueL1);
 		CombinatorialType t1 = new CombinatorialType();
 		t1.addAtomicBid(atom11);
 
 		//Local bidder
-		bundle = new LinkedList<Integer>();
-		bundle.add( items.get(1) );
+		bundle = Arrays.asList( items.get(1) );
 		AtomicBid atom21 = new AtomicBid(2, bundle, marginalValueL2);
 		CombinatorialType t2 = new CombinatorialType();
 		t2.addAtomicBid(atom21);
 		
 		//Global bidder
-		bundle = new LinkedList<Integer>();
-		bundle.add( items.get(0) );
-		bundle.add( items.get(1) );
+		bundle = Arrays.asList( items.get(0), items.get(1) );
 		AtomicBid atom31 = new AtomicBid(3, bundle, marginalValueG);
 		CombinatorialType t3 = new CombinatorialType();
 		t3.addAtomicBid(atom31);
 		
-		List<Type> bids = new LinkedList<Type>();
-		bids.add(t1);
-		bids.add(t2);
-		bids.add(t3);
+		List<Type> bids = Arrays.asList(t1, t2, t3);
 		
-		List<Double> costs = new LinkedList<Double>();
-		costs.add(0.7275);
-		costs.add(0.6832);
+		List<Double> costs = Arrays.asList(0.7275, 0.6832);
 		
 		GridGenerator generator = new GridGenerator(1, 2);
 		generator.setSeed(0);
@@ -2692,69 +2546,50 @@ public class testProbabilisticCAXOR {
 		List<IBombingStrategy> bombs = new LinkedList<IBombingStrategy>();
 		bombs.add(b);
 		
-		List<Double> pd = new LinkedList<Double>();
-		pd.add(1.);
+		List<Double> pd = Arrays.asList(1.);
 		
 		jpmf.setBombs(bombs, pd);
 		jpmf.update();
 		
 		ProbabilisticCAXOR auction = new ProbabilisticCAXOR( bids.size(), items.size(), bids, costs, jpmf);
 		auction.setSolver(cplexSolver);
-		auction.setPaymentRule("EC-CORE");
+		auction.setPaymentRule("ECC-CORE");
 		auction.setSeed(0);
 		try
 		{
 			auction.solveIt();
-			AllocationEC allocation = (AllocationEC)auction.getAllocation();
-			assertTrue(allocation.getNumberOfAllocatedAuctioneers() == 1);
-			//System.out.println("Test sw = " + allocation.getExpectedWelfare() );
-			assertTrue( allocation.getBiddersInvolved(0).size() == 1 );
-			assertTrue(Math.abs( allocation.getExpectedWelfare() - 0.0230 ) < 1e-4);
-			
-			//Get allocated buyers involved in the trade 
-			assertTrue( allocation.getBiddersInvolved(0).size() == 1);
-			assertTrue( allocation.getBiddersInvolved(0).get(0) == 2 );
-			
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 1 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );
-			
-			assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
-			
-			double[] payments = auction.getPayments();
-			assertTrue( payments.length == 1);
-			
-			//System.out.println("payments[0]="+payments[0]);
-			//System.out.println(">> " + allocation.getRealizedRV(0, 0) + " p[0]="+payments[0] + " p[1]="+payments[1]);
-			if( allocation.getRealizedRV(0, 0) == 0.7 )
-			{
-				assertTrue( Math.abs(payments[0] - 0.47824) < 1e-4 );				
-			}
-			
-			assertTrue( allocation.isAllocated(0) );
-			assertTrue( !allocation.isAllocated(1) );
-			assertTrue( allocation.isAllocated(2) );
-			assertTrue( !allocation.isAllocated(3) );
+			throw new RuntimeException("VCG should be in the core for this setting");
 		}
 		catch (PaymentException e)
 		{
-			if( e.getMessage().equals("Empty Core"))
+			if( e.getMessage().equals("VCG is in the Core"))
 			{
-				//System.out.println("Empty Core");
+				System.out.println("VCG is in the Core");
 				AllocationEC allocation = (AllocationEC)auction.getAllocation();
-				assertTrue(allocation.getRealizedRV(0, 0) == 0.8 );
-				assertTrue( allocation.getBiddersInvolved(0).size() == 1 );
-				assertTrue(Math.abs( allocation.getExpectedWelfare() - 0.0230 ) < 1e-4);
+				assertTrue(allocation.getNumberOfAllocatedAuctioneers() == 1);
+				assertTrue(allocation.getBiddersInvolved(0).size() == 1);
+				assertTrue(allocation.getBiddersInvolved(0).get(0) == 2);
 				
-				//Get allocated buyers involved in the trade 
-				assertTrue( allocation.getBiddersInvolved(0).size() == 1);
-				assertTrue( allocation.getBiddersInvolved(0).get(0) == 2 );
-				assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 1 );
-				assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );
+				assertTrue(Math.abs( allocation.getExpectedWelfare() - 0.0230 ) < 1e-4);
+				assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 1 );
+				assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );
 				
 				double[] payments = auction.getPayments();
-				assertTrue( payments.length == 1);
-				assertTrue( Math.abs(payments[0] - 0.54656) < 1e-4 );
+				assertTrue(payments.length == 1);
+				
+				if(allocation.getRealizedRV(0, 0) == 0.7)
+					assertTrue( Math.abs( payments[0] - 0.6832*0.7) < 1e-4 );
+				else if(allocation.getRealizedRV(0, 0) == 0.8)
+					assertTrue( Math.abs( payments[0] - 0.6832*0.8) < 1e-4 );
+				else throw new RuntimeException("Incorrect realization of RV");
+				
+				assertTrue( allocation.isAllocated(0) );
+				assertTrue( !allocation.isAllocated(1) );
+				assertTrue( allocation.isAllocated(2) );
+				assertTrue( !allocation.isAllocated(3) );
 			}
+			else
+				e.printStackTrace();
 		}
 		catch (Exception e)
 		{
@@ -2877,10 +2712,10 @@ public class testProbabilisticCAXOR {
 				assertTrue( allocation.getBiddersInvolved(0).get(1) == 2 );
 				assertTrue( allocation.getBiddersInvolved(0).get(2) == 3 );
 				
-				assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 3 );
-				assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );
-				assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 0 );
-				assertTrue( allocation.getAllocatedBundlesByIndex(0).get(2) == 0 );
+				assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 3 );
+				assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );
+				assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 0 );
+				assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(2) == 0 );
 				
 				//assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
 				
@@ -3040,9 +2875,9 @@ public class testProbabilisticCAXOR {
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
 			assertTrue( allocation.getBiddersInvolved(0).get(1) == 3 );
 			
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 1 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 1 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 2 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 1 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 1 );
 			
 			double[] payments = auction.getPayments();
 			assertTrue( payments.length == 2);
@@ -3200,9 +3035,9 @@ public class testProbabilisticCAXOR {
 			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
 			assertTrue( allocation.getBiddersInvolved(0).get(1) == 3 );
 			
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 1 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 1 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 2 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 1 );
+			assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 1 );
 			
 			double[] payments = auction.getPayments();
 			assertTrue( payments.length == 2);
@@ -3243,9 +3078,9 @@ public class testProbabilisticCAXOR {
 				assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
 				assertTrue( allocation.getBiddersInvolved(0).get(1) == 3 );
 				
-				assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2 );
-				assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 1 );
-				assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 1 );
+				assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 2 );
+				assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 1 );
+				assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 1 );
 				
 				double[] payments = auction.getPayments();
 				assertTrue( payments.length == 2);
@@ -3279,9 +3114,9 @@ public class testProbabilisticCAXOR {
 				assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
 				assertTrue( allocation.getBiddersInvolved(0).get(1) == 3 );
 				
-				assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2 );
-				assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 1 );
-				assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 1 );
+				assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 2 );
+				assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 1 );
+				assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 1 );
 				
 				double[] payments = auction.getPayments();
 				assertTrue( payments.length == 2);
@@ -3313,6 +3148,130 @@ public class testProbabilisticCAXOR {
 		}
 	}
 
+
+	/**
+	 * ECC-CORE for a large domain with uncertainty and dependent availabilities of goods.
+	 * Test the Constraints Generation algorithm. A single local winning bidder.
+	 */
+	@Test
+	public void testECCCORE_Large_ConstraintGeneration() throws Exception 
+	{
+		IloCplex cplexSolver = new IloCplex();
+		List<Integer> items = Arrays.asList( 1, 2, 3, 4, 5, 6, 7, 8, 9 );
+		
+		//Bidder 1
+		AtomicBid atom11 = new AtomicBid(1, Arrays.asList( 5, 8 ), 174.1030);
+		AtomicBid atom12 = new AtomicBid(1, Arrays.asList( 5, 6 ), 148.8033);
+		AtomicBid atom13 = new AtomicBid(1, Arrays.asList( 8, 9 ), 207.3529);
+		CombinatorialType t1 = new CombinatorialType(atom11, atom12, atom13);
+
+		//Bidder 2
+		AtomicBid atom21 = new AtomicBid(2, Arrays.asList( 6, 9), 156.144);
+		AtomicBid atom22 = new AtomicBid(2, Arrays.asList( 6, 8), 107.793);
+		CombinatorialType t2 = new CombinatorialType(atom21, atom22);
+		
+		//Bidder 3
+		AtomicBid atom31 = new AtomicBid(3, Arrays.asList( 1 ), 97.014);
+		CombinatorialType t3 = new CombinatorialType(atom31);
+		
+		//Bidder 4
+		AtomicBid atom41 = new AtomicBid(4, Arrays.asList( 1, 2, 3, 4, 5, 6, 7, 8, 9 ), 581.890);
+		CombinatorialType t4 = new CombinatorialType(atom41);
+		
+		//Bidder 5
+		AtomicBid atom51 = new AtomicBid(5, Arrays.asList( 1, 2, 3, 4, 5 ), 314.316);
+		AtomicBid atom52 = new AtomicBid(5, Arrays.asList( 2, 5, 6, 7, 8 ), 208.312);
+		AtomicBid atom53 = new AtomicBid(5, Arrays.asList( 1, 2, 3, 5, 6 ), 273.986);
+		AtomicBid atom54 = new AtomicBid(5, Arrays.asList( 1, 2, 4, 5, 7 ), 278.663);
+		CombinatorialType t5 = new CombinatorialType(atom51, atom52, atom53, atom54);
+		
+		List<Type> bids = Arrays.asList(t1, t2, t3, t4, t5);
+		
+		List<Double> costs = Arrays.asList(6.346, 3.552, 2.723, 0.262, 9.937, 4.205, 5.280, 7.560, 7.739);
+		
+		GridGenerator generator = new GridGenerator(3, 3);
+		generator.setSeed(0);
+		generator.buildProximityGraph();
+		Graph grid = generator.getGrid();
+		
+		double primaryReductionCoef = 0.3;
+		double secondaryReductionCoef = 0.2;
+		JointProbabilityMass jpmf = new JointProbabilityMass( grid );
+		jpmf.setNumberOfSamples(1000000);
+		jpmf.setNumberOfBombsToThrow(1);
+		
+		IBombingStrategy b = new FocusedBombingStrategy(grid, 1., primaryReductionCoef, secondaryReductionCoef);
+		List<IBombingStrategy> bombs = Arrays.asList(b);
+		
+		List<Double> pd = Arrays.asList(1.);
+		
+		jpmf.setBombs(bombs, pd);
+		jpmf.update();
+		
+		ProbabilisticCAXOR auction = new ProbabilisticCAXOR( bids.size(), items.size(), bids, costs, jpmf);
+		auction.setSolver(cplexSolver);
+		auction.setPaymentRule("ECC-CORE");
+		auction.setSeed(0);
+		try
+		{
+			auction.solveIt();
+			System.out.println("Solved.");
+
+			AllocationEC allocation = (AllocationEC)auction.getAllocation();
+			assertTrue(allocation.getNumberOfAllocatedAuctioneers() == 1);
+			assertTrue(allocation.getBiddersInvolved(0).size() == 2);
+			assertTrue(allocation.getBiddersInvolved(0).get(0) == 1);
+			assertTrue(allocation.getBiddersInvolved(0).get(1) == 5);
+			
+			assertTrue(allocation.getAllocatedBundlesOfTrade(0).size() == 2);
+			assertTrue(allocation.getAllocatedBundlesOfTrade(0).get(0) == 2);
+			assertTrue(allocation.getAllocatedBundlesOfTrade(0).get(1) == 0);
+			
+			System.out.println("> " + allocation.getRealizedRV(0).toString());
+		}
+		catch (PaymentException e)
+		{
+			if( e.getMessage().equals("VCG is in the Core"))
+			{
+				System.out.println("VCG is in the Core");
+				AllocationEC allocation = (AllocationEC)auction.getAllocation();
+				assertTrue(allocation.getNumberOfAllocatedAuctioneers() == 1);
+				assertTrue(allocation.getBiddersInvolved(0).size() == 1);
+				assertTrue(allocation.getBiddersInvolved(0).get(0) == 2);
+				
+				assertTrue(Math.abs( allocation.getExpectedWelfare() - 0.0230 ) < 1e-4);
+				assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 1 );
+				assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );
+				
+				double[] payments = auction.getPayments();
+				assertTrue(payments.length == 1);
+				
+				if(allocation.getRealizedRV(0, 0) == 0.7)
+					assertTrue( Math.abs( payments[0] - 0.6832*0.7) < 1e-4 );
+				else if(allocation.getRealizedRV(0, 0) == 0.8)
+					assertTrue( Math.abs( payments[0] - 0.6832*0.8) < 1e-4 );
+				else throw new RuntimeException("Incorrect realization of RV");
+				
+				assertTrue( allocation.isAllocated(0) );
+				assertTrue( !allocation.isAllocated(1) );
+				assertTrue( allocation.isAllocated(2) );
+				assertTrue( !allocation.isAllocated(3) );
+			}
+			else if(e.getMessage().equals("Empty Core"))
+			{
+				System.out.println("Empty Core");
+				AllocationEC allocation = (AllocationEC)auction.getAllocation();
+				assertTrue(allocation.getRealizedRV(0, 0)==0.8);
+				assertTrue(allocation.getRealizedRV(0, 1)==0.7);
+			}
+			else
+				e.printStackTrace();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
 	
 	/*
 	 * EC-CORE for LLG domain (empty core) 

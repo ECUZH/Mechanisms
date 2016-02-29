@@ -76,9 +76,9 @@ public class testCAXOR {
 		
 		assertTrue( allocation.getAllocatedWelfare() == 45);
 		
-		assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 2);
-		assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 2);
-		assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 0);
+		assertTrue( allocation.getAllocatedBundlesOfTrade(0).size() == 2);
+		assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 2);
+		assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 0);
 		
 		List<Double> vcg = ca.computeVCG();		
 		assertTrue( vcg.size() == 2 );
@@ -179,8 +179,8 @@ public class testCAXOR {
 
 		assertTrue( allocation.getAllocatedWelfare() == 55 );
 		
-		assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );
-		assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 2 );
+		assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 0 );
+		assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(1) == 2 );
 		
 		List<Double> vcg = ca.computeVCG();
 		assertTrue( vcg.size() == 2 );

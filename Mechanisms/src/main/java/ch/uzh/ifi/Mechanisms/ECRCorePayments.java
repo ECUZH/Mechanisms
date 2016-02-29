@@ -117,7 +117,7 @@ public class ECRCorePayments implements PaymentRule
 		for(int i = 0; i < _allocation.getBiddersInvolved(0).size(); ++i)
 		{
 			int itsId =  _allocation.getBiddersInvolved(0).get(i);
-			int itsAllocatedBundleIdx = _allocation.getAllocatedBundlesByIndex(0).get(i);
+			int itsAllocatedBundleIdx = _allocation.getAllocatedBundlesOfTrade(0).get(i);
 			AtomicBid itsAllocatedBundle = _bids.get( itsId - 1).getAtom( itsAllocatedBundleIdx );
 			double realizedValue = itsAllocatedBundle.getValue() * _allocation.getRealizedRV(0, i);
 			totalCost += itsAllocatedBundle.computeCost(_costs)  * _allocation.getRealizedRV(0, i/*itsId - 1*/);
@@ -207,7 +207,7 @@ public class ECRCorePayments implements PaymentRule
 					System.out.println("Costs" + _costs.toString());
 					for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
 					{
-						System.out.println("Bidder id=" + _allocation.getBiddersInvolved(0).get(j) + " got its " + _allocation.getAllocatedBundlesByIndex(0).get(j));
+						System.out.println("Bidder id=" + _allocation.getBiddersInvolved(0).get(j) + " got its " + _allocation.getAllocatedBundlesOfTrade(0).get(j));
 						System.out.println("Realization " + j + ": " + _allocation.getRealizedRV(0, j));
 					}
 					System.out.println("EC-VCG: " + ecrvcgPayments.toString());
@@ -333,7 +333,7 @@ public class ECRCorePayments implements PaymentRule
 		for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
 		{
 			int agentId = _allocation.getBiddersInvolved(0).get(j);
-			int itsAllocatedAtom = _allocation.getAllocatedBundlesByIndex(0).get(j);
+			int itsAllocatedAtom = _allocation.getAllocatedBundlesOfTrade(0).get(j);
 			AtomicBid allocatedBundle = _bids.get( agentId-1 ).getAtom( itsAllocatedAtom );
 					
 			double value = allocatedBundle.getValue();

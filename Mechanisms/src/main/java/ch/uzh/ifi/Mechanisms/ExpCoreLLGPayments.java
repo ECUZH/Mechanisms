@@ -66,7 +66,7 @@ public class ExpCoreLLGPayments implements PaymentRule
 		for(int i = 0; i < allocatedAgentsIds.size(); ++i)
 		{
 			int allocatedAgentId = _allocation.getBiddersInvolved(0).get(i);
-			int allocatedAtomIdx = _allocation.getAllocatedBundlesByIndex(0).get(i);
+			int allocatedAtomIdx = _allocation.getAllocatedBundlesOfTrade(0).get(i);
 			AtomicBid allocatedAtom = _bids.get(allocatedAgentId - 1).getAtom(allocatedAtomIdx);
 			A += allocatedAtom.computeCost(_costs) * auction.computeExpectedMarginalAvailability(allocatedAtom, null, null);//_allocation.getRealizedRV(0, i);
 			

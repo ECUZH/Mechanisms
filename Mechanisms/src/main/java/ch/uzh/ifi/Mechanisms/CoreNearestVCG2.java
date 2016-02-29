@@ -51,7 +51,7 @@ public class CoreNearestVCG2 implements PaymentRule
 		for(int i = 0; i < _allocation.getBiddersInvolved(0).size(); ++i)
 		{
 			int bidderId = _allocation.getBiddersInvolved(0).get(i);
-			int itsAllocatedBundle = _allocation.getAllocatedBundlesByIndex(0).get(i);
+			int itsAllocatedBundle = _allocation.getAllocatedBundlesOfTrade(0).get(i);
 			AtomicBid bundle = _bids.get(bidderId-1).getAtom(itsAllocatedBundle);
 			allocatedCosts += computeCost(bundle);
 		}

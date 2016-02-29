@@ -735,7 +735,7 @@ public class testZollingerMechanism {
 		Allocation allocation = ca.getAllocation();
 		
 		//System.out.println("Allocated bundle: " + allocation.getAllocatedBundlesByIndex(0).get(0));
-		assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 1);
+		assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 1);
 		assertTrue( allocation.getBiddersInvolved(0).size() == 1 );
 		assertTrue( allocation.getBiddersInvolved(0).get(0) == 2 );
 
@@ -790,7 +790,7 @@ public class testZollingerMechanism {
 		
 		Allocation allocation = ca.getAllocation();
 		
-		assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 1);
+		assertTrue( allocation.getAllocatedBundlesOfTrade(0).get(0) == 1);
 		assertTrue( allocation.getBiddersInvolved(0).size() == 1 );
 		assertTrue( allocation.getBiddersInvolved(0).get(0) == 2 );
 

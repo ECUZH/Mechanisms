@@ -51,7 +51,7 @@ public class ThresholdPayments implements PaymentRule
 		List<Double> payments = vcgPayments.computePayments();
 		List<Double> vcgDiscounts = vcgPayments.getVCGDiscounts();
 		
-		if( vcgDiscounts.size() <= 0)   		throw new PaymentException("No VCG discounts for " + _allPlans.toString() + " " + _allocation.getAllocatedBundlesByIndex(0), _allocation.getAllocatedWelfare());
+		if( vcgDiscounts.size() <= 0)   		throw new PaymentException("No VCG discounts for " + _allPlans.toString() + " " + _allocation.getAllocatedBundlesOfTrade(0), _allocation.getAllocatedWelfare());
 		if( vcgDiscounts.get(0) == Double.NaN) 	throw new RuntimeException("Incorrect vcg discounts: " + vcgDiscounts.toString());
 		
 		if( _paymentCorrectionRule.equals("Trim") )
@@ -117,7 +117,7 @@ public class ThresholdPayments implements PaymentRule
 			double itsDiscount = correctedDiscounts.get(i);
 			double itsValue = 0.;
 			int itsId = _allocation.getAuctioneerId(i);
-			int itsBundle = _allocation.getAllocatedBundlesByIndex(i).get(0);
+			int itsBundle = _allocation.getAllocatedBundlesOfTrade(i).get(0);
 				
 			for(int j = 0; j < _allPlans.size(); ++j)
 				if( _allPlans.get(j).getAgentId() == itsId )
@@ -136,7 +136,7 @@ public class ThresholdPayments implements PaymentRule
 			for(int k = 0; k < _allocation.getNumberOfAllocatedAuctioneers(); ++k)							//Compute the value for the seller i
 			{
 				int winnerId = _allocation.getAuctioneerId(k);
-				int winnersAtom = _allocation.getAllocatedBundlesByIndex(_allocation.getAuctioneerIndexById(winnerId)).get(0);
+				int winnersAtom = _allocation.getAllocatedBundlesOfTrade(_allocation.getAuctioneerIndexById(winnerId)).get(0);
 				AtomicBid atom = _allPlans.get( winnerId-1 ).getAtom( winnersAtom );
 				if( atom.getInterestingSet().contains( _allBids.get(_numberOfBuyers+i).getAgentId() ) )	//If the seller participates in this deal
 				{

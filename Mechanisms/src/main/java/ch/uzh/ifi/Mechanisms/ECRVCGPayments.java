@@ -62,7 +62,7 @@ public class ECRVCGPayments implements PaymentRule
 			for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
 			{
 				int bidderId = _allocation.getBiddersInvolved(0).get(j);				
-				int itsAllocatedAtom = _allocation.getAllocatedBundlesByIndex(0).get(j);
+				int itsAllocatedAtom = _allocation.getAllocatedBundlesOfTrade(0).get(j);
 				AtomicBid allocatedBundle = _bids.get( bidderId-1 ).getAtom( itsAllocatedAtom );
 				//List<Dou> realizedMarginalAvailability = _allocation.getRealizedRVsPerGood(0);//_allocation.getRealizedRV(0, j);
 				
@@ -88,7 +88,7 @@ public class ECRVCGPayments implements PaymentRule
 			{
 				int bidderId = _allocation.getBiddersInvolved(0).get(j);
 				
-				int itsAllocatedAtom = _allocation.getAllocatedBundlesByIndex(0).get(j);
+				int itsAllocatedAtom = _allocation.getAllocatedBundlesOfTrade(0).get(j);
 				AtomicBid allocatedBundle = _bids.get( bidderId-1 ).getAtom( itsAllocatedAtom );
 				double realizedMarginalAvailability = _allocation.getRealizedRV(0, j);
 				double cost  = allocatedBundle.computeCost(_costs);
