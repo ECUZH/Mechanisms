@@ -5,7 +5,6 @@ import java.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ch.uzh.ifi.MechanismDesignPrimitives.AllocationEC;
 import ch.uzh.ifi.MechanismDesignPrimitives.JointProbabilityMass;
 import ch.uzh.ifi.MechanismDesignPrimitives.Allocation;
 import ch.uzh.ifi.MechanismDesignPrimitives.Type;
@@ -16,7 +15,6 @@ import edu.harvard.econcs.jopt.solver.client.SolverClient;
 import edu.harvard.econcs.jopt.solver.mip.CompareType;
 import edu.harvard.econcs.jopt.solver.mip.MIP;
 import edu.harvard.econcs.jopt.solver.mip.Constraint;
-import edu.harvard.econcs.jopt.solver.mip.Term;
 import edu.harvard.econcs.jopt.solver.mip.VarType;
 import edu.harvard.econcs.jopt.solver.mip.Variable;
 import edu.harvard.econcs.jopt.solver.SolveParam;
