@@ -2859,55 +2859,69 @@ public class testProbabilisticCAXOR {
 		try
 		{
 			auction.solveIt();
-			AllocationEC allocation = (AllocationEC)auction.getAllocation();
-			assertTrue(allocation.getNumberOfAllocatedAuctioneers() == 1);
-			
-			System.out.println("Test sw = " + allocation.getExpectedWelfare() );
-			assertTrue( allocation.getBiddersInvolved(0).size() == 3 );
-			assertTrue(Math.abs( allocation.getExpectedWelfare() - 50.61738 ) < 1e-1);
-			
-			//Get allocated buyers involved in the trade 
-			assertTrue( allocation.getBiddersInvolved(0).size() == 3);
-			assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
-			assertTrue( allocation.getBiddersInvolved(0).get(1) == 2 );
-			assertTrue( allocation.getBiddersInvolved(0).get(2) == 3 );
-			
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 3 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 0 );
-			assertTrue( allocation.getAllocatedBundlesByIndex(0).get(2) == 0 );
-			
-			//assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
-			
-			double[] payments = auction.getPayments();
-			assertTrue( payments.length == 3);
-			
-			//System.out.println("payments[0]="+payments[0]);
-			//System.out.println(">> " + allocation.getRealizedRV(0, 0) + " p[0]="+payments[0]);
-			if( allocation.getRealizedRV(0, 0) == 0.7 )
-			{
-				assertTrue( Math.abs(payments[0] - 3.04045) < 1e-4 );				
-			}
-			else if( allocation.getRealizedRV(0, 0) == 0.8 )
-			{
-				assertTrue( Math.abs(payments[0] - 3.4748) < 1e-4 );
-			}
-			else if( allocation.getRealizedRV(0, 0) == 1.0 )
-			{
-				assertTrue( Math.abs(payments[0] - 4.3435) < 1e-4 );
-			}
-			
-			assertTrue( allocation.isAllocated(0) );
-			assertTrue( allocation.isAllocated(1) );
-			assertTrue( allocation.isAllocated(2) );
-			assertTrue( allocation.isAllocated(3) );
 		}
-		catch (Exception e)
-		{ 
+		catch (PaymentException e)
+		{
+			if(e.getMessage().equals("VCG is in the Core"))
+			{
+				AllocationEC allocation = (AllocationEC)auction.getAllocation();
+				assertTrue(allocation.getNumberOfAllocatedAuctioneers() == 1);
+				
+				System.out.println("Test sw = " + allocation.getExpectedWelfare() );
+				assertTrue( allocation.getBiddersInvolved(0).size() == 3 );
+				assertTrue(Math.abs( allocation.getExpectedWelfare() - 50.61738 ) < 1e-1);
+				
+				//Get allocated buyers involved in the trade 
+				assertTrue( allocation.getBiddersInvolved(0).size() == 3);
+				assertTrue( allocation.getBiddersInvolved(0).get(0) == 1 );
+				assertTrue( allocation.getBiddersInvolved(0).get(1) == 2 );
+				assertTrue( allocation.getBiddersInvolved(0).get(2) == 3 );
+				
+				assertTrue( allocation.getAllocatedBundlesByIndex(0).size() == 3 );
+				assertTrue( allocation.getAllocatedBundlesByIndex(0).get(0) == 0 );
+				assertTrue( allocation.getAllocatedBundlesByIndex(0).get(1) == 0 );
+				assertTrue( allocation.getAllocatedBundlesByIndex(0).get(2) == 0 );
+				
+				//assertTrue( (Math.abs(allocation.getRealizedRV(0, 0) - (1.-primaryReductionCoef)) < 1e-6) || (Math.abs(allocation.getRealizedRV(0, 0) - (1.-secondaryReductionCoef)) < 1e-6) );
+				
+				double[] payments;
+				try 
+				{
+					payments = auction.getPayments();
+					assertTrue( payments.length == 3);
+					//System.out.println("payments[0]="+payments[0]);
+					//System.out.println(">> " + allocation.getRealizedRV(0, 0) + " p[0]="+payments[0]);
+					if( allocation.getRealizedRV(0, 0) == 0.7 )
+					{
+						assertTrue( Math.abs(payments[0] - 3.04045) < 1e-4 );				
+					}
+					else if( allocation.getRealizedRV(0, 0) == 0.8 )
+					{
+						assertTrue( Math.abs(payments[0] - 3.4748) < 1e-4 );
+					}
+					else if( allocation.getRealizedRV(0, 0) == 1.0 )
+					{
+						assertTrue( Math.abs(payments[0] - 4.3435) < 1e-4 );
+					}
+					
+					assertTrue( allocation.isAllocated(0) );
+					assertTrue( allocation.isAllocated(1) );
+					assertTrue( allocation.isAllocated(2) );
+					assertTrue( allocation.isAllocated(3) );
+				} 
+				catch (Exception e1) 
+				{
+					e1.printStackTrace();
+				}
+			}
+			else
+				e.printStackTrace();
+		}
+		catch( Exception e)
+		{
 			e.printStackTrace();
 		}
 	}
-	
 	
 	/*
 	 * 
