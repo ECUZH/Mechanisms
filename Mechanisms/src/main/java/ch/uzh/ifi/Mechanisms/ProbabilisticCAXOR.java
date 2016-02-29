@@ -667,7 +667,7 @@ public class ProbabilisticCAXOR implements Auction
 		}
 		catch(PaymentException e)
 		{
-			if( e.getMessage().equals("Empty Core") || e.getMessage().equals("VCG is in the Core") )
+			if( e.getMessage().equals("Empty Core")  )
 			{
 				switch(_paymentRule )
 				{
@@ -677,6 +677,31 @@ public class ProbabilisticCAXOR implements Auction
 											break;
 					case "ECC-CORE"		:	_payments = computePayments(new ECCVCGPayments(_allocation, _numberOfBuyers, _numberOfItems, _bids, _costs, _jpmf, _cplexSolver));
 											break;
+					case "ECC-CORE_LLG"	:	_payments = computePayments(new ECCVCGPayments(_allocation, _numberOfBuyers, _numberOfItems, _bids, _costs, _jpmf, _cplexSolver));
+											break;
+					case "ECR-CORE"		:	_payments = computePayments(new ECRVCGPayments(_allocation, _numberOfBuyers, _numberOfItems, _bids, _costs, _jpmf, _cplexSolver));
+											break;
+					case "ECR-CORE_LLG"	:	_payments = computePayments(new ECRVCGPayments(_allocation, _numberOfBuyers, _numberOfItems, _bids, _costs, _jpmf, _cplexSolver));
+											throw e;
+											//break;
+					case "Exp-CORE"		:	if( e.getMessage().equals("VCG is in the Core") )
+												_payments = computePayments(new ExpVCGPayments(_allocation, _numberOfBuyers, _numberOfItems, _bids, _costs, _jpmf, _cplexSolver));
+											else throw new RuntimeException("The Exp-CORE cannot be empty. " + e.toString());
+											break;
+					case "expostIR_ECR" :	throw e;
+					default				:	throw new Exception("Empty Core exception. No such payment rule exists: " + _paymentRule);
+				}
+				throw e;					//Required by the BNE algorithm to estimate the number of empty core cases (see UtilityEstimator.java)
+			}
+			else if(e.getMessage().equals("VCG is in the Core"))
+			{
+				switch(_paymentRule )
+				{
+					case "EC-CORE"		:	_payments = computePayments(new ECVCGPayments(_allocation, _numberOfBuyers, _numberOfItems, _bids, _costs, _jpmf, _cplexSolver));
+											break;
+					case "EC-CORE_LLG"	:	_payments = computePayments(new ECVCGPayments(_allocation, _numberOfBuyers, _numberOfItems, _bids, _costs, _jpmf, _cplexSolver));
+											break;
+					case "ECC-CORE"		:	_payments = e.getPayments(); break;
 					case "ECC-CORE_LLG"	:	_payments = computePayments(new ECCVCGPayments(_allocation, _numberOfBuyers, _numberOfItems, _bids, _costs, _jpmf, _cplexSolver));
 											break;
 					case "ECR-CORE"		:	_payments = computePayments(new ECRVCGPayments(_allocation, _numberOfBuyers, _numberOfItems, _bids, _costs, _jpmf, _cplexSolver));
