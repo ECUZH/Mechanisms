@@ -167,11 +167,14 @@ public class ECCCorePayments implements PaymentRule
 			term = _cplexSolver.prod(term, term);
 			objectiveQP = _cplexSolver.sum(objectiveQP, term);
 		}
+		_logger.debug("Create LP objective: " + objectiveLP.toString());
+		_logger.debug("Create QP objective: " + objectiveQP.toString()); 
+		
 		_cplexSolver.add(_cplexSolver.minimize(objectiveLP));
 
 		int constraintIdBPO = 0;
 		
-		while( z > TOL )
+		while( z > _TOL )
 		{
 			_logger.debug("z="+z+" totalPayment="+totalPayment );
 			
@@ -476,5 +479,5 @@ public class ECCCorePayments implements PaymentRule
 	
 	private IloCplex _cplexSolver;
 	private boolean _isExternalSolver;
-	private final double TOL = 1e-4;
+	private final double _TOL = 1e-4;
 }
