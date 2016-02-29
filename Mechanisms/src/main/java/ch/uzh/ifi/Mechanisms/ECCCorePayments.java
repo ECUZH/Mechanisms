@@ -168,7 +168,7 @@ public class ECCCorePayments implements PaymentRule
 			objectiveQP = _cplexSolver.sum(objectiveQP, term);
 		}
 		_logger.debug("Create LP objective: " + objectiveLP.toString());
-		_logger.debug("Create QP objective: " + objectiveQP.toString()); 
+		_logger.debug("Create QP objective: " + objectiveQP.toString());
 		
 		_cplexSolver.add(_cplexSolver.minimize(objectiveLP));
 
@@ -289,7 +289,11 @@ public class ECCCorePayments implements PaymentRule
 			_cplexSolver.end();
 		}
 		
-		if(constraintIdBPO == 0)	throw new PaymentException("VCG is in the Core",0);
+		if(constraintIdBPO == 0)
+		{
+			_logger.debug("VCG is in the core => throwing an exception");
+			throw new PaymentException("VCG is in the Core",0, _payments);
+		}
 		
 		_logger.debug("<- computePayments()");
 		return _payments;
