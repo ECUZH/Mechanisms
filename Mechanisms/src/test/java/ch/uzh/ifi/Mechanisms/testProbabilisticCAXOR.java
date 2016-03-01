@@ -3154,7 +3154,7 @@ public class testProbabilisticCAXOR {
 	 * Test the Constraints Generation algorithm. A single local winning bidder.
 	 */
 	@Test
-	public void testECCCORE_Large_ConstraintGeneration() throws Exception 
+	public void testECCCORE_Large_ConstraintGeneration() throws Exception
 	{
 		IloCplex cplexSolver = new IloCplex();
 		List<Integer> items = Arrays.asList( 1, 2, 3, 4, 5, 6, 7, 8, 9 );
