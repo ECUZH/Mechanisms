@@ -180,15 +180,18 @@ public class ECCCorePayments implements PaymentRule
 			
 			//Create optimization constraints			
 			IloNumExpr constraint = _cplexSolver.constant(0);
-
+			double subTotalPayment = 0.;
 			for(int i = 0; i < _allocation.getBiddersInvolved(0).size(); ++i)
 			{
 				int allocatedAgentId = _allocation.getBiddersInvolved(0).get(i);
 				if( ! blockingCoalition.contains( allocatedAgentId ) )
+				{
 					constraint = _cplexSolver.sum(constraint, pi[i]);
+					subTotalPayment += _payments.get(i);
+				}
 			}
 			
-			lp.addRow( _cplexSolver.le(z+totalPayment, constraint, "c"+constraintIdBPO));
+			lp.addRow( _cplexSolver.le(z+/*totalPayment*/subTotalPayment, constraint, "c"+constraintIdBPO));
 			constraintIdBPO += 1;
 			
 			//Solve LP
@@ -208,22 +211,25 @@ public class ECCCorePayments implements PaymentRule
 			} 
 			catch (IloException e1) 
 			{
-				if(e1.getMessage().contains("CPLEX Error  1217: No solution exists."))
+				if(e1.getMessage().contains("CPLEX Error  1217: No solution exists.") )
 				{
-					_logger.error("z="+z+" totalPayment="+totalPayment + "; blocking coalition: " + blockingCoalition.toString());
-					_logger.error("LP: " + _cplexSolver.toString());
-					_logger.error("Bids: " + _bids.toString());
-					_logger.error("Costs" + _costs.toString());
-					for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
+					if(!(blockingCoalition.containsAll(_allocation.getBiddersInvolved(0)) && _allocation.getBiddersInvolved(0).containsAll(blockingCoalition)) )
 					{
-						_logger.error("Bidder id=" + _allocation.getBiddersInvolved(0).get(j) + " got its " + _allocation.getAllocatedBundlesOfTrade(0).get(j));
-						_logger.error("Realization " + j + ": " + _allocation.getRealizedRV(0, j));
+						_logger.error("z="+z+" totalPayment="+totalPayment + "; blocking coalition: " + blockingCoalition.toString());
+						_logger.error("LP: " + _cplexSolver.toString());
+						_logger.error("Bids: " + _bids.toString());
+						_logger.error("Costs" + _costs.toString());
+						for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
+						{
+							_logger.error("Bidder id=" + _allocation.getBiddersInvolved(0).get(j) + " got its " + _allocation.getAllocatedBundlesOfTrade(0).get(j));
+							_logger.error("Realization " + j + ": " + _allocation.getRealizedRV(0, j));
+						}
+						_logger.error("EC-VCG: " + eccvcgPayments.toString());
+						_logger.error("Realized values: " + realizedValues.toString());
+						_logger.error("ALL RVs="+ _allocation.getRealizedRVsPerGood(0).toString());
+						_logger.error("Blocking coalition: " + blockingCoalition.toString() + " with z="+z);
+						_logger.error("Total payment: " + totalPayment);
 					}
-					_logger.error("EC-VCG: " + eccvcgPayments.toString());
-					_logger.error("Realized values: " + realizedValues.toString());
-					_logger.error("ALL RVs="+ _allocation.getRealizedRVsPerGood(0).toString());
-					_logger.error("Blocking coalition: " + blockingCoalition.toString() + " with z="+z);
-					_logger.error("Total payment: " + totalPayment);
 					throw new PaymentException("Empty Core", 1);
 				}
 				else
