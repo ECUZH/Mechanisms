@@ -191,7 +191,7 @@ public class ECCCorePayments implements PaymentRule
 				}
 			}
 			
-			lp.addRow( _cplexSolver.le(z+/*totalPayment*/subTotalPayment, constraint, "c"+constraintIdBPO));
+			lp.addRow( _cplexSolver.le(z+subTotalPayment, constraint, "c"+constraintIdBPO));
 			constraintIdBPO += 1;
 			
 			//Solve LP
