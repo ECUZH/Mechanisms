@@ -8,7 +8,7 @@ import ilog.concert.IloNumVarType;
 import ilog.concert.IloRange;
 import ilog.cplex.IloCplex;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -17,7 +17,6 @@ import org.apache.logging.log4j.Logger;
 import ch.uzh.ifi.MechanismDesignPrimitives.AllocationEC;
 import ch.uzh.ifi.MechanismDesignPrimitives.JointProbabilityMass;
 import ch.uzh.ifi.MechanismDesignPrimitives.Type;
-import ch.uzh.ifi.MechanismDesignPrimitives.Allocation;
 import ch.uzh.ifi.MechanismDesignPrimitives.AtomicBid;
 
 public class ECCCorePayments implements PaymentRule
@@ -27,30 +26,30 @@ public class ECCCorePayments implements PaymentRule
 	
 	/**
 	 * Constructor
-	 * @param allocation
-	 * @param numberOfBuyers
-	 * @param numberOfItems
-	 * @param bids
-	 * @param costs
-	 * @param binaryBids
-	 * @param jpmf
+	 * @param allocation allocation of the auction
+	 * @param numberOfBidders number of bidders in the auction
+	 * @param numberOfItems number of goods in the auction
+	 * @param bids bids of bidders
+	 * @param costs (additive) costs per good
+	 * @param binaryBids binary form of bids of agents
+	 * @param jpmf joint probability mass function
 	 */
-	public ECCCorePayments(AllocationEC allocation, int numberOfBuyers, int numberOfItems, List<Type> bids, 
+	public ECCCorePayments(AllocationEC allocation, int numberOfBidders, int numberOfItems, List<Type> bids, 
 			              List<Double> costs, List<int[][]> binaryBids, JointProbabilityMass jpmf)
 	{
-		this.init(allocation, numberOfBuyers, numberOfItems, bids, costs, binaryBids, jpmf);		
+		this.init(allocation, numberOfBidders, numberOfItems, bids, costs, binaryBids, jpmf);		
 	}
 	
 	/**
 	 * Constructor
-	 * @param allocation
-	 * @param numberOfBuyers
-	 * @param numberOfItems
-	 * @param bids
-	 * @param costs
-	 * @param binaryBids
-	 * @param jpmf
-	 * @param solver
+	 * @param allocation allocation of the auction
+	 * @param numberOfBidders number of bidders in the auction
+	 * @param numberOfItems number of goods in the auction
+	 * @param bids bids of bidders
+	 * @param costs (additive) costs per good
+	 * @param binaryBids binary form of bids of agents
+	 * @param jpmf joint probability mass function
+	 * @param solver CPLEX solver
 	 */
 	public ECCCorePayments(AllocationEC allocation, int numberOfBuyers, int numberOfItems, List<Type> bids, 
 			              List<Double> costs, List<int[][]> binaryBids, JointProbabilityMass jpmf, IloCplex solver)
@@ -61,13 +60,13 @@ public class ECCCorePayments implements PaymentRule
 	
 	/**
 	 * Initialization
-	 * @param allocation
-	 * @param numberOfBuyers
-	 * @param numberOfItems
-	 * @param bids
-	 * @param costs
-	 * @param binaryBids
-	 * @param jpmf
+	 * @param allocation allocation of the auction
+	 * @param numberOfBidders number of bidders in the auction
+	 * @param numberOfItems number of goods in the auction
+	 * @param bids bids of bidders
+	 * @param costs (additive) costs per good
+	 * @param binaryBids binary form of bids of agents
+	 * @param jpmf joint probability mass function
 	 */
 	private void init(AllocationEC allocation, int numberOfBuyers, int numberOfItems, List<Type> bids, 
             List<Double> costs, List<int[][]> binaryBids, JointProbabilityMass jpmf)
@@ -116,7 +115,7 @@ public class ECCCorePayments implements PaymentRule
 		
 		if( _allocation.getNumberOfAllocatedAuctioneers() <= 0 ) 
 		{
-			_payments = new LinkedList<Double>();
+			_payments = new ArrayList<Double>();
 			throw new Exception("No agents were allocated, return an empty list.");
 		}
 		
@@ -126,9 +125,9 @@ public class ECCCorePayments implements PaymentRule
 		_payments = eccvcgPayments;
 		_logger.debug("ECC-VCG payments: " + _payments.toString());
 
-		List<Double> realizedValues = new LinkedList<Double>();
+		List<Double> realizedValues = new ArrayList<Double>();
 		
-		List<Integer> blockingCoalition = new LinkedList<Integer>();
+		List<Integer> blockingCoalition = new ArrayList<Integer>();
 		double z = computeSEP(eccvcgPayments, blockingCoalition);
 		double totalPayment = computeTotalPayment(eccvcgPayments);
 		_logger.debug("z="+z + ". Blocking coalition:" + blockingCoalition.toString() + ". Total payment=" + totalPayment);
@@ -194,7 +193,9 @@ public class ECCCorePayments implements PaymentRule
 			lp.addRow( _cplexSolver.le(z+subTotalPayment, constraint, "c"+constraintIdBPO));
 			constraintIdBPO += 1;
 			
-			//Solve LP
+			//---------------------------------------------
+			//Linear Programming Problem:
+			//---------------------------------------------
 			try 
 			{
 				_cplexSolver.solve();
@@ -249,7 +250,7 @@ public class ECCCorePayments implements PaymentRule
 			}
 
 			//---------------------------------------------
-			//Now solve the QP:
+			//Quadratic Programming Problem:
 			//---------------------------------------------
 			IloNumExpr equalityConstraint = _cplexSolver.constant(0);
 			equalityConstraint = objectiveLP;
@@ -259,7 +260,7 @@ public class ECCCorePayments implements PaymentRule
 			_cplexSolver.add( _cplexSolver.minimize(objectiveQP));
 			
 			_cplexSolver.solve();
-			_payments = new LinkedList<Double>();
+			_payments = new ArrayList<Double>();
 			
 			for(int i = 0; i < _allocation.getBiddersInvolved(0).size(); ++i)
 				try 
@@ -279,7 +280,7 @@ public class ECCCorePayments implements PaymentRule
 				}
 			_logger.debug("New payments: " + _payments.toString());
 			
-			blockingCoalition = new LinkedList<Integer>();
+			blockingCoalition = new ArrayList<Integer>();
 			z = computeSEP( _payments, blockingCoalition);
 			totalPayment = computeTotalPayment(_payments);
 			
@@ -317,9 +318,9 @@ public class ECCCorePayments implements PaymentRule
 		_logger.debug("-> computeSEP(paymentsT="+paymentsT.toString()+", blockingCoalition="+ blockingCoalition.toString()+")");
 		_cplexSolver.clearModel();
 		
-		List<List<IloNumVar> > variables = new LinkedList<List<IloNumVar> >();// i-th element of the list contains the list of variables 
+		List<List<IloNumVar> > variables = new ArrayList<List<IloNumVar> >();// i-th element of the list contains the list of variables 
 																			  // corresponding to the i-th agent
-		List<IloNumVar> gammaVariables = new LinkedList<IloNumVar>();		  //Variables for winners of WDP willing to join a coalition 
+		List<IloNumVar> gammaVariables = new ArrayList<IloNumVar>();		  //Variables for winners of WDP willing to join a coalition 
 		
 		//Create optimization variables and formulate an objective function
 		IloNumExpr objective = _cplexSolver.constant(0.);
@@ -328,16 +329,16 @@ public class ECCCorePayments implements PaymentRule
 		for(int i = 0; i < _numberOfBidders; ++i)							//For every bidder ...
 		{
 			Type bid = _bids.get(i);
-			List<IloNumVar> varI = new LinkedList<IloNumVar>();				//Create a new variable per atomic bid
+			List<IloNumVar> varI = new ArrayList<IloNumVar>();				//Create a new variable per atomic bid
 			for(int j = 0; j < bid.getNumberOfAtoms(); ++j )				//For every atomic bid ...
 			{
 				double value = bid.getAtom(j).getValue();
 				double cost  = bid.getAtom(j).computeCost(_costs);
 				List<Integer> bundle = bid.getAtom(j).getInterestingSet();
 				
-				List<Integer> allocatedAvailabilitiesPerGood = _allocation.getGoodIdsWithKnownAvailabilities(_bids, true);
+				List<Integer> goodsWithKnownAvailabilities = _allocation.getGoodIdsWithKnownAvailabilities(_bids, true);
 				List<Double> realizedRVsPerGood = _allocation.getRealizationsOfAvailabilitiesPerGood(_bids, true);
-				double expectedMarginalAvailability = _jpmf.getMarginalProbability(bundle, allocatedAvailabilitiesPerGood, realizedRVsPerGood);
+				double expectedMarginalAvailability = _jpmf.getMarginalProbability(bundle, goodsWithKnownAvailabilities, realizedRVsPerGood);
 				
 				IloNumVar x = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "x" + i + "_" + j);
 				varI.add(x);
@@ -356,17 +357,17 @@ public class ECCCorePayments implements PaymentRule
 					
 			double value = allocatedBundle.getValue();
 			double cost  = allocatedBundle.computeCost(_costs);
-			double realizedMarginalAvailability = _allocation.getRealizedRV(0, j);
+			double realizedAvailability = _allocation.getRealizedRV(0, j);
 			
 			IloNumVar gamma = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "Gamma_" + j);
 			gammaVariables.add(gamma);
 			
-			IloNumExpr term1 = _cplexSolver.prod(-1*( (value-cost)*realizedMarginalAvailability ), gamma);
+			IloNumExpr term1 = _cplexSolver.prod(-1*( (value-cost)*realizedAvailability ), gamma);
 			objective = _cplexSolver.sum(objective, term1);
 			
 			IloNumExpr term2 = _cplexSolver.prod(-1., gamma);
 			term2 = _cplexSolver.sum(1, term2);
-			term2 = _cplexSolver.prod(cost * realizedMarginalAvailability - paymentsT.get(j), term2);
+			term2 = _cplexSolver.prod(cost * realizedAvailability - paymentsT.get(j), term2);
 			objective = _cplexSolver.sum(objective, term2);
 			_logger.debug("SEP: Adding terms " + term1.toString() + " and " + term2.toString() + " to the objective");
 		}
@@ -426,8 +427,8 @@ public class ECCCorePayments implements PaymentRule
 			try 
 			{
 				lp.addRow(range1);
-			} 
-			catch (IloException e) 
+			}
+			catch (IloException e)
 			{
 				_logger.error("Cannot add the following constraint: ");
 				_logger.error("" + range1.toString());
@@ -469,9 +470,9 @@ public class ECCCorePayments implements PaymentRule
 		return payments.stream().reduce( (x1, x2) -> x1 + x2).get();
 	}
 	
-	/*
+	/**
 	 * (non-Javadoc)
-	 * @see Mechanisms.PaymentRule#isBudgetBalanced()
+	 * @see ch.uzh.ifi.Mechanisms.PaymentRule#isBudgetBalanced()
 	 */
 	@Override
 	public boolean isBudgetBalanced() 

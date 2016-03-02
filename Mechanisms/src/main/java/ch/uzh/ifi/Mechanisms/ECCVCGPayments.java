@@ -2,7 +2,7 @@ package ch.uzh.ifi.Mechanisms;
 
 import ilog.cplex.IloCplex;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -48,7 +48,7 @@ public class ECCVCGPayments implements PaymentRule
 	{
 		_logger.debug("-> computePayments()");
 		int numberOfAllocatedBidders = _allocation.getBiddersInvolved(0).size();
-		List<Double> payments = new LinkedList<Double>();
+		List<Double> payments = new ArrayList<Double>();
 		
 		for(int i = 0; i < numberOfAllocatedBidders; ++i)
 		{
@@ -56,7 +56,7 @@ public class ECCVCGPayments implements PaymentRule
 			int allocatedAgentId = _allocation.getBiddersInvolved(0).get(i);
 			_logger.debug("1. Compute the SW without agent id="+allocatedAgentId);
 			
-			List<Type> bids = new LinkedList<Type>();
+			List<Type> bids = new ArrayList<Type>();
 			for(int j = 0; j < _numberOfBuyers; ++j)
 				if( _bids.get(j).getAgentId() != allocatedAgentId )
 					bids.add(_bids.get(j));
