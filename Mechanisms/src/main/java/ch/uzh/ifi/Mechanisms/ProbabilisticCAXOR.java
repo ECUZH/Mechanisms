@@ -7,7 +7,7 @@ import ilog.concert.IloNumVar;
 import ilog.concert.IloNumVarType;
 import ilog.cplex.IloCplex;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -360,12 +360,12 @@ public class ProbabilisticCAXOR implements Auction
 	{
 		_logger.debug("-> computeWinnerDeterminationLLG(allocatedGoods="+(allocatedGoods != null ? allocatedGoods.toString():"")+", " +( realizedAvailabilities!= null ? realizedAvailabilities.toString():"") +")");
 		_allocation = new AllocationEC();
-		List<Integer> allocatedBidders     = new LinkedList<Integer>();
-		List<Integer> allocatedBundles     = new LinkedList<Integer>();
-		List<Double> buyersExpectedValues  = new LinkedList<Double>();
-		List<Double> allocatedBiddersValues= new LinkedList<Double>();
-		List<Double> realizedRandomVars    = new LinkedList<Double>();
-		List<Double> realizedRVsPerGood    = new LinkedList<Double >();
+		List<Integer> allocatedBidders     = new ArrayList<Integer>();
+		List<Integer> allocatedBundles     = new ArrayList<Integer>();
+		List<Double> buyersExpectedValues  = new ArrayList<Double>();
+		List<Double> allocatedBiddersValues= new ArrayList<Double>();
+		List<Double> realizedRandomVars    = new ArrayList<Double>();
+		List<Double> realizedRVsPerGood    = new ArrayList<Double >();
 		double sellerExpectedCost = 0.;
 		
 		if( _bids.size() == 3 )
@@ -528,7 +528,7 @@ public class ProbabilisticCAXOR implements Auction
 		_logger.debug("-> computeWinnerDeterminationGeneral(allocatedGoods="+ (allocatedGoods!=null?allocatedGoods.toString():"") + ", realizedAvailabilities="+ (realizedAvailabilities!=null?realizedAvailabilities.toString():"") + ")");
 		_cplexSolver.clearModel();
 		_cplexSolver.setOut(null);
-		List<List<IloNumVar> > variables = new LinkedList<List<IloNumVar> >();// i-th element of the list contains the list of variables 
+		List<List<IloNumVar> > variables = new ArrayList<List<IloNumVar> >();// i-th element of the list contains the list of variables 
 																			// corresponding to the i-th agent
 		//Create the optimization variables and set the objective function:
 		IloNumExpr objective = _cplexSolver.constant(0.);
@@ -537,7 +537,7 @@ public class ProbabilisticCAXOR implements Auction
 		for(int i = 0; i < _numberOfBuyers; ++i)
 		{
 			Type bid = _bids.get(i);
-			List<IloNumVar> varI = new LinkedList<IloNumVar>();				//Create a new variable for every atomic bid
+			List<IloNumVar> varI = new ArrayList<IloNumVar>();				//Create a new variable for every atomic bid
 			for(int j = 0; j < bid.getNumberOfAtoms(); ++j )
 			{
 				IloNumVar x = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "x" + i + "_" + j);
@@ -606,12 +606,12 @@ public class ProbabilisticCAXOR implements Auction
 
 		_allocation = new AllocationEC();
 		
-		List<Integer> allocatedBidders    = new LinkedList<Integer>();
-		List<Integer> allocatedBundles    = new LinkedList<Integer>();
-		List<Double> buyersExpectedValues = new LinkedList<Double>();
-		List<Double> realizedRandomVars   = new LinkedList<Double>();
-		List<Double> allocatedBiddersValues = new LinkedList<Double>();
-		List<Double> realizedRVsPerGood = new LinkedList<Double>();
+		List<Integer> allocatedBidders    = new ArrayList<Integer>();
+		List<Integer> allocatedBundles    = new ArrayList<Integer>();
+		List<Double> buyersExpectedValues = new ArrayList<Double>();
+		List<Double> realizedRandomVars   = new ArrayList<Double>();
+		List<Double> allocatedBiddersValues = new ArrayList<Double>();
+		List<Double> realizedRVsPerGood = new ArrayList<Double>();
 		
 		double sellerExpectedCost = 0.;
 		double[] realizedSample = _jpmf.getSample();
@@ -663,7 +663,7 @@ public class ProbabilisticCAXOR implements Auction
 			if( _allocation.getNumberOfAllocatedAuctioneers() > 0 )
 				_payments = paymentRule.computePayments();
 			else
-				_payments = new LinkedList<Double>();
+				_payments = new ArrayList<Double>();
 		}
 		catch(PaymentException e)
 		{
@@ -718,7 +718,7 @@ public class ProbabilisticCAXOR implements Auction
 				}
 				throw e;					//Required by the BNE algorithm to estimate the number of empty core cases (see UtilityEstimator.java)
 			}
-			else							_payments = new LinkedList<Double>();
+			else							_payments = new ArrayList<Double>();
 		}
 		catch (Exception e) 
 		{
@@ -775,7 +775,7 @@ public class ProbabilisticCAXOR implements Auction
 		//_mip.setSolveParam(SolveParam.MIP_DISPLAY, 0);
 		
 		_bids = agentsTypes;
-		_payments = new LinkedList<Double>();
+		_payments = new ArrayList<Double>();
 		
 		convertAllBidsToBinaryFormat();
 		
@@ -863,7 +863,7 @@ public class ProbabilisticCAXOR implements Auction
 	 */
 	private void convertAllBidsToBinaryFormat()
 	{
-		_binaryBids = new LinkedList<int[][]>();						//The list contains bids of all agents in a binary format
+		_binaryBids = new ArrayList<int[][]>();						//The list contains bids of all agents in a binary format
 		for(int i = 0; i < _bids.size(); ++i)
 		{
 			Type bid = _bids.get(i);									//The bid of the i-th bidder
@@ -888,7 +888,7 @@ public class ProbabilisticCAXOR implements Auction
 		for(int i = 0; i < numberOfRows; ++i)
 		{
 			List<Integer> itemsSet = bid.getAtom(i).getInterestingSet();
-			List<Integer> items = new LinkedList<Integer>();
+			List<Integer> items = new ArrayList<Integer>();
 			
 			for(Integer item : itemsSet)
 				items.add(item);
@@ -930,7 +930,7 @@ public class ProbabilisticCAXOR implements Auction
 		return realizedRV;
 	}
 	
-	/*
+	/**
 	 * The method used by WDP for LLG domain to fill some data structures required by the Allocation object.
 	 * @param allocatedBidders - a list of allocated bidders (is filled by this method)
 	 * @param allocatedBundles - a list of indexes of allocated bundles for every allocated bidder
