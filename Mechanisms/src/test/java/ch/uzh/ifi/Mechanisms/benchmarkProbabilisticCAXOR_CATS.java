@@ -3,9 +3,12 @@ package ch.uzh.ifi.Mechanisms;
 import ilog.concert.IloException;
 import ilog.cplex.IloCplex;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.IntStream;
 
 import ch.uzh.ifi.DomainGenerators.DomainGeneratorCATS;
 import ch.uzh.ifi.MechanismDesignPrimitives.AllocationEC;
@@ -21,53 +24,42 @@ import ch.uzh.ifi.GraphAlgorithms.Graph;
 public class benchmarkProbabilisticCAXOR_CATS 
 {
 
-	/*
+	/**
 	 * Entry point
 	 */
 	public static void main(String[] args) throws IloException 
 	{
 			int numberOfGoods = 9;
 			int numberOfAgents = 5;
-			List<Type> types = new LinkedList<Type>();
-			for(int i = 0; i < numberOfAgents; ++i)
-			{
-				List<Integer> bundle = new LinkedList<Integer>();
-				bundle.add( 0 );
-				double marginalValue1 = 0.;
-				AtomicBid atom11  =  new AtomicBid(i+1, bundle, Math.max(marginalValue1 ,0));		
-				CombinatorialType t1 = new CombinatorialType();
-				t1.addAtomicBid(atom11);
-				types.add(t1);
-			}
-			IloCplex solver = new IloCplex();
-			
+			int numberOfSampleGames = 100;
+			int numberOfRuns = 1;
 			boolean isLowVariance = false;
-			String paymentRule = "ECC-CORE";
-
-			int numberOfSampleGames = 1000;
+			
 			double shadingFactor = 0.96;
+			String paymentRule = "ECC-CORE";
 			
 			double costsMax = 10.;
 			double primaryReductionCoef = 0.3;
 			double secondaryReductionCoef = 0.2;
 			
-			List<Integer> items = new LinkedList<Integer>();
-			items.add(1);
-			items.add(2);
+			List<Type> types = new ArrayList<Type>();
+			IntStream.range(0, numberOfAgents).boxed().forEach( i -> types.add( new CombinatorialType( new AtomicBid(i+1, Arrays.asList(0), 0.) ) ) );
+
+			IloCplex solver = new IloCplex();
 			
-			int numberOfRuns = 10;
 			int[] irViolation = new int[numberOfRuns];
 			double[] efficiency = new double[numberOfRuns];
 			int[] emptyCoreCounter = new int[numberOfRuns];
+			int[] vcgInCoreCounter = new int[numberOfRuns];
 			
 			for(int j = 0; j < numberOfRuns; ++j)
-			{	
+			{
 				GridGenerator gridGenerator = new GridGenerator(3, 3);
 				gridGenerator.setSeed(0);
 				gridGenerator.buildProximityGraph();
 				Graph grid = gridGenerator.getGrid();
 			
-				JointProbabilityMass jpmf = new JointProbabilityMass( grid);
+				JointProbabilityMass jpmf = new JointProbabilityMass( grid );
 				jpmf.setNumberOfSamples(10000);
 				jpmf.setNumberOfBombsToThrow(1);
 				
@@ -83,6 +75,7 @@ public class benchmarkProbabilisticCAXOR_CATS
 						
 				for(int i = 0; i < numberOfSampleGames; ++i)
 				{
+					System.out.println("i="+i);
 					Random generator = new Random(j*10000 + i);
 					generator.setSeed(System.nanoTime());
 					
@@ -117,6 +110,8 @@ public class benchmarkProbabilisticCAXOR_CATS
 						{
 							if(e.getMessage().equals("Empty Core"))
 								emptyCoreCounter[j] += 1;
+							else if(e.getMessage().equals("VCG is in the Core"))
+								vcgInCoreCounter[j] += 1;
 						}
 						AllocationEC allocation = (AllocationEC)auction.getAllocation();
 						double[] payments = auction.getPayments();
@@ -162,7 +157,8 @@ public class benchmarkProbabilisticCAXOR_CATS
 				}
 				//System.out.println("[IRV]="+irViolation[j]);
 				System.out.println("Eff=" + efficiency[j]);
-				//System.out.println("EmptyCore=" + emptyCoreCounter[j]);
+				System.out.println("EmptyCore=" + emptyCoreCounter[j]);
+				System.out.println("VCG in the Core=" + vcgInCoreCounter[j]);
 			}
 			
 			double irMean = 0.;
