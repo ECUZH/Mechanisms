@@ -86,10 +86,7 @@ public class benchmarkProbabilisticCAXOR_CATS
 					{
 						Type ct = domainGenerator.generateBid(j*10000 + i*10 + q, types.get(q));
 						bids.add(ct);
-					}
-					
-					//System.out.println("Bids: " + bids.toString());
-					
+					}					
 					
 					List<Double> costs = new LinkedList<Double>();
 					for(int q = 0; q < numberOfGoods; ++q)
