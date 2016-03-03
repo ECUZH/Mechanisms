@@ -36,7 +36,7 @@ public class benchmarkProbabilisticCAXOR_CATS
 			boolean isLowVariance = false;
 			
 			double shadingFactor = 1.;
-			String paymentRule = "ECC-CORE";
+			String paymentRule = "ECC-CORE"; 
 			
 			double costsMax = 10.;
 			double primaryReductionCoef = 0.3;
