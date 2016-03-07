@@ -18,13 +18,13 @@
     <Logger name="ch.uzh.ifi.DomainGenerators.SpatialDomainGenerator" level="ERROR" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
-    <Logger name="ch.uzh.ifi.Mechanisms.ProbabilisticCAXOR" level="DEBUG" additivity="false">
+    <Logger name="ch.uzh.ifi.Mechanisms.ProbabilisticCAXOR" level="ERROR" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
     <Logger name="ch.uzh.ifi.Mechanisms.ECCCoreLLGPayments" level="ERROR" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
-    <Logger name="ch.uzh.ifi.Mechanisms.ECCCorePayments" level="DEBUG" additivity="false">
+    <Logger name="ch.uzh.ifi.Mechanisms.ECCCorePayments" level="ERROR" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
     <Logger name="ch.uzh.ifi.Mechanisms.ECCorePayments" level="ERROR" additivity="false">

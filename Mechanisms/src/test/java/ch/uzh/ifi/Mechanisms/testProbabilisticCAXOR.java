@@ -32,9 +32,7 @@ public class testProbabilisticCAXOR {
 	public void testECVCG_LLG() throws IloException 
 	{
 		IloCplex cplexSolver = new IloCplex();
-		List<Integer> items = new LinkedList<Integer>();
-		items.add(1);
-		items.add(2);
+		List<Integer> items = Arrays.asList(1, 2);
 		
 		//Local bidder 
 		List<Integer> bundle = new LinkedList<Integer>();
