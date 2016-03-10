@@ -11,6 +11,7 @@ import java.util.Random;
 import java.util.stream.IntStream;
 
 import ch.uzh.ifi.DomainGenerators.DomainGeneratorCATS;
+import ch.uzh.ifi.DomainGenerators.DomainGeneratorCATSUncertain;
 import ch.uzh.ifi.MechanismDesignPrimitives.AllocationEC;
 import ch.uzh.ifi.MechanismDesignPrimitives.AtomicBid;
 import ch.uzh.ifi.MechanismDesignPrimitives.CombinatorialType;
@@ -47,52 +48,38 @@ public class benchmarkProbabilisticCAXOR_CATS
 
 			IloCplex solver = new IloCplex();
 			
-			int[] irViolation = new int[numberOfRuns];
+			int[] irViolation  =  new int[numberOfRuns];
 			double[] efficiency = new double[numberOfRuns];
 			int[] emptyCoreCounter = new int[numberOfRuns];
 			int[] vcgInCoreCounter = new int[numberOfRuns];
 			
 			for(int j = 0; j < numberOfRuns; ++j)
 			{
-				GridGenerator gridGenerator = new GridGenerator(3, 3);
-				gridGenerator.setSeed(0);
-				gridGenerator.buildProximityGraph();
-				Graph grid = gridGenerator.getGrid();
-			
-				JointProbabilityMass jpmf = new JointProbabilityMass( grid );
-				jpmf.setNumberOfSamples(10000);
-				jpmf.setNumberOfBombsToThrow(1);
+				DomainGeneratorCATSUncertain domainGenerator = new DomainGeneratorCATSUncertain(numberOfGoods);
+				domainGenerator.setNumberOfJPMFSamples(10000);
+				domainGenerator.setNumberOfBombsToThrow(1);
+				domainGenerator.setBombsParameters(Arrays.asList(primaryReductionCoef), Arrays.asList(secondaryReductionCoef), Arrays.asList(1.), Arrays.asList(1.));
+				domainGenerator.generateJPMF();
 				
-				IBombingStrategy b1 = new FocusedBombingStrategy(grid, 1., primaryReductionCoef, secondaryReductionCoef);
-				List<IBombingStrategy> bombs = new LinkedList<IBombingStrategy>();
-				bombs.add(b1);
-				
-				List<Double> pd = new LinkedList<Double>();
-				pd.add(1.);
-				
-				jpmf.setBombs(bombs, pd);
-				jpmf.update();
-						
 				for(int i = 0; i < numberOfSampleGames; ++i)
 				{
 					System.out.println("i="+i);
 					Random generator = new Random(j*10000 + i);
 					generator.setSeed(System.nanoTime());
 					
-					DomainGeneratorCATS domainGenerator = new DomainGeneratorCATS(numberOfGoods, 1, grid);
 					List<Type> bids = new LinkedList<Type>();
 					
 					for(int q = 0; q < numberOfAgents; ++q)
 					{
-						Type ct = domainGenerator.generateBid(j*10000 + i*10 + q, types.get(q));
+						Type ct = domainGenerator.generateBid(j*10000 + i*10 + q, types.get(q).getAgentId());
 						bids.add(ct);
-					}					
+					}
 					
 					List<Double> costs = new LinkedList<Double>();
 					for(int q = 0; q < numberOfGoods; ++q)
 						costs.add( costsMax * generator.nextDouble());
 					
-					ProbabilisticCAXOR auction = new ProbabilisticCAXOR( bids.size(), numberOfGoods, bids, costs, jpmf);
+					ProbabilisticCAXOR auction = new ProbabilisticCAXOR( bids.size(), numberOfGoods, bids, costs, domainGenerator.getJPMF());
 					auction.setSolver(solver);
 					auction.setPaymentRule(paymentRule);
 					auction.setSeed(System.nanoTime());
@@ -101,7 +88,7 @@ public class benchmarkProbabilisticCAXOR_CATS
 					{
 						try
 						{
-						auction.solveIt();
+							auction.solveIt();
 						}
 						catch(PaymentException e)
 						{
@@ -127,7 +114,7 @@ public class benchmarkProbabilisticCAXOR_CATS
 								irViolation[j]+=1;
 							
 							double realizedValue = value*realizedAvailability; 
-							double realizedCost = computeCost(bids.get(allocatedBidderId-1).getAtom(allocatedBundleIdx), costs)*realizedAvailability;
+							double realizedCost = bids.get(allocatedBidderId-1).getAtom(allocatedBundleIdx).computeCost(costs)*realizedAvailability;
 							efficiency[j] += realizedValue - realizedCost;
 						}
 						/*
@@ -176,15 +163,5 @@ public class benchmarkProbabilisticCAXOR_CATS
 			//System.out.println(irMean);
 			System.out.println(effMean);
 			//System.out.println(emptyCoreMean );
-	}
-	
-	public static double computeCost(AtomicBid atom, List<Double> costs)
-	{
-		double cost = 0.;
-		
-		for(int item : atom.getInterestingSet())
-			cost += costs.get( item - 1 );
-		
-		return cost;
-	}
+	}	
 }
