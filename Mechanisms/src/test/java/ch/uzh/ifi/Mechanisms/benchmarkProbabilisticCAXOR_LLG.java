@@ -37,7 +37,6 @@ public class benchmarkProbabilisticCAXOR_LLG
 		System.out.println("Test: " + testName + " varianceLvl = " + varianceLevel + ". isTruthful = " + isTruthful + " . " +paymentRule);
 		
 		boolean isLowVariance = varianceLevel == 0 ? true : false;
-		//String paymentRule = "ECR-CORE_LLG";
 		
 		double[] shadeECCL = {0.166,   0.132,  0.103,  0.098,  0.079,  0.055,  0.045,  0.033,  0.022,  0.018, 0.009};
 		double[] shadeECRL = {0.185,   0.132,  0.104,  0.098,  0.077,  0.054,  0.046,  0.026,  0.028,  0.011, 0.008};
@@ -49,9 +48,9 @@ public class benchmarkProbabilisticCAXOR_LLG
 		double[] shadeExpH = {0.164,   0.131,  0.105,  0.096,  0.068,  0.058,  0.048,  0.032,  0.024,  0.019, 0.010};
 		double[] shadeSMH  = {0.058,   0.046,  0.042,  0.033,  0.033,  0.009,  0.004,  0.002,  0.005,  0.004, 0.000};
 		
-		for(int k = 7; k < shadeECCL.length; ++k )
+		for(int k = 0; k < shadeECCL.length; ++k )
 		{
-			int numberOfSampleGames = 10000;
+			int numberOfSampleGames = 1;
 			double shadingFactor = 0.;
 			switch(paymentRule) 
 			{
@@ -79,44 +78,46 @@ public class benchmarkProbabilisticCAXOR_LLG
 			items.add(1);
 			items.add(2);
 			
-			int numberOfRuns = 10;
+			int numberOfRuns = 100;
 			int[] irViolation = new int[numberOfRuns];
 			double[] efficiency = new double[numberOfRuns];
 			int[] emptyCoreCounter = new int[numberOfRuns];
 			
+			
+			GridGenerator gridGenerator = new GridGenerator(1, 2);
+			gridGenerator.setSeed(0);
+			gridGenerator.buildProximityGraph();
+			Graph grid = gridGenerator.getGrid();
+		
+			JointProbabilityMass jpmf = new JointProbabilityMass( grid);
+			jpmf.setNumberOfSamples(10000);
+			jpmf.setNumberOfBombsToThrow(1);
+			
+			IBombingStrategy b1 = new FocusedBombingStrategy(grid, 1., primaryReductionCoef, secondaryReductionCoef);
+			IBombingStrategy b2 = new FocusedBombingStrategy(grid, 1., primaryReductionCoef1, secondaryReductionCoef1);
+			List<IBombingStrategy> bombs = new LinkedList<IBombingStrategy>();
+			bombs.add(b1);
+			bombs.add(b2);
+			
+			List<Double> pd = new LinkedList<Double>();
+			pd.add(0.5);
+			pd.add(0.5);
+			
+			jpmf.setBombs(bombs, pd);
+			jpmf.update();
+		
+			
 			for(int j = 0; j < numberOfRuns; ++j)
-			{	
-				GridGenerator gridGenerator = new GridGenerator(1, 2);
-				gridGenerator.setSeed(0);
-				gridGenerator.buildProximityGraph();
-				Graph grid = gridGenerator.getGrid();
-			
-				JointProbabilityMass jpmf = new JointProbabilityMass( grid);
-				jpmf.setNumberOfSamples(10000);
-				jpmf.setNumberOfBombsToThrow(1);
-				
-				IBombingStrategy b1 = new FocusedBombingStrategy(grid, 1., primaryReductionCoef, secondaryReductionCoef);
-				IBombingStrategy b2 = new FocusedBombingStrategy(grid, 1., primaryReductionCoef1, secondaryReductionCoef1);
-				List<IBombingStrategy> bombs = new LinkedList<IBombingStrategy>();
-				bombs.add(b1);
-				bombs.add(b2);
-				
-				List<Double> pd = new LinkedList<Double>();
-				pd.add(0.5);
-				pd.add(0.5);
-				
-				jpmf.setBombs(bombs, pd);
-				jpmf.update();
-			
+			{
+				//System.out.println("Run: " + j);
 				double maxRegret = 0.;
 				List<Double> regret = new LinkedList<Double>();
 			
 				for(int i = 0; i < numberOfSampleGames; ++i)
 				{
-					Random generator = new Random(10 * i);
+					Random generator = new Random(10 * i + j*numberOfRuns);
 					generator.setSeed(System.nanoTime());
 				
-					//System.out.println("i="+i);
 					//Local bidder
 					List<Integer> bundle = new LinkedList<Integer>();
 					bundle.add( items.get(0) );
@@ -153,7 +154,6 @@ public class benchmarkProbabilisticCAXOR_LLG
 					costs.add( costsMax * generator.nextDouble());
 					
 					ProbabilisticCAXOR auction = new ProbabilisticCAXOR( bids.size(), items.size(), bids, costs, jpmf);
-					//auction.setPaymentRule("Exp-CORE_LLG");
 					auction.setPaymentRule(paymentRule);
 					auction.setSeed(System.nanoTime());
 					
@@ -161,7 +161,7 @@ public class benchmarkProbabilisticCAXOR_LLG
 					{
 						try
 						{
-						auction.solveIt();
+							auction.solveIt();
 						}
 						catch(PaymentException e)
 						{
@@ -234,13 +234,40 @@ public class benchmarkProbabilisticCAXOR_LLG
 			emptyCoreMean /= numberOfRuns;
 			emptyCoreMean /=numberOfSampleGames;
 			
+			
+			double effStdErr = 0.;
+			for(int j = 0; j < numberOfRuns; ++j)
+				effStdErr += Math.pow(efficiency[j] - effMean, 2);
+
+			effStdErr /= numberOfRuns;
+			effStdErr = Math.sqrt(effStdErr);
+			effStdErr = effStdErr / Math.sqrt(numberOfRuns);
+
+			
+			double irStdErr = 0.;
+			for(int j = 0; j < numberOfRuns; ++j)
+				irStdErr += Math.pow(irViolation[j] - irMean, 2);
+
+			irStdErr /= numberOfRuns;
+			irStdErr = Math.sqrt(irStdErr);
+			irStdErr = irStdErr / Math.sqrt(numberOfRuns);
+
+			
+			double emptyCoreStdErr = 0.;
+			for(int j = 0; j < numberOfRuns; ++j)
+				emptyCoreStdErr += Math.pow(emptyCoreCounter[j] - emptyCoreMean, 2);
+
+			emptyCoreStdErr /= numberOfRuns;
+			emptyCoreStdErr = Math.sqrt(emptyCoreStdErr);
+			emptyCoreStdErr = emptyCoreStdErr / Math.sqrt(numberOfRuns);
+
 			switch(testName)
 			{
-			case "Efficiency"		:	System.out.println(effMean);
+			case "Efficiency"		:	System.out.println("E[eff]=" + effMean+ " S="+effStdErr);
 										break;
-			case "IRV"				:	System.out.println(irMean);
+			case "IRV"				:	System.out.println("E[IRV]=" + irMean + " S="+irStdErr);
 										break;
-			case "EmptyCore"		:   System.out.println(emptyCoreMean);
+			case "EmptyCore"		:   System.out.println("E[emptyCore]=" + emptyCoreMean + " S="+ emptyCoreStdErr);
 										break;
 			default					: 	throw new RuntimeException("Wrong test name : " + testName);
 			}
