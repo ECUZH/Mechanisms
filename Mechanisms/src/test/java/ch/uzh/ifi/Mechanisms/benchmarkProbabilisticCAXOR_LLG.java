@@ -78,7 +78,7 @@ public class benchmarkProbabilisticCAXOR_LLG
 			items.add(1);
 			items.add(2);
 			
-			int numberOfRuns = 100;
+			int numberOfRuns = 10000;
 			int[] irViolation = new int[numberOfRuns];
 			double[] efficiency = new double[numberOfRuns];
 			int[] emptyCoreCounter = new int[numberOfRuns];
