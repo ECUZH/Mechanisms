@@ -25,9 +25,9 @@ public class CoreNearestVCG2 implements PaymentRule
 
 	}
 	
-	/*
+	/**
 	 * (non-Javadoc)
-	 * @see Mechanisms.PaymentRule#computePayments()
+	 * @see ch.uzh.ifi.Mechanisms.PaymentRule#computePayments()
 	 */
 	@Override
 	public List<Double> computePayments() throws Exception 
@@ -53,22 +53,17 @@ public class CoreNearestVCG2 implements PaymentRule
 			int bidderId = _allocation.getBiddersInvolved(0).get(i);
 			int itsAllocatedBundle = _allocation.getAllocatedBundlesOfTrade(0).get(i);
 			AtomicBid bundle = _bids.get(bidderId-1).getAtom(itsAllocatedBundle);
-			allocatedCosts += computeCost(bundle);
+			allocatedCosts += bundle.computeCost(_costs);
 		}
 		
 		CAXOR ca = new CAXOR( _numberOfAgents - _allocation.getBiddersInvolved(0).size(), _numberOfItems, bids, _costs);
 		ca.setPaymentRule("VCG_LLG");
 		ca.computeWinnerDeterminationLLG();
-		double Wi = ca.getAllocation().getAllocatedWelfare();
+		double Wi = 0.;
+		if( ca.getAllocation().getNumberOfAllocatedAuctioneers() > 0) 
+			Wi = ca.getAllocation().getAllocatedWelfare();
 		
 		double coeff = ((allocatedCosts + Wi) - vcg.get(1) - vcg.get(0))/2;
-		//double coeff = 0.0;
-		//for( Double VCGi : vcg )
-		//	coeff += VCGi;
-		//coeff *= -1.0;
-		//coeff += Wi;
-		//coeff /= _allocation.getBiddersInvolved(0).size();
-			
 		_payments = new LinkedList<Double>();
 
 		for(int i = 0; i < _allocation.getBiddersInvolved(0).size(); ++i)
@@ -77,6 +72,10 @@ public class CoreNearestVCG2 implements PaymentRule
 		return _payments;
 	}
 
+	/**
+	 * (non-Javadoc)
+	 * @see ch.uzh.ifi.Mechanisms.PaymentRule#isBudgetBalanced()
+	 */
 	@Override
 	public boolean isBudgetBalanced() 
 	{
@@ -88,22 +87,6 @@ public class CoreNearestVCG2 implements PaymentRule
 		
 		return totalPayment >= 0 ? true : false;
 	}
-	
-	/*
-	 * The method computes the additive cost of a given bundle.
-	 * @param atom - an atomic bid of an agent containing the bundle
-	 * @return the cost of the bundle, i.e., the sum of costs of all items in the bundle
-	 */
-	public double computeCost(AtomicBid atom)
-	{
-		double cost = 0.;
-		
-		for(int item : atom.getInterestingSet())
-			cost += _costs.get( item - 1 );
-		
-		return cost;
-	}
-	
 	
 	private List<Double> _costs;
 	private List<Double> _payments;
