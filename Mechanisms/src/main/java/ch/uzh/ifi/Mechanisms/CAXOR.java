@@ -46,6 +46,13 @@ public class CAXOR implements Auction
 		resetTypes(bids);
 	}
 	
+	/**
+	 * Constructor
+	 * @param numberOfAgents number of bidders
+	 * @param numberOfItems number of goods
+	 * @param bids bids of bidders
+	 * @param costs costs for goods
+	 */
 	public CAXOR(int numberOfAgents, int numberOfItems, List<Type> bids, List<Double> costs)
 	{
 		if(numberOfAgents != bids.size())	throw new RuntimeException("The number of bids should be equla to the number of agents");
