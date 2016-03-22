@@ -10,6 +10,8 @@ import ilog.cplex.IloCplex;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -142,8 +144,8 @@ public class ProbabilisticCAXOR implements Auction
 		
 		if( _paymentRule.equals("expostIR_ECR") )
 		{
-			throw new RuntimeException("Currently unsupported");
-			//computeWinnerDeterminationStrawMan(allocatedAvailabilities, realizedAvailabilities);
+			//throw new RuntimeException("Currently unsupported");
+			computeWinnerDeterminationStrawMan(allocatedAvailabilities, realizedAvailabilities);
 		}
 		else if( _paymentRule.equals("EC-VCG_LLG")  || _paymentRule.equals("EC-CORE_LLG") || 
 			     _paymentRule.equals("Exp-VCG_LLG") || _paymentRule.equals("Exp-CORE_LLG")||
@@ -169,34 +171,36 @@ public class ProbabilisticCAXOR implements Auction
 	}
 
 	
-	/*
-	 * The method solved the WDP for the LLG domain.
+	/**
+	 * The method solves the WDP for the LLG domain.
 	 */
-	/*public void computeWinnerDeterminationStrawMan(List<Integer> allocatedGoods, List<Double> realizedAvailabilities)
+	public void computeWinnerDeterminationStrawMan(List<Integer> allocatedGoods, List<Double> realizedAvailabilities)
 	{
 		double[] realizedSample = new double[_numberOfItems];
 		for(int i = 0; i < _jpmf.getBombs().size(); ++i)
 		{
 			for(int j = 0; j < _numberOfItems; ++j)
 			{
+				double primaryReductionCoeff = 0.3;
+				double secondaryReductionCoeff = 0.2;
 				if(j == 0)
 				{
-					realizedSample[0] = 1. - _jpmf.getBombs().get(i).getPrimaryReductionCoefficient();
-					realizedSample[1] = 1. - _jpmf.getBombs().get(i).getSecondaryReductionCoefficient();
+					realizedSample[0] = 1. - primaryReductionCoeff;
+					realizedSample[1] = 1. - secondaryReductionCoeff;
 				}
 				else
 				{
-					realizedSample[0] = 1. - _jpmf.getBombs().get(i).getSecondaryReductionCoefficient();
-					realizedSample[1] = 1. - _jpmf.getBombs().get(i).getPrimaryReductionCoefficient();
+					realizedSample[0] = 1. - secondaryReductionCoeff;
+					realizedSample[1] = 1. - primaryReductionCoeff;
 				}
 				
-				_allocation = new Allocation();
-				List<Integer> allocatedBidders     = new LinkedList<Integer>();
-				List<Integer> allocatedBundles     = new LinkedList<Integer>();
-				List<Double> buyersExpectedValues  = new LinkedList<Double>();
-				List<Double> allocatedBiddersValues= new LinkedList<Double>();
-				List<Double> realizedRandomVars    = new LinkedList<Double>();
-				List<Double> realizedRVsPerGood    = new LinkedList<Double >();
+				_allocation = new AllocationEC();
+				List<Integer> allocatedBidders     = new ArrayList<Integer>();
+				List<Integer> allocatedBundles     = new ArrayList<Integer>();
+				List<Double> buyersExpectedValues  = new ArrayList<Double>();
+				List<Double> allocatedBiddersValues= new ArrayList<Double>();
+				List<Double> realizedRandomVars    = new ArrayList<Double>();
+				List<Double> realizedRVsPerGood    = new ArrayList<Double >();
 				double sellerExpectedCost = 0.;
 				
 				if( _bids.size() == 3 )
@@ -206,17 +210,17 @@ public class ProbabilisticCAXOR implements Auction
 					AtomicBid globalBundle = _bids.get(2).getAtom(0);
 		
 					double values[] = {localBundle1.getValue(), localBundle2.getValue(), globalBundle.getValue()};
-					double costs[]  = {computeCost(localBundle1), computeCost(localBundle2), computeCost(globalBundle)};
+					double costs[]  = {localBundle1.computeCost(_costs), localBundle2.computeCost(_costs), globalBundle.computeCost(_costs)};
 					double expectedMarginalAvailabilities[] = {computeExpectedMarginalAvailability( localBundle1, allocatedGoods, realizedAvailabilities ), computeExpectedMarginalAvailability( localBundle2, allocatedGoods, realizedAvailabilities ), computeExpectedMarginalAvailability( globalBundle, allocatedGoods, realizedAvailabilities )};
 		
 					double swLocal1 = (values[0] - costs[0]) * expectedMarginalAvailabilities[0];
 					double swLocal2 = (values[1] - costs[1]) * expectedMarginalAvailabilities[1];
 					double swGlobal = (values[2] - costs[2]) * expectedMarginalAvailabilities[2];
-					//_logger.debug("3 bidders. " + "sw1 = " + swLocal1 + " sw2 = " + swLocal2 + " sw3 = " + swGlobal);
+					_logger.debug("3 bidders. " + "sw1 = " + swLocal1 + " sw2 = " + swLocal2 + " sw3 = " + swGlobal);
 		
 					if( swLocal1 >= 0 && swLocal2 >= 0 && swLocal1 + swLocal2 >= swGlobal )	//Allocate to local bidders
 					{
-						//_logger.debug("Allocate to local bidders.");
+						_logger.debug("Allocate to local bidders.");
 						//double[] realizedSample = _jpmf.getSample();
 						for(Double rRV : realizedSample)
 							realizedRVsPerGood.add(rRV);
@@ -229,7 +233,7 @@ public class ProbabilisticCAXOR implements Auction
 					}
 					else if( swLocal1 >= 0 && swLocal2 < 0 && swLocal1 >= swGlobal )
 					{
-						//_logger.debug("Allocate to a single local bidder.");
+						_logger.debug("Allocate to a single local bidder.");
 						//double[] realizedSample = _jpmf.getSample();
 						for(Double rRV : realizedSample)
 							realizedRVsPerGood.add(rRV);
@@ -239,7 +243,7 @@ public class ProbabilisticCAXOR implements Auction
 					}
 					else if( swLocal2 >= 0 && swLocal1 < 0 && swLocal2 >= swGlobal )
 					{
-						//_logger.debug("Allocate to a single local bidder.");
+						_logger.debug("Allocate to a single local bidder.");
 						//double[] realizedSample = _jpmf.getSample();
 						for(Double rRV : realizedSample)
 							realizedRVsPerGood.add(rRV);
@@ -249,7 +253,7 @@ public class ProbabilisticCAXOR implements Auction
 					}
 					else if( swGlobal >= 0 )
 					{
-						//_logger.debug("Allocate to a global bidder.");
+						_logger.debug("Allocate to a global bidder.");
 						//double[] realizedSample = _jpmf.getSample();
 						for(Double rRV : realizedSample)
 							realizedRVsPerGood.add(rRV);
@@ -263,7 +267,7 @@ public class ProbabilisticCAXOR implements Auction
 					try 
 					{
 						_allocation.addAllocatedAgents( 0, allocatedBidders, allocatedBundles, sellerExpectedCost, buyersExpectedValues, false);
-						_allocation.addRealizedValues(realizedRandomVars);
+						_allocation.addRealizedRVs(realizedRandomVars);
 						_allocation.addRealizedValuesPerGood(realizedRVsPerGood);
 						_allocation.setAllocatedBiddersValues(allocatedBiddersValues);
 					}
@@ -280,7 +284,7 @@ public class ProbabilisticCAXOR implements Auction
 					for(int k = 0; k < _allocation.getBiddersInvolved(0).size(); ++k)
 					{
 						int allocatedBidderId = _allocation.getBiddersInvolved(0).get(k);
-						int allocatedAtomIdx = _allocation.getAllocatedBundlesByIndex(0).get(k);
+						int allocatedAtomIdx = _allocation.getAllocatedBundlesOfTrade(0).get(k);
 						AtomicBid atom = _bids.get(allocatedBidderId-1).getAtom(allocatedAtomIdx);
 						double value = atom.getValue();
 						double realizedAvailability = _allocation.getRealizedRV(0, k);
@@ -288,7 +292,7 @@ public class ProbabilisticCAXOR implements Auction
 						
 						if( realizedValue < payments.get(k))
 						{
-							_allocation = new Allocation();
+							_allocation = new AllocationEC();
 							return;
 						}
 					}
@@ -297,7 +301,7 @@ public class ProbabilisticCAXOR implements Auction
 				{
 					if(e.getMessage().equals("Empty Core"))
 					{
-						_allocation = new Allocation();
+						_allocation = new AllocationEC();
 						return;
 					}
 				}
@@ -311,15 +315,15 @@ public class ProbabilisticCAXOR implements Auction
 		if( _allocation.getNumberOfAllocatedAuctioneers() > 0)
 		{
 			realizedSample = _jpmf.getSample();
-			List<Double> realizedRandomVars    = new LinkedList<Double>();
-			List<Double> realizedRVsPerGood    = new LinkedList<Double >();
+			List<Double> realizedRandomVars    = new ArrayList<Double>();
+			List<Double> realizedRVsPerGood    = new ArrayList<Double >();
 			for(Double rRV : realizedSample)
 				realizedRVsPerGood.add(rRV);
 			
 			for(int k = 0; k < _allocation.getBiddersInvolved(0).size(); ++k)
 			{
 				int allocatedBidderId = _allocation.getBiddersInvolved(0).get(k);
-				int allocatedAtomIdx = _allocation.getAllocatedBundlesByIndex(0).get(k);
+				int allocatedAtomIdx = _allocation.getAllocatedBundlesOfTrade(0).get(k);
 				AtomicBid atom = _bids.get(allocatedBidderId-1).getAtom(allocatedAtomIdx);
 				double value = atom.getValue();
 				
@@ -327,19 +331,19 @@ public class ProbabilisticCAXOR implements Auction
 			}
 			
 			List<Integer> allocatedBidders  = _allocation.getBiddersInvolved(0);
-			List<Integer> allocatedBundles     = _allocation.getAllocatedBundlesByIndex(0);
-			List<Double> buyersExpectedValues  = _allocation.getBiddersExpectedValues(0);
-			List<Double> allocatedBiddersValues= _allocation.getBiddersAllocatedValues(0);
+			List<Integer> allocatedBundles     = _allocation.getAllocatedBundlesOfTrade(0);
+			List<Double> buyersExpectedValues  = IntStream.range(0, _allocation.getBiddersInvolved(0).size()).boxed().map(i-> (double)_allocation.getBiddersExpectedValue(0, i)).collect(Collectors.toList());
+			List<Double> allocatedBiddersValues= IntStream.range(0, _allocation.getBiddersInvolved(0).size()).boxed().map(i-> (double)_allocation.getBiddersAllocatedValue(0, i)).collect(Collectors.toList());
 	
 			double sellerExpectedCost =_allocation.getAuctioneerExpectedValue(0);
 			
-			_allocation.addRealizedValues(realizedRandomVars);
+			_allocation.addRealizedRVs(realizedRandomVars);
 			_allocation.addRealizedValuesPerGood(realizedRVsPerGood);
 			
-			_allocation = new Allocation();
+			_allocation = new AllocationEC();
 			try {
 				_allocation.addAllocatedAgents( 0, allocatedBidders, allocatedBundles, sellerExpectedCost, buyersExpectedValues, false);
-				_allocation.addRealizedValues(realizedRandomVars);
+				_allocation.addRealizedRVs(realizedRandomVars);
 				_allocation.addRealizedValuesPerGood(realizedRVsPerGood);
 				_allocation.setAllocatedBiddersValues(allocatedBiddersValues);
 	
@@ -347,14 +351,15 @@ public class ProbabilisticCAXOR implements Auction
 			{
 				e.printStackTrace();
 			}
-		}
-		
-	}*/
+		}	
+	}
 
 	
 	
-	/*
+	/**
 	 * The method solved the WDP for the LLG domain.
+	 * @param allocatedGoods
+	 * @param realizedAvailabilities
 	 */
 	public void computeWinnerDeterminationLLG(List<Integer> allocatedGoods, List<Double> realizedAvailabilities)
 	{
@@ -795,9 +800,9 @@ public class ProbabilisticCAXOR implements Auction
 		throw new RuntimeException("No planer is used for this type of auction.");
 	}
 
-	/*
+	/**
 	 * (non-Javadoc)
-	 * @see Mechanisms.Auction#getPaymentRule()
+	 * @see ch.uzh.ifi.Mechanisms.Auction#getPaymentRule()
 	 */
 	@Override
 	public String getPaymentRule() 
@@ -805,9 +810,9 @@ public class ProbabilisticCAXOR implements Auction
 		return _paymentRule;
 	}
 
-	/*
+	/**
 	 * (non-Javadoc)
-	 * @see Mechanisms.Auction#isBudgetBalanced()
+	 * @see ch.uzh.ifi.Mechanisms.Auction#isBudgetBalanced()
 	 */
 	@Override
 	public boolean isBudgetBalanced() 
@@ -815,9 +820,9 @@ public class ProbabilisticCAXOR implements Auction
 		return true;
 	}
 	
-	/*
+	/**
 	 * (non-Javadoc)
-	 * @see Mechanisms.Auction#isReverse()
+	 * @see ch.uzh.ifi.Mechanisms.Auction#isReverse()
 	 */
 	@Override
 	public boolean isReverse() 
@@ -825,7 +830,7 @@ public class ProbabilisticCAXOR implements Auction
 		return false;
 	}
 	
-	/*
+	/**
 	 * (non-Javadoc)
 	 * @see ch.uzh.ifi.Mechanisms.Auction#isExPostIR()
 	 */
@@ -835,7 +840,7 @@ public class ProbabilisticCAXOR implements Auction
 		return false;
 	}
 	
-	/*
+	/**
 	 * The method sets the random seed.
 	 * @param seed - a random seed to be used
 	 */
@@ -845,7 +850,7 @@ public class ProbabilisticCAXOR implements Auction
 		_generator.setSeed(_randomSeed);
 	}
 	
-	/*
+	/**
 	 * The method sets the payment rule to be used by the auction.
 	 * Possible payment rules:
 	 * - EC-VCG
@@ -858,7 +863,7 @@ public class ProbabilisticCAXOR implements Auction
 		_paymentRule = paymentRule;
 	}
 	
-	/*
+	/**
 	 * The method converts bids of all agents into a binary matrix form.
 	 */
 	private void convertAllBidsToBinaryFormat()
@@ -874,11 +879,11 @@ public class ProbabilisticCAXOR implements Auction
 		}
 	}
 	
-	/*
+	/**
 	 * The method converts an input bid into a binary format. In the binary format the bid is represented as a matrix A [M x K],
 	 * where M is the number of atomic bids in the XOR bid and k is the number of items in the CA. A[i][j] = 1 if a package i 
 	 * contains an item j and 0 otherwise. 
-	 * @param binary bid - the result will be stored in this matrix
+	 * @param binaryBid - the result will be stored in this matrix
 	 * @param numberOfRows - the number of rows of the binaryBid (is equal to the number of atomic bids in the bid)
 	 * @param numberOfColumns - the number of columns of the binary bid
 	 * @param bid - an XOR bid
@@ -898,9 +903,11 @@ public class ProbabilisticCAXOR implements Auction
 		}
 	}
 	
-	/*
+	/**
 	 * The method computes the expected availability of a bundle by a buyer given the exogenous joint probability density function.
 	 * @param atom - an atomic bid for the bundle
+	 * @param allocatedGoods
+	 * @param realizedAvailabilities
 	 * @return the expected availability of the bundle
 	 */
 	public double computeExpectedMarginalAvailability(AtomicBid atom, List<Integer> allocatedGoods, List<Double> realizedAvailabilities)
@@ -911,7 +918,7 @@ public class ProbabilisticCAXOR implements Auction
 		return res;
 	}
 	
-	/*
+	/**
 	 * The method computes availability of the specified bundle given realizations of random variables. This availability
 	 * is computed as minimal availability among all individual goods within the bundle. 
 	 * @param bundle - the bundle for which availability should be computed
@@ -969,7 +976,7 @@ public class ProbabilisticCAXOR implements Auction
 	private List<Type> _bids;						//Bids submitted by buyers
 	private List<int[][]> _binaryBids;				//Bids converted into a binary matrix format
 	private List<Double> _payments;					//A list of payments of allocated bidders
-	private AllocationEC _allocation;					//The data structure contains the resulting allocation of the auction
+	private AllocationEC _allocation;				//The data structure contains the resulting allocation of the auction
 	private Random _generator;						//A random number generator used to resolve the uncertainty
 	private long _randomSeed;						//A seed used to setup the random numbers generator
 
