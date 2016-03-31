@@ -1,5 +1,12 @@
 package ch.uzh.ifi.Mechanisms;
 
+import ilog.concert.IloException;
+import ilog.concert.IloLPMatrix;
+import ilog.concert.IloNumExpr;
+import ilog.concert.IloNumVar;
+import ilog.concert.IloNumVarType;
+import ilog.cplex.IloCplex;
+
 import java.util.*;
 
 import org.apache.logging.log4j.LogManager;
@@ -143,16 +150,9 @@ public class CAXOR implements Auction
 	@Override
 	public void resetTypes(List<Type> agentsTypes) 
 	{	
-		_mip = new MIP();
-		_mip.setSolveParam(SolveParam.MIP_DISPLAY, 0);
 		_bids = agentsTypes;
-		_payments = new LinkedList<Double>();
-		//for(int i = 0; i < _numberOfAgents; ++i)
-		//	_payments.add(0.);
-		
+		_payments = new ArrayList<Double>();
 		convertAllBidsToBinaryFormat();		
-		
-		_solverClient = new SolverClient();
 	}
 	
 	/**
@@ -180,9 +180,9 @@ public class CAXOR implements Auction
 	 * @see ch.uzh.ifi.Mechanisms.Auction#solveIt()
 	 */
 	@Override
-	public void solveIt()
+	public void solveIt() throws Exception
 	{
-		if( _paymentRule.equals("VCG_LLG") || _paymentRule.equals("CORE_LLG") )
+		if( _paymentRule.equals("VCG_LLG") || _paymentRule.equals("CORE_LLG") || _paymentRule.equals("CORE_SH_LLG") )
 			computeWinnerDeterminationLLG();
 		else
 			computeWinnerDetermination();
@@ -197,6 +197,8 @@ public class CAXOR implements Auction
 				case "CORE"       :		computeCorePayments();
 										break;
 				case "CORE_LLG":		computeNearestVCG2();
+										break;
+				case "CORE_SH_LLG":		computeNearestShapleyProj();
 										break;
 				default			  :		throw new RuntimeException("No such payment rule exists: " + _paymentRule);
 			}
@@ -334,68 +336,86 @@ public class CAXOR implements Auction
 	/*
 	 * The method builds a MIP problem and feeds it to the CPLEX solver.
 	 */
-	public void computeWinnerDetermination() //throws Exception
+	public void computeWinnerDetermination() throws IloException //throws Exception
 	{
+		_cplexSolver = new IloCplex();
+		_cplexSolver.clearModel();
+		_cplexSolver.setOut(null);
+		
 		List<Integer> allocatedBidders = new LinkedList<Integer>();
 		List<Integer> allocatedBundles = new LinkedList<Integer>();
 		List<Double> buyersValues      = new LinkedList<Double>();
 		double sellerCost = 0.;
 		
-		List<List<Variable> > variables = new LinkedList<List<Variable> >();// i-th element of the list contains the list of variables 
+		List<List<IloNumVar> > variables = new ArrayList<List<IloNumVar>>();// i-th element of the list contains the list of variables 
 																			// corresponding to the i-th agent
 		//Create the optimization variables and formulate the objective function:
+		IloNumExpr objective = _cplexSolver.constant(0.);
+		IloLPMatrix lp = _cplexSolver.addLPMatrix();
+		
 		for(int i = 0; i < _bids.size(); ++i)								//For every bidder ...
 		{
 			Type bid = _bids.get(i);
-			List<Variable> varI = new LinkedList<Variable>();				//Create a new variable per atomic bid
+			List<IloNumVar> varI = new ArrayList<IloNumVar>();				//Create a new variable per atomic bid
 			for(int j = 0; j < bid.getNumberOfAtoms(); ++j )				//For every atomic bid ...
 			{
 				AtomicBid bundle = bid.getAtom(j);
 				double value = bundle.getValue();
 				double cost = bundle.computeCost(_costs);
-				Variable x = new Variable("x" + i + "_" + j, VarType.INT, 0, 1);
+				
+				IloNumVar x = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "x" + i + "_" + j);
 				varI.add(x);
-				_mip.add(x);
-				_mip.addObjectiveTerm( value - cost, x);
+				
+				IloNumExpr term = _cplexSolver.prod((value - cost), x);
+				objective = _cplexSolver.sum(objective, term);
 			}
 			variables.add(varI);
 		}
-		_mip.setObjectiveMax(true);
+		_cplexSolver.add(_cplexSolver.maximize(objective));
 		
 		//Create optimization constraints for ITEMS:
 		for(int i = 0; i < _numberOfItems; ++i)
 		{
-			Constraint c = new Constraint(CompareType.LEQ, 1);
+			IloNumExpr constraint = _cplexSolver.constant(0);
+			
 			for(int j = 0; j < _numberOfAgents; ++j)
 			{
 				int[][] binaryBid = _binaryBids.get(j);
-				List<Variable> varI = (List<Variable>)(variables.get(j));
+				List<IloNumVar> varI = (List<IloNumVar>)(variables.get(j));
 				for( int q = 0; q < varI.size(); ++q )
-					c.addTerm( binaryBid[q][i], varI.get(q));
+					if( binaryBid[q][i] > 0)
+					{
+						IloNumExpr term = _cplexSolver.prod(binaryBid[q][i], varI.get(q));
+						constraint = _cplexSolver.sum(constraint, term);
+					}
 			}
-			_mip.add(c);
+			lp.addRow( _cplexSolver.ge(1.0, constraint, "Item_"+i) );
 		}
 		
 		//Create optimization constraints for XOR:
 		for(int i = 0; i < _numberOfAgents; ++i)
 		{
-			Constraint c = new Constraint(CompareType.LEQ, 1);
-			List<Variable> varI = (List<Variable>)(variables.get(i));
+			IloNumExpr constraint = _cplexSolver.constant(0);
+			double upperBound = 1.;
+			
+			List<IloNumVar> varI = (List<IloNumVar>)(variables.get(i));
 			for(int q = 0; q < varI.size(); ++q)
-				c.addTerm( 1.0, varI.get(q));
+				constraint = _cplexSolver.sum(constraint, varI.get(q));
 
-			_mip.add(c);
+			lp.addRow( _cplexSolver.ge(upperBound, constraint, "Bidder"+i));
 		}
 		
 		//Launch CPLEX to solve the problem:
-		_result = _solverClient.solve(_mip);
-				
-		Map<String, Double> m = _result.getValues();
+		_cplexSolver.setParam(IloCplex.Param.RootAlgorithm, 2);		
+		
+		_cplexSolver.solve();
+		
+		//Map<String, Double> m = _result.getValues();
 		_allocation = new Allocation();
 		
 		for(int i = 0; i < _numberOfAgents; ++i)
 			for(int j = 0; j < _bids.get(i).getNumberOfAtoms(); ++j)
-				if( Math.abs( (double) m.get("x"+i+"_"+j) - 1.0 ) < 1e-6 )
+				if( Math.abs( _cplexSolver.getValue(variables.get(i).get(j)) - 1.0 ) < 1e-6 )
 				{
 					try 
 					{						
@@ -419,11 +439,12 @@ public class CAXOR implements Auction
 			}
 	}
 	
-	/*
+	/**
 	 * The method computes bidder optimal core payments.
 	 * @return a list of payments of allocated agents.
+	 * @throws PaymentException if VCG is in the core
 	 */
-	public List<Double> computeCorePayments()
+	public List<Double> computeCorePayments() throws PaymentException
 	{
 		List<Integer> units = new LinkedList<Integer>();
 		for(int i = 0; i < _numberOfItems; ++i)
@@ -434,10 +455,24 @@ public class CAXOR implements Auction
 		{
 			_payments = paymentRule.computePayments();
 		} 
+		catch (PaymentException e) 
+		{
+			if(e.getMessage().equals("VCG is in the Core"))
+			{
+				switch(_paymentRule)
+				{
+					case "CORE" :	_payments = e.getPayments(); break;
+					default     :	
+				}
+				throw e;
+			}
+			e.printStackTrace();
+		}
 		catch (Exception e) 
 		{
 			e.printStackTrace();
 		}
+		
 		return _payments;
 	}
 	
@@ -455,7 +490,7 @@ public class CAXOR implements Auction
 		try 
 		{
 			_payments = paymentRule.computePayments();
-		} 
+		}
 		catch (Exception e) 
 		{
 			e.printStackTrace();
@@ -485,10 +520,31 @@ public class CAXOR implements Auction
 		return _payments;
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
+	public List<Double> computeNearestShapleyProj()
+	{
+		List<Integer> units = new LinkedList<Integer>();
+		for(int i = 0; i < _numberOfItems; ++i)
+			units.add(1);
+		
+		PaymentRule paymentRule = new CoreNearestShapleyProj(_allocation, _bids, units, _numberOfItems, _costs);
+		try 
+		{
+			_payments = paymentRule.computePayments();
+		}
+		catch (Exception e) 
+		{
+			e.printStackTrace();
+		}
+		return _payments;
+	}
 	/*
 	 * The method prints out the results of the winner determination problem.
 	 */
-	public void printResults()
+	/*public void printResults()
 	{
 		double obj = _result.getObjectiveValue();
 		System.out.println("Objective: " + obj + ". Wellfare: " + _allocation.getAllocatedWelfare() );
@@ -505,7 +561,7 @@ public class CAXOR implements Auction
 			System.out.println("Total revenue: " + revenue);
 		else
 			System.out.println("Payments were not computed.");
-	}
+	}*/
 	
 	/*
 	 * (non-Javadoc)
@@ -636,10 +692,6 @@ public class CAXOR implements Auction
 	private List<Double> _payments;
 	private Allocation _allocation;
 	private JointProbabilityMass _jpmf;
-
-	SolverClient _solverClient;										//A CPLEX solver client
-	private IMIPResult _result;										//A data structure for the solution
-	private IMIP _mip = new MIP();									//A data structure for the mixed integer program
 	
-	static int constraintID = 0;									//Constraints counter
+	private IloCplex _cplexSolver;
 }

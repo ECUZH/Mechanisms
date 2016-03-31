@@ -32,13 +32,14 @@ public class ProbabilisticCAXOR implements Auction
 	
 	private static final Logger _logger = LogManager.getLogger(ProbabilisticCAXOR.class);
 	
-	/*
+	/**
 	 * Constructor
-	 * @param numberOfBuyers - the number of buyers in the auction
-	 * @param numberOfItems - the number of items to be auctioned
-	 * @param bids - bids of agents. A bid consists of atomic bids. An Atomic Bid must include a bundle, i.e., a list
+	 * @param numberOfBuyers the number of buyers in the auction
+	 * @param numberOfItems the number of items to be auctioned
+	 * @param bids bids of agents. A bid consists of atomic bids. An Atomic Bid must include a bundle, i.e., a list
 	 *               of items an agent is willing to buy. Each item must be encoded with an integer starting from 1, 2, ... m.
-	 * @param jpmf - joint probability mass function for availabilities of individual goods
+	 * @param costs a list of costs per good
+	 * @param jpmf joint probability mass function for availabilities of individual goods
 	 */
 	public ProbabilisticCAXOR(int numberOfBuyers, int numberOfItems, List<Type> bids, List<Double> costs, JointProbabilityMass jpmf)
 	{
@@ -53,15 +54,16 @@ public class ProbabilisticCAXOR implements Auction
 		resetTypes(bids);
 	}
 	
-	/*
-	 * 
+	/**
+	 * The method sets up the CPLEX solver to be used for solving the WDP.
+	 * @param solver CPLEX solver
 	 */
 	public void setSolver(IloCplex solver)
 	{
 		_cplexSolver = solver;
 	}
 	
-	/*
+	/**
 	 * (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
@@ -82,9 +84,9 @@ public class ProbabilisticCAXOR implements Auction
 		return str;
 	}
 	
-	/*
+	/**
 	 * (non-Javadoc)
-	 * @see Mechanisms.Auction#solveIt()
+	 * @see ch.uzh.ifi.Mechanisms.Auction#solveIt()
 	 */
 	@Override
 	public void solveIt() throws Exception 
@@ -655,7 +657,7 @@ public class ProbabilisticCAXOR implements Auction
 		_logger.debug("<- computeWinnerDeterminationGeneral(...)");
 	}
 	
-	/*
+	/**
 	 * The method computes and returns payments for the market.
 	 * @param pr - payment rule to be used
 	 * @return a vector of prices for bidders
@@ -706,7 +708,8 @@ public class ProbabilisticCAXOR implements Auction
 											break;
 					case "EC-CORE_LLG"	:	_payments = computePayments(new ECVCGPayments(_allocation, _numberOfBuyers, _numberOfItems, _bids, _costs, _jpmf, _cplexSolver));
 											break;
-					case "ECC-CORE"		:	_payments = e.getPayments(); break;
+					case "ECC-CORE"		:	_payments = e.getPayments(); 
+											break;
 					case "ECC-CORE_LLG"	:	_payments = computePayments(new ECCVCGPayments(_allocation, _numberOfBuyers, _numberOfItems, _bids, _costs, _jpmf, _cplexSolver));
 											break;
 					case "ECR-CORE"		:	_payments = computePayments(new ECRVCGPayments(_allocation, _numberOfBuyers, _numberOfItems, _bids, _costs, _jpmf, _cplexSolver));
