@@ -12,6 +12,7 @@ import java.util.stream.IntStream;
 
 import ch.uzh.ifi.DomainGenerators.DomainGeneratorCATS;
 import ch.uzh.ifi.DomainGenerators.DomainGeneratorCATSUncertain;
+import ch.uzh.ifi.DomainGenerators.SpacialDomainGenerationException;
 import ch.uzh.ifi.MechanismDesignPrimitives.AllocationEC;
 import ch.uzh.ifi.MechanismDesignPrimitives.AtomicBid;
 import ch.uzh.ifi.MechanismDesignPrimitives.CombinatorialType;
@@ -27,6 +28,7 @@ public class benchmarkProbabilisticCAXOR_CATS
 
 	/**
 	 * Entry point
+	 * @throws SpacialDomainGenerationException 
 	 */
 	public static void main(String[] args) throws IloException 
 	{
@@ -55,68 +57,71 @@ public class benchmarkProbabilisticCAXOR_CATS
 			
 			for(int j = 0; j < numberOfRuns; ++j)
 			{
-				DomainGeneratorCATSUncertain domainGenerator = new DomainGeneratorCATSUncertain(numberOfGoods);
-				domainGenerator.setNumberOfJPMFSamples(10000);
-				domainGenerator.setNumberOfBombsToThrow(1);
-				domainGenerator.setBombsParameters(Arrays.asList(primaryReductionCoef), Arrays.asList(secondaryReductionCoef), Arrays.asList(1.), Arrays.asList(1.));
-				domainGenerator.generateJPMF();
+				DomainGeneratorCATSUncertain domainGenerator;
+				try {
+					domainGenerator = new DomainGeneratorCATSUncertain(numberOfGoods);
 				
-				for(int i = 0; i < numberOfSampleGames; ++i)
-				{
-					System.out.println("i="+i);
-					Random generator = new Random(j*10000 + i);
-					generator.setSeed(System.nanoTime());
-					
-					List<Type> bids = new LinkedList<Type>();
-					
-					for(int q = 0; q < numberOfAgents; ++q)
+					domainGenerator.setNumberOfJPMFSamples(10000);
+					domainGenerator.setNumberOfBombsToThrow(1);
+					domainGenerator.setBombsParameters(Arrays.asList(primaryReductionCoef), Arrays.asList(secondaryReductionCoef), Arrays.asList(1.), Arrays.asList(1.));
+					domainGenerator.generateJPMF();
+				
+					for(int i = 0; i < numberOfSampleGames; ++i)
 					{
-						Type ct = domainGenerator.generateBid(j*10000 + i*10 + q, types.get(q).getAgentId());
-						bids.add(ct);
-					}
+						System.out.println("i="+i);
+						Random generator = new Random(j*10000 + i);
+						generator.setSeed(System.nanoTime());
 					
-					List<Double> costs = new LinkedList<Double>();
-					for(int q = 0; q < numberOfGoods; ++q)
-						costs.add( costsMax * generator.nextDouble());
+						List<Type> bids = new LinkedList<Type>();
 					
-					ProbabilisticCAXOR auction = new ProbabilisticCAXOR( bids.size(), numberOfGoods, bids, costs, domainGenerator.getJPMF());
-					auction.setSolver(solver);
-					auction.setPaymentRule(paymentRule);
-					auction.setSeed(System.nanoTime());
+						for(int q = 0; q < numberOfAgents; ++q)
+						{
+							Type ct = domainGenerator.generateBid(j*10000 + i*10 + q, types.get(q).getAgentId());
+							bids.add(ct);
+						}
 					
-					try
-					{
+						List<Double> costs = new LinkedList<Double>();
+						for(int q = 0; q < numberOfGoods; ++q)
+							costs.add( costsMax * generator.nextDouble());
+					
+						ProbabilisticCAXOR auction = new ProbabilisticCAXOR( bids.size(), numberOfGoods, bids, costs, domainGenerator.getJPMF());
+						auction.setSolver(solver);
+						auction.setPaymentRule(paymentRule);
+						auction.setSeed(System.nanoTime());
+					
 						try
 						{
-							auction.solveIt();
-						}
-						catch(PaymentException e)
-						{
-							if(e.getMessage().equals("Empty Core"))
-								emptyCoreCounter[j] += 1;
-							else if(e.getMessage().equals("VCG is in the Core"))
-								vcgInCoreCounter[j] += 1;
-						}
-						AllocationEC allocation = (AllocationEC)auction.getAllocation();
-						double[] payments = auction.getPayments();
+							try
+							{
+								auction.solveIt();
+							}
+							catch(PaymentException e)
+							{
+								if(e.getMessage().equals("Empty Core"))
+									emptyCoreCounter[j] += 1;
+								else if(e.getMessage().equals("VCG is in the Core"))
+									vcgInCoreCounter[j] += 1;
+							}
+							AllocationEC allocation = (AllocationEC)auction.getAllocation();
+							double[] payments = auction.getPayments();
+								
+							int numberOfAllocatedAgents = 0;
+							if(allocation.getNumberOfAllocatedAuctioneers() > 0)
+								numberOfAllocatedAgents = allocation.getBiddersInvolved(0).size();
 						
-						int numberOfAllocatedAgents = 0;
-						if(allocation.getNumberOfAllocatedAuctioneers() > 0)
-							numberOfAllocatedAgents = allocation.getBiddersInvolved(0).size();
-						
-						for(int q = 0; q < numberOfAllocatedAgents; ++q)
-						{
-							int allocatedBidderId = allocation.getBiddersInvolved(0).get(q);
-							int allocatedBundleIdx = allocation.getAllocatedBundlesOfTrade(0).get(q);
-							double value = bids.get(allocatedBidderId-1).getAtom(allocatedBundleIdx).getValue() / shadingFactor;
-							double realizedAvailability = allocation.getRealizedRV(0, q);
-							if( value*realizedAvailability - payments[q] < 0 )
-								irViolation[j]+=1;
+							for(int q = 0; q < numberOfAllocatedAgents; ++q)
+							{
+								int allocatedBidderId = allocation.getBiddersInvolved(0).get(q);
+								int allocatedBundleIdx = allocation.getAllocatedBundlesOfTrade(0).get(q);
+								double value = bids.get(allocatedBidderId-1).getAtom(allocatedBundleIdx).getValue() / shadingFactor;
+								double realizedAvailability = allocation.getRealizedRV(0, q);
+								if( value*realizedAvailability - payments[q] < 0 )
+									irViolation[j]+=1;
 							
-							double realizedValue = value*realizedAvailability; 
-							double realizedCost = bids.get(allocatedBidderId-1).getAtom(allocatedBundleIdx).computeCost(costs)*realizedAvailability;
-							efficiency[j] += realizedValue - realizedCost;
-						}
+								double realizedValue = value*realizedAvailability; 
+								double realizedCost = bids.get(allocatedBidderId-1).getAtom(allocatedBundleIdx).computeCost(costs)*realizedAvailability;
+								efficiency[j] += realizedValue - realizedCost;
+							}
 						/*
 						if(numberOfAllocatedAgents == 2)
 						{
@@ -133,16 +138,20 @@ public class benchmarkProbabilisticCAXOR_CATS
 								irViolation[j]+=1;
 						}*/
 						
-					}
-					catch (Exception e) 
-					{
+						}
+						catch (Exception e) 
+						{
 						e.printStackTrace();
+						}
 					}
+					//System.out.println("[IRV]="+irViolation[j]);
+					System.out.println("Eff=" + efficiency[j]);
+					System.out.println("EmptyCore=" + emptyCoreCounter[j]);
+					System.out.println("VCG in the Core=" + vcgInCoreCounter[j]);
+				} catch (SpacialDomainGenerationException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
 				}
-				//System.out.println("[IRV]="+irViolation[j]);
-				System.out.println("Eff=" + efficiency[j]);
-				System.out.println("EmptyCore=" + emptyCoreCounter[j]);
-				System.out.println("VCG in the Core=" + vcgInCoreCounter[j]);
 			}
 			
 			double irMean = 0.;
