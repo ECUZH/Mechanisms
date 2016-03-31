@@ -4,17 +4,22 @@ import ch.uzh.ifi.MechanismDesignPrimitives.Allocation;
 import ch.uzh.ifi.MechanismDesignPrimitives.Type;
 import ch.uzh.ifi.MechanismDesignPrimitives.AtomicBid;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
- * 
+ * The class provides methods to compute VCG payments.
  * @author Dmitry Moor
- *
  */
 public class VCGPayments implements PaymentRule
 {
 
+	private static final Logger _logger = LogManager.getLogger(VCGPayments.class);
+	
 	/**
 	 * A Constructor.
 	 * @param welfare - a total welfare of computed allocation
@@ -44,7 +49,7 @@ public class VCGPayments implements PaymentRule
 	public List<Double> computePayments() throws Exception 
 	{
 		int numberOfAllocatedBidders = _allocation.getBiddersInvolved(0).size();
-		_payments = new LinkedList<Double>();
+		_payments = new ArrayList<Double>();
 		
 		for(int i = 0; i < numberOfAllocatedBidders; ++i)
 		{
@@ -52,7 +57,7 @@ public class VCGPayments implements PaymentRule
 			int allocatedAgentId = _allocation.getBiddersInvolved(0).get(i);
 			double allocatedAgentValue = 0.;
 			
-			List<Type> bids = new LinkedList<Type>();
+			List<Type> bids = new ArrayList<Type>();
 			for(int j = 0; j < _numberOfAgents; ++j)
 				if( _bids.get(j).getAgentId() != allocatedAgentId )
 					bids.add(_bids.get(j));
@@ -63,51 +68,40 @@ public class VCGPayments implements PaymentRule
 			else
 				auction.computeWinnerDetermination();
 			
-			double expectedReducedSW = auction.getAllocation().getAllocatedWelfare();
+			double subgameSW = 0.;
+			if( auction.getAllocation().getNumberOfAllocatedAuctioneers() > 0)
+				subgameSW = auction.getAllocation().getAllocatedWelfare();
 			
 			//2. Compute the SW with agent i not taking its value into account
-			double realizedDecreasedSW = 0.;
+			double decreasedSW = 0.;
 			for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
 			{
 				int bidderId = _allocation.getBiddersInvolved(0).get(j);
-				
 				int itsAllocatedAtom = _allocation.getAllocatedBundlesOfTrade(0).get(j);
 				AtomicBid allocatedBundle = _bids.get( bidderId-1 ).getAtom( itsAllocatedAtom );
 				double cost  = computeCost( allocatedBundle );
+				
 				if(bidderId != allocatedAgentId)
-					realizedDecreasedSW += allocatedBundle.getValue() - cost;
+					decreasedSW += allocatedBundle.getValue() - cost;
 				else
 				{
 					allocatedAgentValue = allocatedBundle.getValue();
-					realizedDecreasedSW += -1* cost;
+					decreasedSW += -1* cost;
 				}
 			}
-			if( expectedReducedSW - realizedDecreasedSW >  allocatedAgentValue)
+			if( subgameSW - decreasedSW >  allocatedAgentValue)
 			{
-				System.out.println(">> " + allocatedAgentValue + " vcg="+ (expectedReducedSW - realizedDecreasedSW));
-				System.out.println(">> bids: " + _bids.toString());
-				System.out.println(">> Costs: " + _costs.toString());
+				_logger.error("IR violation: v=" + allocatedAgentValue + " p_vcg="+ (subgameSW - decreasedSW));
+				_logger.error("Bids: " + _bids.toString());
+				_logger.error("Costs: " + _costs.toString());
+				throw new PaymentException("IR violation for VCG", 0);
 			}
-			_payments.add(expectedReducedSW - realizedDecreasedSW);
-			
-			
-			
-			//CAXOR ca = new CAXOR( _numberOfAgents-1, _numberOfItems, bids);		//Solve the CA without Agent i
-			//MultiUnitCAXOR ca = new MultiUnitCAXOR( _numberOfAgents-1, _numberOfItems, _unitsOfItems, bids);	//Solve the CA without Agent i
-			//ca.computeWinnerDetermination();
-			//double Wi = ca.getAllocation().getAllocatedWelfare();												//Allocation without Agent i
-			//double payment = Wi - (W - _allocation.getAgentAllocatedWelfareContribution(winnerIdx));			//VCG payment for Agent i
-			
-			//if( payment < - (1e-4) ) throw new RuntimeException("Negative VCG payments ");
-			
-			//_payments.add(payment < 0 ? 0 : payment);
-			
-			//winnerIdx += 1;
+			_payments.add(subgameSW - decreasedSW);			
 		}
 		return _payments;
 	}
 	
-	/*
+	/**
 	 * The method checks whether this is an LLG setup.
 	 * @returns true if the bids come from the LLG domain
 	 */
@@ -121,9 +115,9 @@ public class VCGPayments implements PaymentRule
 		return false;
 	}
 	
-	/*
+	/**
 	 * (non-Javadoc)
-	 * @see Mechanisms.PaymentRule#isBudgetBalanced()
+	 * @see ch.uzh.ifi.Mechanisms.PaymentRule#isBudgetBalanced()
 	 */
 	@Override
 	public boolean isBudgetBalanced() 
@@ -137,8 +131,8 @@ public class VCGPayments implements PaymentRule
 		return totalPayment >= 0 ? true : false;
 	}
 	
-	/*
-	 * The method computes the additive cost of a given bundle.
+	/**
+	 * The method computes an additive cost of a given bundle.
 	 * @param atom - an atomic bid of an agent containing the bundle
 	 * @return the cost of the bundle, i.e., the sum of costs of all items in the bundle
 	 */
@@ -158,7 +152,5 @@ public class VCGPayments implements PaymentRule
 	private List<Integer> _unitsOfItems;
 	private int _numberOfItems;
 	private int _numberOfAgents;
-	private Allocation _allocation;
-	
-	//private Logger _logger;
+	private Allocation _allocation;	
 }

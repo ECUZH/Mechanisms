@@ -30,7 +30,10 @@
     <Logger name="ch.uzh.ifi.Mechanisms.ECCorePayments" level="ERROR" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
-     <Logger name="ch.uzh.ifi.Mechanisms.ECCVCGPayments" level="ERROR" additivity="false">
+    <Logger name="ch.uzh.ifi.Mechanisms.ECCVCGPayments" level="ERROR" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
+    <Logger name="ch.uzh.ifi.Mechanisms.VCGPayments" level="ERROR" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
     <Root level="debug">
