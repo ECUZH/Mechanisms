@@ -16,15 +16,6 @@ import ch.uzh.ifi.MechanismDesignPrimitives.JointProbabilityMass;
 import ch.uzh.ifi.MechanismDesignPrimitives.Allocation;
 import ch.uzh.ifi.MechanismDesignPrimitives.Type;
 import ch.uzh.ifi.MechanismDesignPrimitives.AtomicBid;
-import edu.harvard.econcs.jopt.solver.IMIP;
-import edu.harvard.econcs.jopt.solver.IMIPResult;
-import edu.harvard.econcs.jopt.solver.client.SolverClient;
-import edu.harvard.econcs.jopt.solver.mip.CompareType;
-import edu.harvard.econcs.jopt.solver.mip.MIP;
-import edu.harvard.econcs.jopt.solver.mip.Constraint;
-import edu.harvard.econcs.jopt.solver.mip.VarType;
-import edu.harvard.econcs.jopt.solver.mip.Variable;
-import edu.harvard.econcs.jopt.solver.SolveParam;
 
 /**
  * The class implements a combinatorial auction with XOR bidding language.
@@ -563,9 +554,9 @@ public class CAXOR implements Auction
 			System.out.println("Payments were not computed.");
 	}*/
 	
-	/*
+	/**
 	 * (non-Javadoc)
-	 * @see Mechanisms.Auction#getAllocation()
+	 * @see ch.uzh.ifi.Mechanisms.Auction#getAllocation()
 	 */
 	@Override
 	public Allocation getAllocation()
@@ -573,7 +564,7 @@ public class CAXOR implements Auction
 		return _allocation;
 	}
 	
-	/*
+	/**
 	 * The method converts bids of all agents into a binary matrix form.
 	 */
 	private void convertAllBidsToBinaryFormat()
@@ -589,7 +580,7 @@ public class CAXOR implements Auction
 		}
 	}
 	
-	/*
+	/**
 	 * The method converts an input bid into a binary format. In the binary format the bid is represented as a matrix A [M x K],
 	 * where M is the number of atomic bids in the XOR bid and k is the number of items in the CA. A[i][j] = 1 if a package i 
 	 * contains an item j and 0 otherwise. 
@@ -610,9 +601,9 @@ public class CAXOR implements Auction
 		}
 	}
 	
-	/*
+	/**
 	 * (non-Javadoc)
-	 * @see Mechanisms.Auction#isBudgetBalanced()
+	 * @see ch.uzh.ifi.Mechanisms.Auction#isBudgetBalanced()
 	 */
 	@Override
 	public boolean isBudgetBalanced() 
@@ -620,9 +611,9 @@ public class CAXOR implements Auction
 		return true;
 	}
 	
-	/*
+	/**
 	 * (non-Javadoc)
-	 * @see Mechanisms.Auction#isReverse()
+	 * @see ch.uzh.ifi.Mechanisms.Auction#isReverse()
 	 */
 	@Override
 	public boolean isReverse() 
@@ -630,7 +621,7 @@ public class CAXOR implements Auction
 		return false;
 	}
 	
-	/*
+	/**
 	 * (non-Javadoc)
 	 * @see ch.uzh.ifi.Mechanisms.Auction#isExPostIR()
 	 */
@@ -640,7 +631,7 @@ public class CAXOR implements Auction
 		return true;
 	}
 	
-	/*
+	/**
 	 * The method used by WDP for LLG domain to fill some data structures required by the Allocation object.
 	 * @param allocatedBidders - a list of allocated bidders (is filled by this method)
 	 * @param allocatedBundles - a list of indexes of allocated bundles for every allocated bidder
@@ -661,7 +652,7 @@ public class CAXOR implements Auction
 		return sellerExpectedCost;
 	}
 	
-	/*
+	/**
 	 * The method computes availability of the specified bundle given realizations of random variables. This availability
 	 * is computed as minimal availability among all individual goods within the bundle. 
 	 * @param bundle - the bundle for which availability should be computed

@@ -133,7 +133,7 @@ public class CorePayments implements PaymentRule
 		
 		int constraintIdBPO = 0;
 		
-		while( z > /*totalPayment + */ TOL )
+		while( z > /*totalPayment +*/ TOL )
 		{	
 			_logger.debug("z="+z+" totalPayment="+totalPayment );
 			
@@ -161,7 +161,7 @@ public class CorePayments implements PaymentRule
 			{
 				_cplexSolver.solve();
 			}
-			catch (IloException e1) 
+			catch (IloException e1)
 			{
 				e1.printStackTrace();
 			}
@@ -175,7 +175,7 @@ public class CorePayments implements PaymentRule
 			{
 				if(e1.getMessage().contains("CPLEX Error  1217: No solution exists.") )
 				{
-					if(!(blockingCoalition.containsAll(_allocation.getBiddersInvolved(0)) && _allocation.getBiddersInvolved(0).containsAll(blockingCoalition)) )
+					//if(!(blockingCoalition.containsAll(_allocation.getBiddersInvolved(0)) && _allocation.getBiddersInvolved(0).containsAll(blockingCoalition)) )
 					{
 						_logger.error("z="+z+" totalPayment="+totalPayment + "; blocking coalition: " + blockingCoalition.toString());
 						_logger.error("LP: " + _cplexSolver.toString());
@@ -273,7 +273,6 @@ public class CorePayments implements PaymentRule
 		_logger.debug("-> computeSEP(paymentsT="+paymentsT.toString()+", blockingCoalition="+ blockingCoalition.toString()+")");
 		_cplexSolver.clearModel();
 		
-		//IMIP mipSEP = new MIP();
 		List<List<IloNumVar> > variables = new ArrayList<List<IloNumVar>>();// i-th element of the list contains the list of variables 
 																			// corresponding to the i-th agent
 		List<IloNumVar> gammaVariables = new ArrayList<IloNumVar>();		//variables taking into account winners of the previous iteration
@@ -301,6 +300,8 @@ public class CorePayments implements PaymentRule
 			variables.add(varI);
 		}
 		
+		double totalCost = 0.;
+		double totalPayment = computeTotalPayments(paymentsT);
 		for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
 		{
 			int bidderId = _allocation.getBiddersInvolved(0).get(j);
@@ -308,14 +309,26 @@ public class CorePayments implements PaymentRule
 			int allocatedBundleIdx = _allocation.getAllocatedBundlesOfTrade(0).get(j);
 			AtomicBid bundle = t.getAtom(allocatedBundleIdx);
 			double value = bundle.getValue();
+			double cost  = bundle.computeCost(_costs);
 
 			IloNumVar gamma = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "Gamma_" + j);
 			gammaVariables.add(gamma);
 			
 			IloNumExpr term1 = _cplexSolver.prod(-1*(value-paymentsT.get(j)), gamma);
 			objective = _cplexSolver.sum(objective, term1);
-			_logger.debug("SEP: Adding term " + term1.toString() +  " to the objective");
+			
+			totalCost += cost;
+			//IloNumExpr term2 = _cplexSolver.prod(-1., gamma);
+			//term2 = _cplexSolver.sum(1, term2);
+			//term2 = _cplexSolver.prod(cost - paymentsT.get(j), term2);
+			//objective = _cplexSolver.sum(objective, term2);
+			_logger.debug("SEP: Adding terms " + term1.toString() + " to the objective");
 		}
+		IloNumVar gammaS = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "Gamma_S");
+		gammaVariables.add(gammaS);
+		IloNumExpr termS = _cplexSolver.prod(-1 * ( totalPayment - totalCost ), gammaS);
+		objective = _cplexSolver.sum(objective, termS);
+		_logger.debug("SEP: Adding terms " + termS.toString() + " to the objective");
 		
 		_cplexSolver.add(_cplexSolver.maximize(objective));
 		
@@ -353,6 +366,7 @@ public class CorePayments implements PaymentRule
 		for(int i = 0; i < _numberOfAgents; ++i)
 		{
 			IloNumExpr constraint = _cplexSolver.constant(0);
+			IloNumExpr constraintGamma = _cplexSolver.constant(0);
 			double upperBound = 0.;
 			
 			boolean isWinner = false;
@@ -367,15 +381,32 @@ public class CorePayments implements PaymentRule
 				upperBound = 0.;
 				IloNumExpr term = _cplexSolver.prod(-1, gammaVariables.get(itsIdx));
 				constraint = _cplexSolver.sum(constraint, term);
+				
+				//Constraint for Gamma_S:   GammaI <= GammaS
+				IloNumExpr termGammaI = _cplexSolver.prod(1, gammaVariables.get(itsIdx));
+				IloNumExpr termGammaS = _cplexSolver.prod(-1, gammaS);
+				constraintGamma = _cplexSolver.sum(constraintGamma, termGammaI);
+				constraintGamma = _cplexSolver.sum(constraintGamma, termGammaS);
+				IloRange range = _cplexSolver.ge(0., constraintGamma, "GammaS_"+i);
+				lp.addRow(range);
 			}
 			else
 				upperBound = 1.;
-			
 			List<IloNumVar> varI = (List<IloNumVar>)(variables.get(i));
 			for(int q = 0; q < varI.size(); ++q)
 				constraint = _cplexSolver.sum(constraint, varI.get(q));
 
 			IloRange range1 = _cplexSolver.ge(upperBound, constraint, "Bidder"+i+"_1");
+			
+			if( ! isWinner )
+			{
+				//Constraint for Gamma_S:   x_{i1} + x_{i2} + ... <= GammaS
+				IloNumExpr termGammaS = _cplexSolver.prod(-1, gammaS);
+				constraintGamma = _cplexSolver.sum(constraintGamma, constraint);
+				constraintGamma = _cplexSolver.sum(constraintGamma, termGammaS);
+				IloRange range = _cplexSolver.ge(0., constraintGamma, "GammaS_"+i);
+				lp.addRow(range);
+			}
 			
 			try 
 			{
