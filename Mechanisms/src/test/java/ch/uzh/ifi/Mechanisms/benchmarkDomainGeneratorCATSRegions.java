@@ -10,11 +10,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import ch.uzh.ifi.DomainGenerators.DomainGeneratorCATS;
-import ch.uzh.ifi.DomainGenerators.DomainGeneratorCATSUncertain;
+import ch.uzh.ifi.DomainGenerators.DomainGeneratorSpatial;
 import ch.uzh.ifi.DomainGenerators.SpacialDomainGenerationException;
 import ch.uzh.ifi.MechanismDesignPrimitives.Allocation;
-import ch.uzh.ifi.MechanismDesignPrimitives.AllocationEC;
 import ch.uzh.ifi.MechanismDesignPrimitives.AtomicBid;
 import ch.uzh.ifi.MechanismDesignPrimitives.CombinatorialType;
 import ch.uzh.ifi.MechanismDesignPrimitives.Type;
@@ -41,16 +39,14 @@ public class benchmarkDomainGeneratorCATSRegions {
 		//Create dummy types for all agents.
 		List<Type> types = new ArrayList<Type>();
 		IntStream.range(0, numberOfAgents).boxed().forEach( i -> types.add( new CombinatorialType( new AtomicBid(i+1, Arrays.asList(0), 0.) ) ) );
-
-		IloCplex solver = new IloCplex();
 			
 		double efficiency = 0.;
 		int vcgInCoreCounter = 0;
 		
-		DomainGeneratorCATS domainGenerator;
+		DomainGeneratorSpatial domainGenerator;
 		try 
 		{
-			domainGenerator = new DomainGeneratorCATS(numberOfGoods);
+			domainGenerator = new DomainGeneratorSpatial(numberOfGoods);
 				
 			for(int i = 0; i < numberOfSampleGames; ++i)
 			{
@@ -112,8 +108,9 @@ public class benchmarkDomainGeneratorCATSRegions {
 			double effMean = efficiency / numberOfRuns;
 			System.out.println(effMean);
 			
-		} catch (SpacialDomainGenerationException e1) {
-			// TODO Auto-generated catch block
+		} 
+		catch (SpacialDomainGenerationException e1) 
+		{
 			e1.printStackTrace();
 		}
 	}
