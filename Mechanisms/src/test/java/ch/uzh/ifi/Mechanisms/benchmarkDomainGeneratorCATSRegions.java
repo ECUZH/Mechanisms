@@ -10,11 +10,13 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import ch.uzh.ifi.DomainGenerators.DomainGeneratorCATS;
 import ch.uzh.ifi.DomainGenerators.DomainGeneratorSpatial;
 import ch.uzh.ifi.DomainGenerators.SpacialDomainGenerationException;
 import ch.uzh.ifi.MechanismDesignPrimitives.Allocation;
 import ch.uzh.ifi.MechanismDesignPrimitives.AtomicBid;
 import ch.uzh.ifi.MechanismDesignPrimitives.CombinatorialType;
+import ch.uzh.ifi.MechanismDesignPrimitives.IDomainGenerator;
 import ch.uzh.ifi.MechanismDesignPrimitives.Type;
 
 /**
@@ -43,10 +45,12 @@ public class benchmarkDomainGeneratorCATSRegions {
 		double efficiency = 0.;
 		int vcgInCoreCounter = 0;
 		
-		DomainGeneratorSpatial domainGenerator;
+		//DomainGeneratorSpatial domainGenerator;
+		IDomainGenerator domainGenerator;
 		try 
 		{
-			domainGenerator = new DomainGeneratorSpatial(numberOfGoods);
+			//domainGenerator = new DomainGeneratorSpatial(numberOfGoods);
+			domainGenerator = new DomainGeneratorCATS(numberOfGoods, numberOfAgents);
 				
 			for(int i = 0; i < numberOfSampleGames; ++i)
 			{
@@ -57,7 +61,9 @@ public class benchmarkDomainGeneratorCATSRegions {
 				List<Type> bids = new LinkedList<Type>();
 				for(int j = 0; j < numberOfAgents; ++j)
 				{
-					Type ct = domainGenerator.generateBid(i*10 + j, types.get(j).getAgentId());
+					//Type ct = domainGenerator.generateBid(i*10 + j, types.get(j).getAgentId());
+					Type ct = domainGenerator.generateBid(i, types.get(j).getAgentId());
+					//System.out.println(">> ct="+ct.toString());
 					bids.add(ct);
 				}
 						
