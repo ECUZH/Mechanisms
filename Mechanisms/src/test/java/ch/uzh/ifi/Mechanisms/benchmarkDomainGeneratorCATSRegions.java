@@ -31,93 +31,159 @@ public class benchmarkDomainGeneratorCATSRegions {
 	 */
 	public static void main(String[] args) throws IloException 
 	{
-		int numberOfGoods = 9;
-		int numberOfAgents = 5;
-		int numberOfSampleGames = 100;
-		int numberOfRuns = 1;
+		boolean isCATS = false;						//True if CATS regions should be tested, false if my impl. of regions to be tested
+		//    Test number:             0                   1                     2              3                     4                     5             
+		String[] benchmarks = { "VCG in the Core", "VCG to Value Ratio", "Revenue Ratio", "Number of Winners", "Av Size of Bundle", "Value of Bundle"};
+		String benchmarkName = benchmarks[0];
+		
+		String problemSize = "big";// "small"
+		
+		int numberOfGoods = problemSize.equals("small") ? 9 : 16;
+		int numberOfAgents = problemSize.equals("small") ? 5 : 8;
+		
+		int numberOfSamples = 100;
+		int numberOfGamesPerSample = 100;
 		String paymentRule = "CORE"; 
 		double costsMax = 1e-6;
-
+		IloCplex cplexSolver = new IloCplex();
+		
 		//Create dummy types for all agents.
 		List<Type> types = new ArrayList<Type>();
 		IntStream.range(0, numberOfAgents).boxed().forEach( i -> types.add( new CombinatorialType( new AtomicBid(i+1, Arrays.asList(0), 0.) ) ) );
 			
 		double efficiency = 0.;
-		int vcgInCoreCounter = 0;
 		
-		//DomainGeneratorSpatial domainGenerator;
 		IDomainGenerator domainGenerator;
-		try 
+		
+		for(int k = 0; k < numberOfSamples; ++k)						//For every sample
 		{
-			//domainGenerator = new DomainGeneratorSpatial(numberOfGoods);
-			domainGenerator = new DomainGeneratorCATS(numberOfGoods, numberOfAgents);
-				
-			for(int i = 0; i < numberOfSampleGames; ++i)
+			int vcgInCoreCounter = 0;
+			List<Double> vcgToValueRatio = new ArrayList<Double>();
+			List<Double> revenueRatio = new ArrayList<Double>();
+			List<Integer> numberOfWinners = new ArrayList<Integer>();
+			List<Double> avSizeOfWinningBundle = new ArrayList<Double>();
+			List<Double> avValueOfWinningBundle = new ArrayList<Double>();
+			try 
 			{
-				System.out.println("i="+i);
-				Random generator = new Random(i);
-				generator.setSeed(System.nanoTime());
-						
-				List<Type> bids = new LinkedList<Type>();
-				for(int j = 0; j < numberOfAgents; ++j)
+				for(int i = 0; i < numberOfGamesPerSample; ++i)			
 				{
-					//Type ct = domainGenerator.generateBid(i*10 + j, types.get(j).getAgentId());
-					Type ct = domainGenerator.generateBid(i, types.get(j).getAgentId());
-					//System.out.println(">> ct="+ct.toString());
-					bids.add(ct);
-				}
-						
-				List<Double> costs = new LinkedList<Double>();
-				for(int j = 0; j < numberOfGoods; ++j)
-					costs.add( costsMax * generator.nextDouble());
-						
-				CAXOR auction = new CAXOR( bids.size(), numberOfGoods, bids, costs);
-				auction.setPaymentRule(paymentRule);
-						
-				try
-				{
+					if( isCATS )
+						domainGenerator = new DomainGeneratorCATS(numberOfGoods, numberOfAgents, "C:\\Users\\Dmitry\\Downloads\\files\\files\\files"+(k+1));
+					else
+						domainGenerator = new DomainGeneratorSpatial(numberOfGoods);
+					
+					//System.out.println("i="+i);
+					Random generator = new Random(i);
+					generator.setSeed(System.nanoTime());
+							
+					List<Type> bids = new LinkedList<Type>();
+					for(int j = 0; j < numberOfAgents; ++j)
+					{
+						Type ct;
+						if( isCATS )
+							ct = domainGenerator.generateBid(i, types.get(j).getAgentId());
+						else
+							ct = domainGenerator.generateBid((k+1)*(i*10 + j), types.get(j).getAgentId());
+						bids.add(ct);
+					}
+							
+					List<Double> costs = new LinkedList<Double>();
+					for(int j = 0; j < numberOfGoods; ++j)
+						costs.add( costsMax * generator.nextDouble());
+							
+					CAXOR auction = new CAXOR( bids.size(), numberOfGoods, bids, costs);
+					auction.setPaymentRule(paymentRule);
+					auction.setSolver(cplexSolver);
+							
 					try
 					{
-						auction.solveIt();
+						try
+						{
+							auction.solveIt();
+							vcgToValueRatio.add(auction.getVCGtoValueRatio());
+							revenueRatio.add(auction.getRevenueRatio());
+							if(auction.getAllocation().getNumberOfAllocatedAuctioneers() > 0)
+							{
+								Allocation allocation = auction.getAllocation();
+								double totalSizeOfWinningBundles = 0.;
+								double totalValueOfWinningBundles = 0.;
+								for(int s = 0; s < allocation.getBiddersInvolved(0).size(); ++s)
+								{
+									int bidderId = allocation.getBiddersInvolved(0).get(s);
+									int allocatedBundleIdx = allocation.getAllocatedBundlesOfTrade(0).get(s);
+									int bundleSize = bids.get(bidderId-1).getAtom(allocatedBundleIdx).getInterestingSet().size();
+									double bundleValue = bids.get(bidderId-1).getAtom(allocatedBundleIdx).getValue();
+									totalSizeOfWinningBundles += bundleSize;
+									totalValueOfWinningBundles += bundleValue;
+								}
+								numberOfWinners.add( allocation.getBiddersInvolved(0).size() );
+								avSizeOfWinningBundle.add( totalSizeOfWinningBundles / allocation.getBiddersInvolved(0).size());
+								avValueOfWinningBundle.add( totalValueOfWinningBundles / allocation.getBiddersInvolved(0).size());
+							}
+							else
+							{
+								numberOfWinners.add(0);
+								avSizeOfWinningBundle.add(0.);
+							}
+						}
+						catch(PaymentException e)
+						{
+							if(e.getMessage().equals("VCG is in the Core"))
+								vcgInCoreCounter += 1;
+						}
+						Allocation allocation = auction.getAllocation();
+						double[] payments = auction.getPayments();
+								
+						int numberOfAllocatedAgents = 0;
+						if(allocation.getNumberOfAllocatedAuctioneers() > 0)
+							numberOfAllocatedAgents = allocation.getBiddersInvolved(0).size();
+								
+						for(int q = 0; q < numberOfAllocatedAgents; ++q)
+						{
+							int allocatedBidderId = allocation.getBiddersInvolved(0).get(q);
+							int allocatedBundleIdx = allocation.getAllocatedBundlesOfTrade(0).get(q);
+							double value = bids.get(allocatedBidderId-1).getAtom(allocatedBundleIdx).getValue();
+		 
+							double realizedCost = bids.get(allocatedBidderId-1).getAtom(allocatedBundleIdx).computeCost(costs);
+							efficiency += value - realizedCost;
+						}
 					}
-					catch(PaymentException e)
+					catch (Exception e) 
 					{
-						if(e.getMessage().equals("VCG is in the Core"))
-							vcgInCoreCounter += 1;
-					}
-	
-					Allocation allocation = auction.getAllocation();
-					double[] payments = auction.getPayments();
-							
-					int numberOfAllocatedAgents = 0;
-					if(allocation.getNumberOfAllocatedAuctioneers() > 0)
-						numberOfAllocatedAgents = allocation.getBiddersInvolved(0).size();
-							
-					for(int q = 0; q < numberOfAllocatedAgents; ++q)
-					{
-						int allocatedBidderId = allocation.getBiddersInvolved(0).get(q);
-						int allocatedBundleIdx = allocation.getAllocatedBundlesOfTrade(0).get(q);
-						double value = bids.get(allocatedBidderId-1).getAtom(allocatedBundleIdx).getValue();
-	 
-						double realizedCost = bids.get(allocatedBidderId-1).getAtom(allocatedBundleIdx).computeCost(costs);
-						efficiency += value - realizedCost;
+						e.printStackTrace();
 					}
 				}
-				catch (Exception e) 
-				{
-					e.printStackTrace();
-				}
-			}
-			System.out.println("Eff=" + efficiency);
-			System.out.println("VCG in the Core=" + vcgInCoreCounter);
 				
-			double effMean = efficiency / numberOfRuns;
-			System.out.println(effMean);
-			
-		} 
-		catch (SpacialDomainGenerationException e1) 
-		{
-			e1.printStackTrace();
+				switch(benchmarkName)
+				{
+					case "VCG in the Core" 	:	System.out.println(vcgInCoreCounter); 
+												break;
+					case "VCG to Value Ratio":	double meanVCGtoValueRatio = vcgToValueRatio.stream().reduce( (x1, x2) -> x1+x2).get() / vcgToValueRatio.size();
+												System.out.println(meanVCGtoValueRatio);
+												break;
+					case "Revenue Ratio"	:	double meanRevenueRatio = revenueRatio.stream().reduce( (x1, x2) -> x1+x2).get() / revenueRatio.size();
+												System.out.println(meanRevenueRatio);
+												break;
+					case "Number of Winners":	double meanNumberOfWinners = (double)numberOfWinners.stream().reduce( (x1, x2) -> x1+x2).get() / numberOfWinners.size();
+												System.out.println(meanNumberOfWinners);
+												break;
+					case "Av Size of Bundle":	double meanAvSizeOfWinningBundle = avSizeOfWinningBundle.stream().reduce( (x1, x2) -> x1+x2).get() / avSizeOfWinningBundle.size();
+												System.out.println(meanAvSizeOfWinningBundle);
+												break;
+					case "Value of Bundle"	:	double meanAvValueOfWinningBundle = avValueOfWinningBundle.stream().reduce( (x1, x2) -> x1+x2).get() / avValueOfWinningBundle.size();
+												System.out.println(meanAvValueOfWinningBundle);
+												break;
+					default 				:	throw new RuntimeException("No such benchmark exists: " + benchmarkName);
+				}
+				//System.out.println("Eff=" + efficiency);
+				//double effMean = efficiency / numberOfRuns;
+				//System.out.println(effMean);
+				
+			} 
+			catch (SpacialDomainGenerationException e1) 
+			{
+				e1.printStackTrace();
+			}
 		}
 	}
 }
