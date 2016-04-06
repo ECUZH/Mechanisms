@@ -3,6 +3,7 @@ package ch.uzh.ifi.Mechanisms;
 import ch.uzh.ifi.MechanismDesignPrimitives.Allocation;
 import ch.uzh.ifi.MechanismDesignPrimitives.Type;
 import ch.uzh.ifi.MechanismDesignPrimitives.AtomicBid;
+import ilog.cplex.IloCplex;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -39,6 +40,16 @@ public class VCGPayments implements PaymentRule
 		_unitsOfItems = quantitiesOfItems;
 		_numberOfItems = numberOfItems;
 		_numberOfAgents = _bids.size();
+		_cplexSolver = null;
+	}
+	
+	/**
+	 * The method sets up the solver
+	 * @param solver CPLEX solver
+	 */
+	public void setSolver(IloCplex solver)
+	{
+		_cplexSolver = solver;
 	}
 	
 	/**
@@ -63,6 +74,8 @@ public class VCGPayments implements PaymentRule
 					bids.add(_bids.get(j));
 
 			CAXOR auction = new CAXOR( _numberOfAgents - 1, _numberOfItems, bids, _costs);
+			if(_cplexSolver != null)
+				auction.setSolver(_cplexSolver);
 			if( isLLG() )
 				auction.computeWinnerDeterminationLLG();
 			else
@@ -153,4 +166,5 @@ public class VCGPayments implements PaymentRule
 	private int _numberOfItems;
 	private int _numberOfAgents;
 	private Allocation _allocation;	
+	private IloCplex _cplexSolver;
 }

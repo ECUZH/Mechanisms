@@ -59,8 +59,18 @@ public class CorePayments implements PaymentRule
 		_numberOfAgents = _bids.size();
 		_binaryBids = binaryBids;
 		_costs = costs;
+		_cplexSolver = null;
 	}
 
+	/**
+	 * THe method sets up the solver
+	 * @param solver CPLEX solver
+	 */
+	public void setSolver(IloCplex solver)
+	{
+		_cplexSolver = solver;
+	}
+	
 	/**
 	 * (non-Javadoc)
 	 * @see ch.uzh.ifi.Mechanisms.PaymentRule#computePayments()
@@ -78,6 +88,8 @@ public class CorePayments implements PaymentRule
 			{
 				e.printStackTrace();
 			}
+		else
+			_cplexSolver.clearModel();
 
 		_cplexSolver.setOut(null);
 		_cplexSolver.setParam(IloCplex.Param.RootAlgorithm.AuxRootThreads, -1);
@@ -89,7 +101,8 @@ public class CorePayments implements PaymentRule
 		}
 		
 		_logger.debug("Compute VCG payments: " + _bids.toString());
-		PaymentRule vcgRule = new VCGPayments(_allocation, _bids, _unitsOfItems, _numberOfItems, _costs);
+		VCGPayments vcgRule = new VCGPayments(_allocation, _bids, _unitsOfItems, _numberOfItems, _costs);
+		vcgRule.setSolver(_cplexSolver);
 		List<Double> vcg = vcgRule.computePayments();
 		_payments = vcg;
 		_logger.debug("VCG payments: " + _payments.toString());
@@ -132,6 +145,7 @@ public class CorePayments implements PaymentRule
 		_cplexSolver.add(_cplexSolver.minimize(objectiveLP));
 		
 		int constraintIdBPO = 0;
+		double distanceVCGtoCore = 0.;
 		
 		while( z > /*totalPayment +*/ TOL )
 		{	
@@ -214,6 +228,7 @@ public class CorePayments implements PaymentRule
 			
 			_cplexSolver.solve();
 			_payments = new ArrayList<Double>();
+			distanceVCGtoCore = _cplexSolver.getObjValue();
 			
 			for(int i = 0; i < _allocation.getBiddersInvolved(0).size(); ++i)
 				try 
@@ -249,13 +264,28 @@ public class CorePayments implements PaymentRule
 		
 		lp.clear();
 		_cplexSolver.clearModel();
-		_cplexSolver.endModel();
-		_cplexSolver.end();
+		//_cplexSolver.endModel();
+		//_cplexSolver.end();
 		
 		if(constraintIdBPO == 0)
 		{
 			_logger.info("VCG is in the core => throwing an exception");
 			throw new PaymentException("VCG is in the Core", 0, _payments);
+		}
+		else
+		{
+			double distVCGtoValue = 0.;
+			for(int i = 0; i < _allocation.getBiddersInvolved(0).size(); ++i)
+			{
+				int allocatedBidderId = _allocation.getBiddersInvolved(0).get(i);
+				int allocatedBidderIdx = allocatedBidderId - 1;
+				int itsAllocatedAtom = _allocation.getAllocatedBundlesOfTrade(0).get(i);
+				double itsValue = _bids.get(allocatedBidderIdx).getAtom(itsAllocatedAtom ).getValue();
+				
+				distVCGtoValue +=  (itsValue - vcg.get(i))*(itsValue - vcg.get(i)) ;
+			}
+			_logger.info("VCG is not in the core -> distanceVCGtoCore/distVCGtoValue=" + Math.sqrt(distanceVCGtoCore)/ Math.sqrt(distVCGtoValue) );
+			//System.out.println("VCG is not in the core -> distanceVCGtoCore/distVCGtoValue=" + Math.sqrt(distanceVCGtoCore)/ Math.sqrt(distVCGtoValue) );
 		}
 		_logger.debug("<- computePayments()");
 		return _payments;

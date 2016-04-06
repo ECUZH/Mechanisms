@@ -135,6 +135,15 @@ public class CAXOR implements Auction
 	}
 	
 	/**
+	 * The method sets up a CPLEX solver for WDP.
+	 * @param solver CPLEX solver
+	 */
+	public void setSolver(IloCplex solver)
+	{
+		_cplexSolver = solver;
+	}
+	
+	/**
 	 * (non-Javadoc)
 	 * @see ch.uzh.ifi.Mechanisms.Auction#resetTypes(java.util.List)
 	 */
@@ -143,7 +152,8 @@ public class CAXOR implements Auction
 	{	
 		_bids = agentsTypes;
 		_payments = new ArrayList<Double>();
-		convertAllBidsToBinaryFormat();		
+		convertAllBidsToBinaryFormat();	
+		_cplexSolver = null;
 	}
 	
 	/**
@@ -324,13 +334,15 @@ public class CAXOR implements Auction
 			}
 	}
 	
-	/*
+	/**
 	 * The method builds a MIP problem and feeds it to the CPLEX solver.
 	 */
 	public void computeWinnerDetermination() throws IloException //throws Exception
 	{
-		_cplexSolver = new IloCplex();
-		_cplexSolver.clearModel();
+		if( _cplexSolver == null)
+			_cplexSolver = new IloCplex();
+		else
+			_cplexSolver.clearModel();
 		_cplexSolver.setOut(null);
 		
 		List<Integer> allocatedBidders = new LinkedList<Integer>();
@@ -422,6 +434,8 @@ public class CAXOR implements Auction
 		if(allocatedBundles.size() > 0)
 			try 
 			{
+				_logger.debug("Allocated bidders: " + allocatedBidders);
+				_logger.debug("Allocated bundles: " + allocatedBundles);
 				_allocation.addAllocatedAgent(0, allocatedBidders, allocatedBundles, sellerCost, buyersValues);
 			} 
 			catch (Exception e) 
@@ -441,7 +455,8 @@ public class CAXOR implements Auction
 		for(int i = 0; i < _numberOfItems; ++i)
 			units.add(1);
 				
-		PaymentRule paymentRule = new CorePayments( _allocation, _bids, units, _numberOfItems, _binaryBids, _costs);
+		CorePayments paymentRule = new CorePayments( _allocation, _bids, units, _numberOfItems, _binaryBids, _costs);
+		paymentRule.setSolver(_cplexSolver);
 		try 
 		{
 			_payments = paymentRule.computePayments();
