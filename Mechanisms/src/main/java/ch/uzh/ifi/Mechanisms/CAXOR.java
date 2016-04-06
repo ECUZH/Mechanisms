@@ -460,6 +460,8 @@ public class CAXOR implements Auction
 		try 
 		{
 			_payments = paymentRule.computePayments();
+			_vcgToValueRatio = paymentRule.getVCGtoValueRatio();
+			_revenueRatio = paymentRule.getRevenueRatio();
 		} 
 		catch (PaymentException e) 
 		{
@@ -482,7 +484,7 @@ public class CAXOR implements Auction
 		return _payments;
 	}
 	
-	/*
+	/**
 	 * The method computes and returns VCG prices for the CA.
 	 * @return a vector of VCG prices for bidders
 	 */
@@ -686,6 +688,24 @@ public class CAXOR implements Auction
 		return realizedRV;
 	}
 	
+	/**
+	 * The method returns the ratio of the distance of  VCG to core to the distance between VCG and reported values
+	 * @return the ratio of the distance of  VCG to core to the distance between VCG and reported values
+	 */
+	public double getVCGtoValueRatio()
+	{
+		return _vcgToValueRatio;
+	}
+	
+	/**
+	 * The method returns the ratio of the VCG revenue to core revenue.
+	 * @return the ratio of VCG to core revenue
+	 */
+	public double getRevenueRatio()
+	{
+		return _revenueRatio;
+	}
+	
 	private String _paymentRule;
 	private PaymentRule _paymentRuleObj;
 	
@@ -700,4 +720,7 @@ public class CAXOR implements Auction
 	private JointProbabilityMass _jpmf;
 	
 	private IloCplex _cplexSolver;
+	
+	private double _vcgToValueRatio;								//Used for benchmarking
+	private double _revenueRatio;									//Used for benchmarking
 }

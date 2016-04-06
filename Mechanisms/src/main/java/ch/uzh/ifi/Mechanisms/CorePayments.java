@@ -286,6 +286,9 @@ public class CorePayments implements PaymentRule
 			}
 			_logger.info("VCG is not in the core -> distanceVCGtoCore/distVCGtoValue=" + Math.sqrt(distanceVCGtoCore)/ Math.sqrt(distVCGtoValue) );
 			//System.out.println("VCG is not in the core -> distanceVCGtoCore/distVCGtoValue=" + Math.sqrt(distanceVCGtoCore)/ Math.sqrt(distVCGtoValue) );
+			_vcgToValueRatio = Math.sqrt(distanceVCGtoCore)/ Math.sqrt(distVCGtoValue);
+			_revenueRatio = vcg.stream().reduce( (p1,p2) -> p1+p2 ).get() / _payments.stream().reduce( (p1,p2) -> p1+p2 ).get();
+			//System.out.println(Math.sqrt(distanceVCGtoCore)/ Math.sqrt(distVCGtoValue) );
 		}
 		_logger.debug("<- computePayments()");
 		return _payments;
@@ -496,6 +499,24 @@ public class CorePayments implements PaymentRule
 	}
 	
 	/**
+	 * The method returns the ratio of the distance of  VCG to core to the distance between VCG and reported values
+	 * @return the ratio of the distance of  VCG to core to the distance between VCG and reported values
+	 */
+	public double getVCGtoValueRatio()
+	{
+		return _vcgToValueRatio;
+	}
+	
+	/**
+	 * The method returns the ratio of the VCG revenue to core revenue.
+	 * @return the ratio of VCG to core revenue
+	 */
+	public double getRevenueRatio()
+	{
+		return _revenueRatio;
+	}
+	
+	/**
 	 * The method computes total payment made by all bidders
 	 * @param payments of bidders
 	 * @return a total payment
@@ -520,4 +541,7 @@ public class CorePayments implements PaymentRule
 	
 	private final double TOL = 1e-4;							//Tolerance level
 	private IloCplex _cplexSolver;								//CPLEX solver
+	
+	private double _vcgToValueRatio;
+	private double _revenueRatio;
 }
