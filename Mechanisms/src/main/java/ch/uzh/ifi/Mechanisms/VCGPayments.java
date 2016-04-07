@@ -102,7 +102,7 @@ public class VCGPayments implements PaymentRule
 					decreasedSW += -1* cost;
 				}
 			}
-			if( subgameSW - decreasedSW >  allocatedAgentValue)
+			if( subgameSW - decreasedSW >  allocatedAgentValue + TOL)
 			{
 				_logger.error("IR violation: v=" + allocatedAgentValue + " p_vcg="+ (subgameSW - decreasedSW));
 				_logger.error("Bids: " + _bids.toString());
@@ -167,4 +167,6 @@ public class VCGPayments implements PaymentRule
 	private int _numberOfAgents;
 	private Allocation _allocation;	
 	private IloCplex _cplexSolver;
+	
+	private double TOL=1e-6;
 }

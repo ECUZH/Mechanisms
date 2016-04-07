@@ -391,7 +391,11 @@ public class CorePayments implements PaymentRule
 						}
 					}
 			}
-			IloRange range = _cplexSolver.range(0, constraint, 1.0, "Item_"+i);
+			IloNumVar y = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "y_"+i);
+			IloNumExpr termY = _cplexSolver.prod( -1., y );
+			constraint = _cplexSolver.sum(constraint, termY);
+			IloRange range = _cplexSolver.eq(0, constraint,  "Item_"+i);
+			//IloRange range = _cplexSolver.range(0, constraint, 1.0, "Item_"+i);
 			lp.addRow(range);
 		}
 		
@@ -420,7 +424,12 @@ public class CorePayments implements PaymentRule
 				IloNumExpr termGammaS = _cplexSolver.prod(-1, gammaS);
 				constraintGamma = _cplexSolver.sum(constraintGamma, termGammaI);
 				constraintGamma = _cplexSolver.sum(constraintGamma, termGammaS);
-				IloRange range = _cplexSolver.ge(0., constraintGamma, "GammaS_"+i);
+				IloNumVar y = _cplexSolver.numVar(0, Double.MAX_VALUE, IloNumVarType.Int, "y_GammaS"+i);
+				IloNumExpr termY = _cplexSolver.prod( 1, y );
+				constraintGamma = _cplexSolver.sum(constraintGamma, termY);
+				IloRange range = _cplexSolver.eq(0., constraintGamma, "GammaS_"+i);
+				
+				//IloRange range = _cplexSolver.ge(0., constraintGamma, "GammaS_"+i);
 				lp.addRow(range);
 			}
 			else
