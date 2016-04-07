@@ -50,9 +50,7 @@ public class benchmarkDomainGeneratorCATSRegions {
 		//Create dummy types for all agents.
 		List<Type> types = new ArrayList<Type>();
 		IntStream.range(0, numberOfAgents).boxed().forEach( i -> types.add( new CombinatorialType( new AtomicBid(i+1, Arrays.asList(0), 0.) ) ) );
-			
-		double efficiency = 0.;
-		
+					
 		IDomainGenerator domainGenerator;
 		
 		for(int k = 0; k < numberOfSamples; ++k)						//For every sample
@@ -70,9 +68,8 @@ public class benchmarkDomainGeneratorCATSRegions {
 					if( isCATS )
 						domainGenerator = new DomainGeneratorCATS(numberOfGoods, numberOfAgents, "C:\\Users\\Dmitry\\Downloads\\files\\files\\files"+(k+1));
 					else
-						domainGenerator = new DomainGeneratorSpatial(numberOfGoods);
+						domainGenerator = new DomainGeneratorSpatial(numberOfGoods, problemSize.equals("small") ? 0.78 : 0.86);
 					
-					//System.out.println("i="+i);
 					Random generator = new Random(i);
 					generator.setSeed(System.nanoTime());
 							
@@ -131,22 +128,6 @@ public class benchmarkDomainGeneratorCATSRegions {
 							if(e.getMessage().equals("VCG is in the Core"))
 								vcgInCoreCounter += 1;
 						}
-						Allocation allocation = auction.getAllocation();
-						double[] payments = auction.getPayments();
-								
-						int numberOfAllocatedAgents = 0;
-						if(allocation.getNumberOfAllocatedAuctioneers() > 0)
-							numberOfAllocatedAgents = allocation.getBiddersInvolved(0).size();
-								
-						for(int q = 0; q < numberOfAllocatedAgents; ++q)
-						{
-							int allocatedBidderId = allocation.getBiddersInvolved(0).get(q);
-							int allocatedBundleIdx = allocation.getAllocatedBundlesOfTrade(0).get(q);
-							double value = bids.get(allocatedBidderId-1).getAtom(allocatedBundleIdx).getValue();
-		 
-							double realizedCost = bids.get(allocatedBidderId-1).getAtom(allocatedBundleIdx).computeCost(costs);
-							efficiency += value - realizedCost;
-						}
 					}
 					catch (Exception e) 
 					{
@@ -175,10 +156,6 @@ public class benchmarkDomainGeneratorCATSRegions {
 												break;
 					default 				:	throw new RuntimeException("No such benchmark exists: " + benchmarkName);
 				}
-				//System.out.println("Eff=" + efficiency);
-				//double effMean = efficiency / numberOfRuns;
-				//System.out.println(effMean);
-				
 			} 
 			catch (SpacialDomainGenerationException e1) 
 			{
