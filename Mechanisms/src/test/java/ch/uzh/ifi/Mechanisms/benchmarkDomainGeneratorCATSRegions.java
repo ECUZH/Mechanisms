@@ -34,9 +34,10 @@ public class benchmarkDomainGeneratorCATSRegions {
 		boolean isCATS = false;						//True if CATS regions should be tested, false if my impl. of regions to be tested
 		//    Test number:             0                   1                     2              3                     4                     5             
 		String[] benchmarks = { "VCG in the Core", "VCG to Value Ratio", "Revenue Ratio", "Number of Winners", "Av Size of Bundle", "Value of Bundle"};
-		String benchmarkName = benchmarks[0];
+		String benchmarkName = benchmarks[5];
 		
 		String problemSize = "big";// "small"
+		System.out.println("Test name: \"" + benchmarkName + "\" for problem size \"" + problemSize + "\"" + isCATS);
 		
 		int numberOfGoods = problemSize.equals("small") ? 9 : 16;
 		int numberOfAgents = problemSize.equals("small") ? 5 : 8;
@@ -68,7 +69,7 @@ public class benchmarkDomainGeneratorCATSRegions {
 					if( isCATS )
 						domainGenerator = new DomainGeneratorCATS(numberOfGoods, numberOfAgents, "C:\\Users\\Dmitry\\Downloads\\files\\files\\files"+(k+1));
 					else
-						domainGenerator = new DomainGeneratorSpatial(numberOfGoods, problemSize.equals("small") ? 0.78 : 0.86);
+						domainGenerator = new DomainGeneratorSpatial(numberOfGoods, problemSize.equals("small") ? 0.78 : 0.85);
 					
 					Random generator = new Random(i);
 					generator.setSeed(System.nanoTime());
