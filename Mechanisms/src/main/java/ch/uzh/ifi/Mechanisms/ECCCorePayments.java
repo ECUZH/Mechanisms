@@ -153,7 +153,7 @@ public class ECCCorePayments implements PaymentRule
 				_logger.warn("Costs" + _costs.toString());
 				for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
 					_logger.warn("Realization for bidder id=" + _allocation.getBiddersInvolved(0).get(j) + " is " + _allocation.getRealizedRV(0, j));
-				_logger.warn("EC-VCG: " + eccvcgPayments.toString());
+				_logger.warn("ECC-VCG: " + eccvcgPayments.toString());
 				_logger.warn("Blocking coalition: " + blockingCoalition.toString() + " with z="+z);
 				_logger.warn("Total payment: " + totalPayment);
 				throw new PaymentException("Empty Core",0);
@@ -225,7 +225,7 @@ public class ECCCorePayments implements PaymentRule
 							_logger.error("Bidder id=" + _allocation.getBiddersInvolved(0).get(j) + " got its " + _allocation.getAllocatedBundlesOfTrade(0).get(j));
 							_logger.error("Realization " + j + ": " + _allocation.getRealizedRV(0, j));
 						}
-						_logger.error("EC-VCG: " + eccvcgPayments.toString());
+						_logger.error("ECC-VCG: " + eccvcgPayments.toString());
 						_logger.error("Realized values: " + realizedValues.toString());
 						_logger.error("ALL RVs="+ _allocation.getRealizedRVsPerGood(0).toString());
 						_logger.error("Blocking coalition: " + blockingCoalition.toString() + " with z="+z);
@@ -348,7 +348,9 @@ public class ECCCorePayments implements PaymentRule
 			}
 			variables.add(varI);
 		}
-						
+		
+		double totalCost = 0.;
+		double totalPayment = computeTotalPayment(paymentsT);
 		for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
 		{
 			int agentId = _allocation.getBiddersInvolved(0).get(j);
@@ -362,15 +364,21 @@ public class ECCCorePayments implements PaymentRule
 			IloNumVar gamma = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "Gamma_" + j);
 			gammaVariables.add(gamma);
 			
-			IloNumExpr term1 = _cplexSolver.prod(-1*( (value-cost)*realizedAvailability ), gamma);
+			IloNumExpr term1 = _cplexSolver.prod(-1*( value*realizedAvailability - paymentsT.get(j) ), gamma);
 			objective = _cplexSolver.sum(objective, term1);
 			
-			IloNumExpr term2 = _cplexSolver.prod(-1., gamma);
-			term2 = _cplexSolver.sum(1, term2);
-			term2 = _cplexSolver.prod(cost * realizedAvailability - paymentsT.get(j), term2);
-			objective = _cplexSolver.sum(objective, term2);
-			_logger.debug("SEP: Adding terms " + term1.toString() + " and " + term2.toString() + " to the objective");
+			//IloNumExpr term2 = _cplexSolver.prod(-1., gamma);
+			//term2 = _cplexSolver.sum(1, term2);
+			//term2 = _cplexSolver.prod(cost * realizedAvailability - paymentsT.get(j), term2);
+			//objective = _cplexSolver.sum(objective, term2);
+			totalCost += cost * realizedAvailability;
+			_logger.debug("SEP: Adding terms " + term1.toString() + " to the objective");
 		}
+		IloNumVar gammaS = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "Gamma_S");
+		gammaVariables.add(gammaS);
+		IloNumExpr termS = _cplexSolver.prod(-1 * ( totalPayment - totalCost ), gammaS);
+		objective = _cplexSolver.sum(objective, termS);
+		_logger.debug("SEP: Adding terms " + termS.toString() + " to the objective");
 		
 		_cplexSolver.add(_cplexSolver.maximize(objective));
 		
@@ -400,6 +408,7 @@ public class ECCCorePayments implements PaymentRule
 		for(int i = 0; i < _numberOfBidders; ++i)
 		{
 			IloNumExpr constraint = _cplexSolver.constant(0);
+			IloNumExpr constraintGamma = _cplexSolver.constant(0);
 			double upperBound = 0.;
 			
 			boolean isWinner = false;
@@ -414,6 +423,19 @@ public class ECCCorePayments implements PaymentRule
 				upperBound = 0.;
 				IloNumExpr term = _cplexSolver.prod(-1, gammaVariables.get(itsIdx));
 				constraint = _cplexSolver.sum(constraint, term);
+				
+				//Constraint for Gamma_S:   GammaI <= GammaS
+				IloNumExpr termGammaI = _cplexSolver.prod(1, gammaVariables.get(itsIdx));
+				IloNumExpr termGammaS = _cplexSolver.prod(-1, gammaS);
+				constraintGamma = _cplexSolver.sum(constraintGamma, termGammaI);
+				constraintGamma = _cplexSolver.sum(constraintGamma, termGammaS);
+				IloNumVar y = _cplexSolver.numVar(0, Double.MAX_VALUE, IloNumVarType.Int, "y_GammaS"+i);
+				IloNumExpr termY = _cplexSolver.prod( 1, y );
+				constraintGamma = _cplexSolver.sum(constraintGamma, termY);
+				IloRange range = _cplexSolver.eq(0., constraintGamma, "GammaS_"+i);
+				
+				//IloRange range = _cplexSolver.ge(0., constraintGamma, "GammaS_"+i);
+				lp.addRow(range);
 			}
 			else
 				upperBound = 1.;
@@ -423,6 +445,16 @@ public class ECCCorePayments implements PaymentRule
 				constraint = _cplexSolver.sum(constraint, varI.get(q));
 			
 			IloRange range1 = _cplexSolver.ge(upperBound, constraint, "Bidder"+i+"_1");
+			
+			if( ! isWinner )
+			{
+				//Constraint for Gamma_S:   x_{i1} + x_{i2} + ... <= GammaS
+				IloNumExpr termGammaS = _cplexSolver.prod(-1, gammaS);
+				constraintGamma = _cplexSolver.sum(constraintGamma, constraint);
+				constraintGamma = _cplexSolver.sum(constraintGamma, termGammaS);
+				IloRange range = _cplexSolver.ge(0., constraintGamma, "GammaS_"+i);
+				lp.addRow(range);
+			}
 			
 			try 
 			{
@@ -465,6 +497,11 @@ public class ECCCorePayments implements PaymentRule
 		return obj;
 	}
 	
+	/**
+	 * The method computes total payments.
+	 * @param payments sum of payments in the specified list
+	 * @return
+	 */
 	private double computeTotalPayment(List<Double> payments)
 	{
 		return payments.stream().reduce( (x1, x2) -> x1 + x2).get();
@@ -486,10 +523,10 @@ public class ECCCorePayments implements PaymentRule
 	private List<Double> _costs;						//A list of costs of the goods
 	private AllocationEC _allocation;					//Resulting allocation of the auction 
 	private List<int[][]> _binaryBids;					//Bids converted into a binary matrix format
-	private List<Double> _payments;
+	private List<Double> _payments;						//A list of payments to be computed
 	private JointProbabilityMass _jpmf;					//Joint probability mass function for availabilities of goods
 	
-	private IloCplex _cplexSolver;
-	private boolean _isExternalSolver;
-	private final double _TOL = 1e-4;
+	private IloCplex _cplexSolver;						//CPLEX solver
+	private boolean _isExternalSolver;					//True if the instantiation of the class uses an external CPLEX solver and false otherwise
+	private final double _TOL = 1e-4;					//Tolerance level
 }
