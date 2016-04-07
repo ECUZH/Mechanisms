@@ -214,7 +214,7 @@ public class ECCCorePayments implements PaymentRule
 			{
 				if(e1.getMessage().contains("CPLEX Error  1217: No solution exists.") )
 				{
-					if(!(blockingCoalition.containsAll(_allocation.getBiddersInvolved(0)) && _allocation.getBiddersInvolved(0).containsAll(blockingCoalition)) )
+					if(!blockingCoalition.containsAll(_allocation.getBiddersInvolved(0)) && !_allocation.getBiddersInvolved(0).containsAll(blockingCoalition) )
 					{
 						_logger.error("z="+z+" totalPayment="+totalPayment + "; blocking coalition: " + blockingCoalition.toString());
 						_logger.error("LP: " + _cplexSolver.toString());
