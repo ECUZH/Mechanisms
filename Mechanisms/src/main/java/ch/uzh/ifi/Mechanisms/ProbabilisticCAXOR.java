@@ -527,8 +527,10 @@ public class ProbabilisticCAXOR implements Auction
 		_logger.debug("<- computeWinnerDeterminationLLG(...)");
 	}
 	
-	/*
+	/**
 	 * The method solves WDP for a general (non-LLG) setting
+	 * @param allocatedGoods a list of previously allocated goods if known (null if no allocation happened so far) 
+	 * @param realizedAvailabilities realizations of availabilities of allocated goods (null if no allocation happened so far)
 	 */
 	public void computeWinnerDeterminationGeneral(List<Integer> allocatedGoods, List<Double> realizedAvailabilities) throws IloException 
 	{
