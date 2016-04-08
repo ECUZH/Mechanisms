@@ -100,6 +100,7 @@ public class ECCCorePayments implements PaymentRule
 	public List<Double> computePayments() throws Exception 
 	{
 		_logger.debug("-> computePayments()");
+		long t1 = System.currentTimeMillis();
 		if( _cplexSolver == null )
 			try 
 			{
@@ -128,8 +129,11 @@ public class ECCCorePayments implements PaymentRule
 		List<Double> realizedValues = new ArrayList<Double>();
 		
 		List<Integer> blockingCoalition = new ArrayList<Integer>();
+		long tSEP1 = System.currentTimeMillis();
 		double z = computeSEP(eccvcgPayments, blockingCoalition);
 		double totalPayment = computeTotalPayment(eccvcgPayments);
+		long tSEP2 = System.currentTimeMillis();
+		//System.out.println(tSEP2-tSEP1);
 		_logger.debug("z="+z + ". Blocking coalition:" + blockingCoalition.toString() + ". Total payment=" + totalPayment);
 		
 		IloLPMatrix lp = _cplexSolver.addLPMatrix();
@@ -303,6 +307,8 @@ public class ECCCorePayments implements PaymentRule
 			throw new PaymentException("VCG is in the Core",0, _payments);
 		}
 		
+		long t2 = System.currentTimeMillis();
+		//System.out.println(t2-t1);
 		_logger.debug("<- computePayments()");
 		return _payments;
 	}
@@ -318,6 +324,7 @@ public class ECCCorePayments implements PaymentRule
 		_logger.debug("-> computeSEP(paymentsT="+paymentsT.toString()+", blockingCoalition="+ blockingCoalition.toString()+")");
 		_cplexSolver.clearModel();
 		
+		long tBuild1 = System.currentTimeMillis();
 		List<List<IloNumVar> > variables = new ArrayList<List<IloNumVar> >();// i-th element of the list contains the list of variables 
 																			  // corresponding to the i-th agent
 		List<IloNumVar> gammaVariables = new ArrayList<IloNumVar>();		  //Variables for winners of WDP willing to join a coalition 
@@ -367,10 +374,6 @@ public class ECCCorePayments implements PaymentRule
 			IloNumExpr term1 = _cplexSolver.prod(-1*( value*realizedAvailability - paymentsT.get(j) ), gamma);
 			objective = _cplexSolver.sum(objective, term1);
 			
-			//IloNumExpr term2 = _cplexSolver.prod(-1., gamma);
-			//term2 = _cplexSolver.sum(1, term2);
-			//term2 = _cplexSolver.prod(cost * realizedAvailability - paymentsT.get(j), term2);
-			//objective = _cplexSolver.sum(objective, term2);
 			totalCost += cost * realizedAvailability;
 			_logger.debug("SEP: Adding terms " + term1.toString() + " to the objective");
 		}
@@ -400,7 +403,11 @@ public class ECCCorePayments implements PaymentRule
 					}
 				}
 			}
-			IloRange range = _cplexSolver.range(0, constraint, 1.0, "Item_"+i);
+			IloNumVar y = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "y_"+i);
+			IloNumExpr termY = _cplexSolver.prod( -1., y );
+			constraint = _cplexSolver.sum(constraint, termY);
+			IloRange range = _cplexSolver.eq(0, constraint,  "Item_"+i);
+			//IloRange range = _cplexSolver.range(0, constraint, 1.0, "Item_"+i);
 			lp.addRow(range);
 		}
 		
@@ -470,13 +477,18 @@ public class ECCCorePayments implements PaymentRule
 				throw e;
 			}
 		}
+		long tBuild2 = System.currentTimeMillis();
+		//System.out.println(tBuild2-tBuild1);
 		
 		_logger.debug("SEP: " + _cplexSolver.toString());
 		
 		//Launch CPLEX to solve the problem:
 		try 
 		{
+			long tSolve1 = System.currentTimeMillis();
 			_cplexSolver.solve();
+			long tSolve2 = System.currentTimeMillis();
+			//System.out.println(tSolve2-tSolve1);
 		} 
 		catch (IloException e) 
 		{
@@ -504,7 +516,10 @@ public class ECCCorePayments implements PaymentRule
 	 */
 	private double computeTotalPayment(List<Double> payments)
 	{
-		return payments.stream().reduce( (x1, x2) -> x1 + x2).get();
+		double totalPayment = 0.;
+		for(Double p : payments)
+			totalPayment += p;
+		return totalPayment;
 	}
 	
 	/**
