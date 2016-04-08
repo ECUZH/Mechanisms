@@ -11,6 +11,9 @@ import ilog.cplex.IloCplex;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import ch.uzh.ifi.MechanismDesignPrimitives.AllocationEC;
 import ch.uzh.ifi.MechanismDesignPrimitives.JointProbabilityMass;
 import ch.uzh.ifi.MechanismDesignPrimitives.AtomicBid;
@@ -20,10 +23,17 @@ import ch.uzh.ifi.MechanismDesignPrimitives.Type;
 public class ECRCorePayments implements PaymentRule
 {
 
-	/*
+	private static final Logger _logger = LogManager.getLogger(ECRCorePayments.class);
+	
+	/**
 	 * Constructor.
 	 * @param allocation - an allocation of the auction
-	 * @param numberOfBuyers - the number of buyers participating in the auction
+	 * @param numberOfBuyers number of bidders
+	 * @param numberOfItems number of goods
+	 * @param bids bids of bidders
+	 * @param costs a list of costs per good
+	 * @param binaryBids bids of bidders in a binary format
+	 * @param jpmf join probability mass function
 	 */
 	public ECRCorePayments(AllocationEC allocation, int numberOfBuyers, int numberOfItems, List<Type> bids, 
 			              List<Double> costs, List<int[][]> binaryBids, JointProbabilityMass jpmf)
@@ -39,10 +49,16 @@ public class ECRCorePayments implements PaymentRule
 		_cplexSolver = null;		
 	}
 	
-	/*
+	/**
 	 * Constructor.
 	 * @param allocation - an allocation of the auction
-	 * @param numberOfBuyers - the number of buyers participating in the auction
+	 * @param numberOfBuyers number of bidders
+	 * @param numberOfItems number of goods
+	 * @param bids bids of bidders
+	 * @param costs a list of costs per good
+	 * @param binaryBids bids of bidders in a binary format
+	 * @param jpmf join probability mass function
+	 * @param solver CPLEX solver
 	 */
 	public ECRCorePayments(AllocationEC allocation, int numberOfBuyers, int numberOfItems, List<Type> bids, 
 			              List<Double> costs, List<int[][]> binaryBids, JointProbabilityMass jpmf, IloCplex solver)
@@ -60,17 +76,20 @@ public class ECRCorePayments implements PaymentRule
 		setSolver(solver);
 	}
 	
-	/*
+	/**
 	 * The method sets up the CPLEX solver.
 	 * @param solver - a CPLEX solver
 	 */
 	public void setSolver(IloCplex solver)
 	{
-		//if( solver == null) 	throw new RuntimeException("Solver was not initialized");
 		_cplexSolver = solver;
 		_isExternalSolver = true;
 	}
 	
+	/**
+	 * (non-Javadoc)
+	 * @see ch.uzh.ifi.Mechanisms.PaymentRule#computePayments()
+	 */
 	@Override
 	public List<Double> computePayments() throws Exception 
 	{
@@ -93,9 +112,9 @@ public class ECRCorePayments implements PaymentRule
 		}
 		
 		PaymentRule ecrvcgRule = new ECRVCGPayments(_allocation, _numberOfBuyers, _numberOfItems, _bids, _costs, _jpmf, _cplexSolver);
-		//_logger.debug("Compute EC-VCG payments: " + _bids.toString());
+		_logger.debug("Compute ECR-VCG payments: " + _bids.toString());
 		List<Double> ecrvcgPayments = ecrvcgRule.computePayments();
-		//_logger.debug("EC-VCG payments: " + ecvcgPayments.toString());
+		_logger.debug("ECR-VCG payments: " + ecrvcgPayments.toString());
 		_payments = ecrvcgPayments;
 		
 		List<Integer> blockingCoalition = new LinkedList<Integer>();
@@ -124,14 +143,14 @@ public class ECRCorePayments implements PaymentRule
 			
 			if( ecrvcgPayments.get(i) > realizedValue )
 			{
-				//_logger.debug("Empty Core. p_i^{EC-VCG}=" + ecvcgPayments.get(i)+" > " + expectedValue + "= E[v_i]. VCG:" + ecvcgPayments.toString());
-				//_logger.debug("Bids: " + _bids.toString());
-				//_logger.debug("Costs" + _costs.toString());
-				//for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
-				//	_logger.debug("Realization for bidder id=" + _allocation.getBiddersInvolved(0).get(j) + " is " + _allocation.getRealizedRV(0, j));
-				//_logger.debug("EC-VCG: " + ecvcgPayments.toString());
-				//_logger.debug("Blocking coalition: " + blockingCoalition.toString() + " with z="+z);
-				//_logger.debug("Total payment: " + totalPayment);
+				_logger.debug("Empty Core. p_i^{EC-VCG}=" + ecrvcgPayments.get(i)+" > " + realizedValue + "= \tilde{v}_i. VCG:" + ecrvcgPayments.toString());
+				_logger.debug("Bids: " + _bids.toString());
+				_logger.debug("Costs" + _costs.toString());
+				for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
+					_logger.debug("Realization for bidder id=" + _allocation.getBiddersInvolved(0).get(j) + " is " + _allocation.getRealizedRV(0, j));
+				_logger.debug("EC-VCG: " + ecrvcgPayments.toString());
+				_logger.debug("Blocking coalition: " + blockingCoalition.toString() + " with z="+z);
+				_logger.debug("Total payment: " + totalPayment);
 				throw new PaymentException("Empty Core",0);
 			}
 			IloNumVar x = _cplexSolver.numVar(ecrvcgPayments.get(i), realizedValue, IloNumVarType.Float, "pi_" + itsId);
@@ -217,16 +236,16 @@ public class ECRCorePayments implements PaymentRule
 				}
 				else
 				{
-					//_logger.debug("Bids: " + _bids.toString());
-					//_logger.debug("Costs" + _costs.toString());
-					//for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
-					//{
-					//	_logger.debug("Bidder id=" + _allocation.getBiddersInvolved(0).get(j) + " got its " + _allocation.getAllocatedBundlesByIndex(0).get(j));
-					//	_logger.debug("Realization " + j + ": " + _allocation.getRealizedRV(0, j));
-					//}
-					//_logger.debug("EC-VCG: " + ecvcgPayments.toString());
-					//_logger.debug("Blocking coalition: " + blockingCoalition.toString() + " with z="+z);
-					//_logger.debug("Total payment: " + totalPayment);
+					_logger.debug("Bids: " + _bids.toString());
+					_logger.debug("Costs" + _costs.toString());
+					for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
+					{
+						//_logger.debug("Bidder id=" + _allocation.getBiddersInvolved(0).get(j) + " got its " + _allocation.getAllocatedBundlesByIndex(0).get(j));
+						_logger.debug("Realization " + j + ": " + _allocation.getRealizedRV(0, j));
+					}
+					_logger.debug("EC-VCG: " + ecrvcgPayments.toString());
+					_logger.debug("Blocking coalition: " + blockingCoalition.toString() + " with z="+z);
+					_logger.debug("Total payment: " + totalPayment);
 					e1.printStackTrace();
 				}
 			}
@@ -257,13 +276,13 @@ public class ECRCorePayments implements PaymentRule
 				} 
 				catch (IloException e) 
 				{
-					//_logger.debug("Bids: " + _bids.toString());
-					//_logger.debug("Costs" + _costs.toString());
-					//for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
-					//	_logger.debug("Realization " + j + ": " + _allocation.getRealizedRV(0, j));
-					//_logger.debug("EC-VCG: " + ecvcgPayments.toString());
-					//_logger.debug("Blocking coalition: " + blockingCoalition.toString() + " with z="+z);
-					//_logger.debug("Total payment: " + totalPayment);
+					_logger.debug("Bids: " + _bids.toString());
+					_logger.debug("Costs" + _costs.toString());
+					for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
+						_logger.debug("Realization " + j + ": " + _allocation.getRealizedRV(0, j));
+					_logger.debug("EC-VCG: " + ecrvcgPayments.toString());
+					_logger.debug("Blocking coalition: " + blockingCoalition.toString() + " with z="+z);
+					_logger.debug("Total payment: " + totalPayment);
 					e.printStackTrace();
 				}
 			//_logger.debug("New payments: " + _payments.toString());
@@ -293,12 +312,15 @@ public class ECRCorePayments implements PaymentRule
 		return _payments;
 	}
 
-	/*
+	/**
+	 * The method solves separation problem
 	 * @param paymentsT - winners payments
 	 * @param blockingCoalition - a reference for the blocking coalition to be stored (IDs of agents within the coalition)
+	 * @return opportunity cost of the coalition with the highest coalitional value
 	 */
 	public double computeSEP(List<Double> paymentsT, List<Integer> blockingCoalition) throws IloException
 	{
+		_logger.debug("-> computeSEP(paymentsT="+paymentsT.toString()+", blockingCoalition="+ blockingCoalition.toString()+")");
 		_cplexSolver.clearModel();
 		
 		List<List<IloNumVar> > variables = new LinkedList<List<IloNumVar> >();// i-th element of the list contains the list of variables 
@@ -326,10 +348,13 @@ public class ECRCorePayments implements PaymentRule
 				varI.add(x);
 				IloNumExpr term = _cplexSolver.prod((value - cost) * expectedMarginalAvailability, x);
 				objective = _cplexSolver.sum(objective, term);
+				_logger.debug("SEP: Adding term " + term.toString() + " to the objective.");
 			}
 			variables.add(varI);
 		}
-						
+		
+		double totalCost = 0.;
+		double totalPayment = computeTotalPayment(paymentsT);
 		for(int j = 0; j < _allocation.getBiddersInvolved(0).size(); ++j)
 		{
 			int agentId = _allocation.getBiddersInvolved(0).get(j);
@@ -343,14 +368,17 @@ public class ECRCorePayments implements PaymentRule
 			IloNumVar gamma = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "Gamma_" + j);
 			gammaVariables.add(gamma);
 			
-			IloNumExpr term1 = _cplexSolver.prod(-1*( (value-cost)*realizedMarginalAvailability ), gamma);
+			IloNumExpr term1 = _cplexSolver.prod(-1*( (value*realizedMarginalAvailability - paymentsT.get(j)) ), gamma);
 			objective = _cplexSolver.sum(objective, term1);
 			
-			IloNumExpr term2 = _cplexSolver.prod(-1., gamma);
-			term2 = _cplexSolver.sum(1, term2);
-			term2 = _cplexSolver.prod((cost-paymentsT.get(j)) * realizedMarginalAvailability, term2);
-			objective = _cplexSolver.sum(objective, term2);
+			totalCost += cost * realizedMarginalAvailability;
+			_logger.debug("SEP: Adding terms " + term1.toString() + " to the objective");
 		}
+		IloNumVar gammaS = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "Gamma_S");
+		gammaVariables.add(gammaS);
+		IloNumExpr termS = _cplexSolver.prod(-1 * ( totalPayment - totalCost ), gammaS);
+		objective = _cplexSolver.sum(objective, termS);
+		_logger.debug("SEP: Adding terms " + termS.toString() + " to the objective");
 		
 		_cplexSolver.add(_cplexSolver.maximize(objective));
 		
@@ -372,7 +400,11 @@ public class ECRCorePayments implements PaymentRule
 					}
 				}
 			}
-			IloRange range = _cplexSolver.range(0, constraint, 1.0, "Item_"+i);
+			IloNumVar y = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "y_"+i);
+			IloNumExpr termY = _cplexSolver.prod( -1., y );
+			constraint = _cplexSolver.sum(constraint, termY);
+			IloRange range = _cplexSolver.eq(0, constraint,  "Item_"+i);
+			//IloRange range = _cplexSolver.range(0, constraint, 1.0, "Item_"+i);
 			lp.addRow(range);
 		}
 		
@@ -380,6 +412,7 @@ public class ECRCorePayments implements PaymentRule
 		for(int i = 0; i < _numberOfBuyers; ++i)
 		{
 			IloNumExpr constraint = _cplexSolver.constant(0);
+			IloNumExpr constraintGamma = _cplexSolver.constant(0);
 			double upperBound = 0.;
 			
 			boolean isWinner = false;
@@ -394,6 +427,18 @@ public class ECRCorePayments implements PaymentRule
 				upperBound = 0.;
 				IloNumExpr term = _cplexSolver.prod(-1, gammaVariables.get(itsIdx));
 				constraint = _cplexSolver.sum(constraint, term);
+				
+				//Constraint for Gamma_S:   GammaI <= GammaS
+				IloNumExpr termGammaI = _cplexSolver.prod(1, gammaVariables.get(itsIdx));
+				IloNumExpr termGammaS = _cplexSolver.prod(-1, gammaS);
+				constraintGamma = _cplexSolver.sum(constraintGamma, termGammaI);
+				constraintGamma = _cplexSolver.sum(constraintGamma, termGammaS);
+				IloNumVar y = _cplexSolver.numVar(0, Double.MAX_VALUE, IloNumVarType.Int, "y_GammaS"+i);
+				IloNumExpr termY = _cplexSolver.prod( 1, y );
+				constraintGamma = _cplexSolver.sum(constraintGamma, termY);
+				IloRange range = _cplexSolver.eq(0., constraintGamma, "GammaS_"+i);
+				
+				lp.addRow(range);
 			}
 			else
 				upperBound = 1.;
@@ -402,38 +447,31 @@ public class ECRCorePayments implements PaymentRule
 			for(int q = 0; q < varI.size(); ++q)
 				constraint = _cplexSolver.sum(constraint, varI.get(q));
 			
-			//IloRange range = _cplexSolver.range(0, constraint, upperBound, "Bidder"+i);
-			IloRange range1 = _cplexSolver.ge(upperBound, constraint, "Bidder"+i+"_1");//(0, constraint, upperBound, "Bidder"+i);
-			//IloRange range2 = _cplexSolver.le(0, constraint, "Bidder"+i+"_2");
+			IloRange range1 = _cplexSolver.ge(upperBound, constraint, "Bidder"+i+"_1");
+			
+			if( ! isWinner )
+			{
+				//Constraint for Gamma_S:   x_{i1} + x_{i2} + ... <= GammaS
+				IloNumExpr termGammaS = _cplexSolver.prod(-1, gammaS);
+				constraintGamma = _cplexSolver.sum(constraintGamma, constraint);
+				constraintGamma = _cplexSolver.sum(constraintGamma, termGammaS);
+				IloRange range = _cplexSolver.ge(0., constraintGamma, "GammaS_"+i);
+				lp.addRow(range);
+			}
 			
 			try 
 			{
-				//lp.addRow(range);
 				lp.addRow(range1);
 			} 
 			catch (IloException e) 
 			{
-				System.err.println("Cannot add the following constraint: ");
-				System.err.println("" + range1.toString());
-				System.err.println("LP matrix: ");
-				System.err.println(lp.toString());
-				System.err.println("Bids: " + _bids.toString());
+				_logger.error("Cannot add the following constraint: ");
+				_logger.error("" + range1.toString());
+				_logger.error("LP matrix: ");
+				_logger.error(lp.toString());
+				_logger.error("Bids: " + _bids.toString());
 				throw e;
 			}
-			/*try 
-			{
-				//lp.addRow(range);
-				lp.addRow(range2);
-			} 
-			catch (IloException e) 
-			{
-				System.err.println("Cannot add the following constraint: ");
-				System.err.println("" + range2.toString());
-				System.err.println("LP matrix: ");
-				System.err.println(lp.toString());
-				System.err.println("Bids: " + _bids.toString());
-				throw e;
-			}*/
 		}
 		
 		//_logger.debug("SEP: " + _cplexSolver.toString());
@@ -446,7 +484,7 @@ public class ECRCorePayments implements PaymentRule
 		} 
 		catch (IloException e) 
 		{
-			System.out.println(_bids.toString());
+			_logger.error(_bids.toString());
 			e.printStackTrace();
 		}
 
@@ -455,24 +493,12 @@ public class ECRCorePayments implements PaymentRule
 				if(Math.abs(_cplexSolver.getValue(variables.get(i).get(j)) - 1.0) < 1e-6)
 					blockingCoalition.add( _bids.get(i).getAgentId() );
 		
-		//_logger.debug("Blocking coalition: " + blockingCoalition.toString() + ". Coalitional value is " + _cplexSolver.getObjValue() );
+		_logger.debug("Blocking coalition: " + blockingCoalition.toString() + ". Coalitional value is " + _cplexSolver.getObjValue() );
 		double obj = _cplexSolver.getObjValue();
 		_cplexSolver.clearModel();
-		return obj;
-	}
-
-	/*
-	 * The method returns an index of the specified agent Id in the list of all submitted bids.
-	 * @param agentId - an ID of an agent for which an index is required.
-	 * @throws an exception if there're no bids of the specified agent
-	 */
-	private int getIndexOfAllocatedAgent(int agentId)
-	{
-		for(int j  = 0; j < _numberOfBuyers; ++j)
-			if( _bids.get(j).getAgentId() == agentId )
-				return j;
 		
-		throw new RuntimeException("No agent with id " + agentId + " found in the list of submitted bids: " + _bids.toString());
+		_logger.debug("<- computeSEP(...)");
+		return obj;
 	}
 	
 	private double computeTotalPayment(List<Double> payments)
@@ -483,9 +509,9 @@ public class ECRCorePayments implements PaymentRule
 		return total;
 	}
 	
-	/*
+	/**
 	 * (non-Javadoc)
-	 * @see Mechanisms.PaymentRule#isBudgetBalanced()
+	 * @see ch.uzh.ifi.Mechanisms.PaymentRule#isBudgetBalanced()
 	 */
 	@Override
 	public boolean isBudgetBalanced() 
@@ -497,13 +523,12 @@ public class ECRCorePayments implements PaymentRule
 	private int _numberOfItems;							//The number of goods in the auction
 	private List<Type> _bids;							//A list of bids submitted by agents
 	private List<Double> _costs;						//A list of costs of the goods
-	private AllocationEC _allocation;						//Resulting allocation of the auction 
+	private AllocationEC _allocation;					//Resulting allocation of the auction 
 	private List<int[][]> _binaryBids;					//Bids converted into a binary matrix format
-	private List<Double> _payments;
+	private List<Double> _payments;						//Payments to be computed
 	private JointProbabilityMass _jpmf;					//Joint probability mass function for availabilities of goods
 	
-	private IloCplex _cplexSolver;
-	private boolean _isExternalSolver;
-	private final double TOL = 1e-4;
-	}
-
+	private IloCplex _cplexSolver;						//CPLEX solver
+	private boolean _isExternalSolver;					//True if an external solver should be used; false otherwise
+	private final double TOL = 1e-4;					//Tolerance level
+}
