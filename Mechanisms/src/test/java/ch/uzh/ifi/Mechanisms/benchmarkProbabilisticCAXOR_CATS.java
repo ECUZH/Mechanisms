@@ -51,7 +51,7 @@ public class benchmarkProbabilisticCAXOR_CATS
 		double[] shadeECCHB= {																			   };  //ECC with high variance and big problem size (16 goods, 8 bidders)
 
 		//Shading factors for ECR-CORE:
-		double[] shadeECRLS= {																			   };  //ECR with low variance and small problem size (9 goods, 5 bidders)
+		double[] shadeECRLS= {  0.,      0.,     0.,     0.,     0.,     0.,     0.,     0.,   0.99,     0.};  //ECR with low variance and small problem size (9 goods, 5 bidders)
 		double[] shadeECRHS= {																			   };  //ECR with high variance and small problem size (9 goods, 5 bidders)
 		double[] shadeECRLB= {																			   };  //ECR with low variance and big problem size (16 goods, 8 bidders)
 		double[] shadeECRHB= {																			   };  //ECR with high variance and big problem size (16 goods, 8 bidders)
@@ -68,7 +68,7 @@ public class benchmarkProbabilisticCAXOR_CATS
 		int numberOfGoods = problemSize.equals("small") ? 9 : 16;
 		int numberOfAgents= problemSize.equals("small") ? 5 : 8;
 		int numberOfSampleGames = 1000;
-		int numberOfRuns = 1;
+		int numberOfRuns = 100000;
 		double primaryReductionCoef = isLowVariance ? 0.3 : 0.6;
 		double secondaryReductionCoef = isLowVariance ? 0.2 : 0.1;
 		
