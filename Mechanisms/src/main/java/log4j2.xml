@@ -18,6 +18,9 @@
     <Logger name="ch.uzh.ifi.DomainGenerators.SpatialDomainGenerator" level="ERROR" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
+    <Logger name="ch.uzh.ifi.DomainGenerators.DomainGeneratorCATS" level="ERROR" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
     <Logger name="ch.uzh.ifi.Mechanisms.CAXOR" level="ERROR" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
@@ -40,6 +43,12 @@
       <AppenderRef ref="Console"/>
     </Logger>
     <Logger name="ch.uzh.ifi.Mechanisms.CorePayments" level="ERROR" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
+    <Logger name="ch.uzh.ifi.Mechanisms.benchmarkProbabilisticCAXOR_CATS" level="ERROR" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
+    <Logger name="ch.uzh.ifi.Mechanisms.benchmarkDomainGeneratorCATSRegions" level="ERROR" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
     <Root level="debug">
