@@ -2,6 +2,7 @@ package ch.uzh.ifi.Mechanisms;
 
 import ilog.cplex.IloCplex;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -60,7 +61,7 @@ public class CAXORFactory implements IMechanismFactory
 	@Override
 	public Auction produceMechanism(List<Type> bids, long seed) 
 	{
-		List<Double> costs = new LinkedList<>();
+		List<Double> costs = new ArrayList<>();
 		
 		Random generator = new Random();
 		generator.setSeed(seed);
@@ -72,6 +73,7 @@ public class CAXORFactory implements IMechanismFactory
 		
 		CAXOR ca = new CAXOR(bids.size(), _numberOfItems, bids, costs);
 		ca.setPaymentRule(_paymentRule);
+		ca.setSolver(_cplexSolver);
 		//ca.setSeed(seed);
 		return ca;
 	}
