@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import ch.uzh.ifi.DomainGenerators.DomainGeneratorCATS;
 import ch.uzh.ifi.DomainGenerators.DomainGeneratorSpatial;
 import ch.uzh.ifi.DomainGenerators.SpacialDomainGenerationException;
@@ -24,8 +27,11 @@ import ch.uzh.ifi.MechanismDesignPrimitives.Type;
  * @author Dmitry Moor
  *
  */
-public class benchmarkDomainGeneratorCATSRegions {
+public class benchmarkDomainGeneratorCATSRegions 
+{
 
+	private static final Logger _logger = LogManager.getLogger(benchmarkDomainGeneratorCATSRegions.class);
+	
 	/**
 	 * Entry point
 	 */
@@ -44,7 +50,7 @@ public class benchmarkDomainGeneratorCATSRegions {
 		
 		int numberOfSamples = 100;
 		int numberOfGamesPerSample = 100;
-		String paymentRule = "CORE"; 
+		String paymentRule = "CORE";
 		double costsMax = 1e-6;
 		IloCplex cplexSolver = new IloCplex();
 		
