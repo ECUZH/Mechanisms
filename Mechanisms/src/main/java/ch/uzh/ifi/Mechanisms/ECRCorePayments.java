@@ -8,6 +8,7 @@ import ilog.concert.IloNumVarType;
 import ilog.concert.IloRange;
 import ilog.cplex.IloCplex;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -17,9 +18,13 @@ import org.apache.logging.log4j.Logger;
 import ch.uzh.ifi.MechanismDesignPrimitives.AllocationEC;
 import ch.uzh.ifi.MechanismDesignPrimitives.JointProbabilityMass;
 import ch.uzh.ifi.MechanismDesignPrimitives.AtomicBid;
-import ch.uzh.ifi.MechanismDesignPrimitives.Allocation;
 import ch.uzh.ifi.MechanismDesignPrimitives.Type;
 
+/**
+ * The class implements functionality to compute execution contingent core-selecting payments based on an assumption
+ * that availabilities of all goods are known. 
+ * @author Dmitry Moor
+ */
 public class ECRCorePayments implements PaymentRule
 {
 
@@ -93,6 +98,7 @@ public class ECRCorePayments implements PaymentRule
 	@Override
 	public List<Double> computePayments() throws Exception 
 	{
+		_logger.debug("-> computePayments()");
 		if( _cplexSolver == null )
 			try 
 			{
@@ -107,26 +113,20 @@ public class ECRCorePayments implements PaymentRule
 		
 		if( _allocation.getNumberOfAllocatedAuctioneers() <= 0 ) 
 		{
-			_payments = new LinkedList<Double>();
+			_payments = new ArrayList<Double>();
 			throw new Exception("No agents were allocated, return an empty list.");
 		}
 		
-		PaymentRule ecrvcgRule = new ECRVCGPayments(_allocation, _numberOfBuyers, _numberOfItems, _bids, _costs, _jpmf, _cplexSolver);
 		_logger.debug("Compute ECR-VCG payments: " + _bids.toString());
+		PaymentRule ecrvcgRule = new ECRVCGPayments(_allocation, _numberOfBuyers, _numberOfItems, _bids, _costs, _jpmf, _cplexSolver);
 		List<Double> ecrvcgPayments = ecrvcgRule.computePayments();
-		_logger.debug("ECR-VCG payments: " + ecrvcgPayments.toString());
 		_payments = ecrvcgPayments;
+		_logger.debug("ECR-VCG payments: " + ecrvcgPayments.toString());
 		
-		List<Integer> blockingCoalition = new LinkedList<Integer>();
+		List<Integer> blockingCoalition = new ArrayList<Integer>();
 		double z = computeSEP(ecrvcgPayments, blockingCoalition);
 		double totalPayment = computeTotalPayment(ecrvcgPayments);
-		double totalCost = 0;
 
-		//System.out.println("z="+z + ". Blocking coalition:" + blockingCoalition.toString() + ". Total payment=" + totalPayment);
-		//_cplexSolver.setWarning(null);
-		//_cplexSolverLP.setParam(IloCplex.Param.Barrier.StartAlg, 3);
-		//_cplexSolverLP.setParam(IloCplex.Param.Barrier.ConvergeTol, 1e-12);
-		
 		IloLPMatrix lp = _cplexSolver.addLPMatrix();
 		IloNumVar[] pi = new IloNumVar[_allocation.getBiddersInvolved(0).size() ];
 		IloNumExpr objectiveLP = _cplexSolver.constant(1e-12);
@@ -139,7 +139,6 @@ public class ECRCorePayments implements PaymentRule
 			int itsAllocatedBundleIdx = _allocation.getAllocatedBundlesOfTrade(0).get(i);
 			AtomicBid itsAllocatedBundle = _bids.get( itsId - 1).getAtom( itsAllocatedBundleIdx );
 			double realizedValue = itsAllocatedBundle.getValue() * _allocation.getRealizedRV(0, i);
-			totalCost += itsAllocatedBundle.computeCost(_costs)  * _allocation.getRealizedRV(0, i/*itsId - 1*/);
 			
 			if( ecrvcgPayments.get(i) > realizedValue )
 			{
@@ -165,44 +164,29 @@ public class ECRCorePayments implements PaymentRule
 				
 		int constraintIdBPO = 0;
 		
-		while( z > totalPayment + TOL )
+		while( z >  TOL )
 		{
-			//_logger.debug("z="+z+" totalPayment="+totalPayment+" titalCost=" + totalCost );
-			//Create optimization constraints
-			double cnst = 0.;
-			for(int i = 0; i < _allocation.getBiddersInvolved(0).size(); ++i)
-				for(int j  = 0; j < blockingCoalition.size(); ++j)
-				{
-					int allocatedAgent = _allocation.getBiddersInvolved(0).get(i);
-					if( allocatedAgent == blockingCoalition.get(j) )
-					{
-						cnst += _payments.get(i);
-						break;
-					}
-				}
+			_logger.debug("z="+z+" totalPayment="+totalPayment );
 			
+			//Create optimization constraints
 			IloNumExpr constraint = _cplexSolver.constant(0);
-
+			double subTotalPayment = 0.;
 			for(int i = 0; i < _allocation.getBiddersInvolved(0).size(); ++i)
 			{
-				boolean isBlocking = false;
-				for(int j = 0; j < blockingCoalition.size(); ++j)
+				int allocatedAgentId = _allocation.getBiddersInvolved(0).get(i);
+				if( ! blockingCoalition.contains( allocatedAgentId ) )
 				{
-					int allocatedAgent = _allocation.getBiddersInvolved(0).get(i);
-					if( allocatedAgent == blockingCoalition.get(j) )
-					{
-						isBlocking = true;
-						break;
-					}
-				}
-				if( ! isBlocking)
 					constraint = _cplexSolver.sum(constraint, pi[i]);
+					subTotalPayment += _payments.get(i);
+				}
 			}
 			
-			IloRange range = _cplexSolver.range(z, constraint, Double.MAX_VALUE, "c"+constraintIdBPO);
-			lp.addRow(range);
+			lp.addRow( _cplexSolver.le(z+subTotalPayment, constraint, "c"+constraintIdBPO));
 			constraintIdBPO += 1;
 			
+			//---------------------------------------------
+			//Linear Programming Problem:
+			//---------------------------------------------
 			try 
 			{
 				_cplexSolver.solve();
@@ -368,7 +352,7 @@ public class ECRCorePayments implements PaymentRule
 			IloNumVar gamma = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "Gamma_" + j);
 			gammaVariables.add(gamma);
 			
-			IloNumExpr term1 = _cplexSolver.prod(-1*( (value*realizedMarginalAvailability - paymentsT.get(j)) ), gamma);
+			IloNumExpr term1 = _cplexSolver.prod(-1*( value*realizedMarginalAvailability - paymentsT.get(j) ), gamma);
 			objective = _cplexSolver.sum(objective, term1);
 			
 			totalCost += cost * realizedMarginalAvailability;
