@@ -1,5 +1,7 @@
 package ch.uzh.ifi.Mechanisms;
 
+import ilog.cplex.IloCplex;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -209,6 +211,16 @@ public class AllocationNonDiscriminatingBiddersLLG implements IAllocationRule
 		return _allocation;
 	}
 
+	/**
+	 * (non-Javadoc)
+	 * @see ch.uzh.ifi.Mechanisms.IAllocationRule#setSolver(ilog.cplex.IloCplex)
+	 */
+	@Override
+	public void setSolver(IloCplex solver) 
+	{
+		_logger.error("No CPLEX solver required for solving LLG domain.");	
+	}
+	
 	/**
 	 * The method computes the expected availability of a bundle by a buyer given the exogenous joint probability density function.
 	 * @param atom - an atomic bid for the bundle

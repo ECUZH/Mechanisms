@@ -1,5 +1,8 @@
 package ch.uzh.ifi.Mechanisms;
 
+import ilog.concert.IloException;
+import ilog.cplex.IloCplex;
+
 import java.util.List;
 
 import ch.uzh.ifi.MechanismDesignPrimitives.Allocation;
@@ -16,11 +19,17 @@ public interface IAllocationRule
 	 * @param allocatedGoods goods that were already allocated (used to compute an alternative allocation given the current one)
 	 * @param realizedAvailabilities realized availabilities of the goods which were already allocated
 	 */
-	public void computeAllocation(List<Integer> allocatedGoods, List<Double> realizedAvailabilities);
+	public void computeAllocation(List<Integer> allocatedGoods, List<Double> realizedAvailabilities) throws IloException;
 	
 	/**
 	 * The method returns an allocation of an auction.
 	 * @return an allocation object
 	 */
 	public Allocation getAllocation();
+	
+	/**
+	 * Set CPLEX solver.
+	 * @param solver CPLEX solver
+	 */
+	public void setSolver(IloCplex solver);
 }
