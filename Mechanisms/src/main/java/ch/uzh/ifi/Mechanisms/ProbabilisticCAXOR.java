@@ -364,7 +364,7 @@ public class ProbabilisticCAXOR implements Auction
 	public void computeWinnerDeterminationLLG(List<Integer> allocatedGoods, List<Double> realizedAvailabilities)
 	{
 		_logger.debug("-> computeWinnerDeterminationLLG(allocatedGoods="+(allocatedGoods != null ? allocatedGoods.toString():"")+", " +( realizedAvailabilities!= null ? realizedAvailabilities.toString():"") +")");
-		IAllocationRule allocationRule = new AllocationNonDiscriminatingBiddersLLG(_bids, _costs, _jpmf);
+		IAllocationRule allocationRule = new AllocationRuleNonDiscriminatingBiddersLLG(_bids, _costs, _jpmf);
 		try 
 		{
 			allocationRule.computeAllocation(allocatedGoods, realizedAvailabilities);
@@ -386,7 +386,7 @@ public class ProbabilisticCAXOR implements Auction
 	public void computeWinnerDeterminationGeneral(List<Integer> allocatedGoods, List<Double> realizedAvailabilities) throws IloException 
 	{
 		_logger.debug("-> computeWinnerDeterminationGeneral(allocatedGoods="+ (allocatedGoods!=null?allocatedGoods.toString():"") + ", realizedAvailabilities="+ (realizedAvailabilities!=null?realizedAvailabilities.toString():"") + ")");
-		IAllocationRule allocationRule = new AllocationNonDiscriminatingBidders(_bids, _costs, _jpmf, _numberOfItems, _binaryBids);
+		IAllocationRule allocationRule = new AllocationRuleNonDiscriminatingBidders(_bids, _costs, _jpmf, _numberOfItems, _binaryBids);
 		allocationRule.setSolver(_cplexSolver);
 		allocationRule.computeAllocation(allocatedGoods, realizedAvailabilities);
 		_allocation = (AllocationEC)allocationRule.getAllocation();
