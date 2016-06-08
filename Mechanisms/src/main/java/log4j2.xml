@@ -18,6 +18,9 @@
     <Logger name="ch.uzh.ifi.DomainGenerators.SpatialDomainGenerator" level="ERROR" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
+    <Logger name="ch.uzh.ifi.DomainGenerators.DomainGeneratorSpatialUncertain" level="ERROR" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
     <Logger name="ch.uzh.ifi.DomainGenerators.DomainGeneratorCATS" level="ERROR" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
@@ -40,6 +43,12 @@
       <AppenderRef ref="Console"/>
     </Logger>
     <Logger name="ch.uzh.ifi.Mechanisms.VCGPayments" level="ERROR" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
+    <Logger name="ch.uzh.ifi.Mechanisms.AllocationNonDiscriminatingBidders" level="ERROR" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
+    <Logger name="ch.uzh.ifi.Mechanisms.AllocationNonDiscriminatingBiddersLLG" level="ERROR" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
     <Logger name="ch.uzh.ifi.Mechanisms.CorePayments" level="ERROR" additivity="false">
