@@ -9,6 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ch.uzh.ifi.MechanismDesignPrimitives.Allocation;
+import ch.uzh.ifi.MechanismDesignPrimitives.AllocationEC;
 import ch.uzh.ifi.MechanismDesignPrimitives.AtomicBid;
 import ch.uzh.ifi.MechanismDesignPrimitives.JointProbabilityMass;
 import ch.uzh.ifi.MechanismDesignPrimitives.Type;
@@ -35,8 +36,15 @@ public abstract class AllocationRuleProbabilistic implements IAllocationRule
 	public abstract void computeAllocation(List<Integer> allocatedGoods,
 			List<Double> realizedAvailabilities) throws IloException;
 
+	/**
+	 * (non-Javadoc)
+	 * @see ch.uzh.ifi.Mechanisms.IAllocationRule#getAllocation()
+	 */
 	@Override
-	abstract public Allocation getAllocation();
+	public Allocation getAllocation()
+	{
+		return _allocation;
+	}
 
 	@Override
 	abstract public void setSolver(IloCplex solver);
@@ -109,4 +117,5 @@ public abstract class AllocationRuleProbabilistic implements IAllocationRule
 	protected List<Type> _bids;						//Types of bidders
 	protected List<Double> _costs;					//Per-good costs
 	protected JointProbabilityMass _jpmf;			//Joint probability mass function
+	protected AllocationEC _allocation;				//An allocation object
 }

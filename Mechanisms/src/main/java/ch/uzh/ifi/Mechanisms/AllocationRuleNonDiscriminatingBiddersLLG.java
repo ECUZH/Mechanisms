@@ -201,16 +201,6 @@ public class AllocationRuleNonDiscriminatingBiddersLLG extends AllocationRulePro
 
 	/**
 	 * (non-Javadoc)
-	 * @see ch.uzh.ifi.Mechanisms.IAllocationRule#getAllocation()
-	 */
-	@Override
-	public Allocation getAllocation() 
-	{
-		return _allocation;
-	}
-
-	/**
-	 * (non-Javadoc)
 	 * @see ch.uzh.ifi.Mechanisms.IAllocationRule#setSolver(ilog.cplex.IloCplex)
 	 */
 	@Override
@@ -218,6 +208,4 @@ public class AllocationRuleNonDiscriminatingBiddersLLG extends AllocationRulePro
 	{
 		_logger.error("No CPLEX solver required for solving LLG domain.");	
 	}
-	
-	private AllocationEC _allocation;				//An allocation object
 }

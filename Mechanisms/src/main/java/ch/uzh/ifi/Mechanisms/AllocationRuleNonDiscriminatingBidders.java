@@ -181,21 +181,8 @@ public class AllocationRuleNonDiscriminatingBidders extends AllocationRuleProbab
 		_logger.debug("<- computeAllocation(...)");
 	}
 
-	/**
-	 * (non-Javadoc)
-	 * @see ch.uzh.ifi.Mechanisms.IAllocationRule#getAllocation()
-	 */
-	@Override
-	public Allocation getAllocation() 
-	{
-		return _allocation;
-	}
-
 	private int _numberOfBidders;					//Number of bidders
 	private int _numberOfGoods;						//Number of goods
-	private List<int[][]> _binaryBids;				//Bids converted into a binary matrix format
-
-	private AllocationEC _allocation;				//An allocation object
-	
+	private List<int[][]> _binaryBids;				//Bids converted into a binary matrix format	
 	private IloCplex _cplexSolver;					//CPLEX solver
 }
