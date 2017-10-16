@@ -22,7 +22,8 @@ import ch.uzh.ifi.GraphAlgorithms.Graph;
 public class testCAXOR {
 
 	/**
-	 * The test creates a setup with two agents and four items.
+	 * The test creates a setup with two bidders (buyers in a forward auction) and four items.
+	 * Bidders have values for the items and the auctioneer has costs of producing these items.
 	 * Check allocation
 	 * Check VCG payments
 	 * @throws Exception
@@ -37,23 +38,29 @@ public class testCAXOR {
 			costs.add(0.);
 				
 		//Create bid 1:
-		List<Integer> items1 = Arrays.asList(1);
-		List<Integer> items2 = Arrays.asList(2);
-		List<Integer> items3 = Arrays.asList(3, 4);
+		List<Integer> bundle11 = Arrays.asList(1);
+		List<Integer> bundle12 = Arrays.asList(2);
+		List<Integer> bundle13 = Arrays.asList(3, 4);
 		
-		AtomicBid atom1 = new AtomicBid(1, items1, 20);
-		AtomicBid atom2 = new AtomicBid(1, items2, 20);
-		AtomicBid atom3 = new AtomicBid(1, items3, 10);
+		double value1 = 20;
+		double value2 = 20;
+		double value3 = 10;
+		AtomicBid atom1 = new AtomicBid(1, bundle11, value1);
+		AtomicBid atom2 = new AtomicBid(1, bundle12, value2);
+		AtomicBid atom3 = new AtomicBid(1, bundle13, value3);
 		Type bid1 = new CombinatorialType(atom1, atom2, atom3);
 		
 		//Create bid 2:
-		List<Integer> items21 = Arrays.asList(1, 2);
-		List<Integer> items22 = Arrays.asList(3);
+		List<Integer> bundle21 = Arrays.asList(1, 2);
+		List<Integer> bundle22 = Arrays.asList(3);
 		
-		AtomicBid atom21 = new AtomicBid(2, items21, 35);
-		AtomicBid atom22 = new AtomicBid(2, items22, 10);
+		double value21 = 35;
+		double value22 = 10;
+		AtomicBid atom21 = new AtomicBid(2, bundle21, value21);
+		AtomicBid atom22 = new AtomicBid(2, bundle22, value22);
 		Type bid2 = new CombinatorialType(atom21, atom22);
 		
+		//Collect all bids and pass them to the auction 
 		List<Type> bids = Arrays.asList(bid1, bid2);
 		
 		CAXOR ca = new CAXOR(numberOfAgents, numberOfItems, bids, costs);
