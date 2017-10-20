@@ -437,8 +437,8 @@ public class CAXOR implements Auction
 				_logger.debug("Allocated bidders: " + allocatedBidders);
 				_logger.debug("Allocated bundles: " + allocatedBundles);
 				_allocation.addAllocatedAgent(0, allocatedBidders, allocatedBundles, sellerCost, buyersValues);
-			} 
-			catch (Exception e) 
+			}
+			catch (Exception e)
 			{
 				e.printStackTrace();
 			}
@@ -494,7 +494,7 @@ public class CAXOR implements Auction
 		for(int i = 0; i < _numberOfItems; ++i)
 			units.add(1);
 		
-		PaymentRule paymentRule = new VCGPayments(_allocation, _bids, units, _numberOfItems, _costs);
+		IPaymentRule paymentRule = new VCGPayments(_allocation, _bids, units, _numberOfItems, _costs);
 		try 
 		{
 			_payments = paymentRule.computePayments();
@@ -516,7 +516,7 @@ public class CAXOR implements Auction
 		for(int i = 0; i < _numberOfItems; ++i)
 			units.add(1);
 		
-		PaymentRule paymentRule = new CoreNearestVCG2(_allocation, _bids, units, _numberOfItems, _costs);
+		IPaymentRule paymentRule = new CoreNearestVCG2(_allocation, _bids, units, _numberOfItems, _costs);
 		try 
 		{
 			_payments = paymentRule.computePayments();
@@ -538,7 +538,7 @@ public class CAXOR implements Auction
 		for(int i = 0; i < _numberOfItems; ++i)
 			units.add(1);
 		
-		PaymentRule paymentRule = new CoreNearestShapleyProj(_allocation, _bids, units, _numberOfItems, _costs);
+		IPaymentRule paymentRule = new CoreNearestShapleyProj(_allocation, _bids, units, _numberOfItems, _costs);
 		try 
 		{
 			_payments = paymentRule.computePayments();
@@ -707,7 +707,7 @@ public class CAXOR implements Auction
 	}
 	
 	private String _paymentRule;
-	private PaymentRule _paymentRuleObj;
+	private IPaymentRule _paymentRuleObj;
 	
 	private int _numberOfAgents;									//The number of bidders in the CA
 	private int _numberOfItems;										//The number of different items to be sold
