@@ -17,7 +17,7 @@ public class testSurplusOptimalReverseAuction {
 
 	
 	@Test
-	public void testIID() 
+	public void testIIDReservePrice() 
 	{
 		int dbID1 = 1;
 		int sellerId1 = 1;
@@ -35,7 +35,7 @@ public class testSurplusOptimalReverseAuction {
 
 		List<Type> bids = Arrays.asList(seller1, seller2);
 		
-		double auctioneerValue = 3.;
+		double auctioneerValue = 3.2;
 		SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(bids.size(), bids, auctioneerValue);
 		auction.computeWinnerDetermination();
 		Allocation allocation = auction.getAllocation();
@@ -43,8 +43,36 @@ public class testSurplusOptimalReverseAuction {
 		assertTrue( allocation.getBiddersInvolved(0).size() == 1);
 		assertTrue( allocation.getBiddersInvolved(0).get(0) == 1);
 		assertTrue( auction.computePayments().size() == 1 );
-		assertTrue( (auction.computePayments().get(0) - 1.5) < 1e-6);		// payment = reserve price
-		
+		assertTrue( (auction.computePayments().get(0) - 1.6) < 1e-6);		// payment = reserve price
 	}
 
+	@Test
+	public void testIIDSecondPrice() 
+	{
+		int dbID1 = 1;
+		int sellerId1 = 1;
+		double sellerCost1 = 1.0;
+		List<Integer> bundle1 = Arrays.asList(dbID1);
+		AtomicBid atom1 = new AtomicBid(sellerId1, bundle1, sellerCost1);
+		SellerType seller1 = new SellerType(atom1, Distribution.UNIFORM, 1., 1./3.);
+		
+		int sellerId2 = 2;
+		double sellerCost2 = 1.5;
+		List<Integer> bundle2 = Arrays.asList(dbID1);
+		AtomicBid atom2 = new AtomicBid(sellerId2, bundle2, sellerCost2);
+		
+		SellerType seller2 = new SellerType(atom2, Distribution.UNIFORM, 1., 1./3.);
+
+		List<Type> bids = Arrays.asList(seller1, seller2);
+		
+		double auctioneerValue = 10.;
+		SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(bids.size(), bids, auctioneerValue);
+		auction.computeWinnerDetermination();
+		Allocation allocation = auction.getAllocation();
+		
+		assertTrue( allocation.getBiddersInvolved(0).size() == 1);
+		assertTrue( allocation.getBiddersInvolved(0).get(0) == 1);
+		assertTrue( auction.computePayments().size() == 1 );
+		assertTrue( (auction.computePayments().get(0) - 2.) < 1e-6);		// payment = reserve price
+	}
 }
