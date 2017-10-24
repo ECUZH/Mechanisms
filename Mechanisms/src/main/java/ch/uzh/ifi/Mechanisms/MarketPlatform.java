@@ -45,36 +45,34 @@ public class MarketPlatform
 	 * @throws Exception 
 	 */
 	public double tatonementPriceSearch() throws Exception
-	{
-		double price = 0.;
-		int numberOfDBs = 2;					// TODO: Make it general
-		
-		// Initial probabilistic allocation of sellers
+	{	
+		// Initial probabilistic allocation of sellers: everyone is allocated with equal probability
 		ProbabilisticAllocation probAllocation = new ProbabilisticAllocation();
 		List<Integer> bidders = new LinkedList<Integer>();
 		List<Double> allocationProbabilities = new LinkedList<Double>();
-		List<Double> biddersValues = new LinkedList<Double>();
 		List<Integer> bundles = new LinkedList<Integer>();
 		for(int j = 0; j < _sellers.size(); ++j)
 		{
 			bidders.add(_sellers.get(j).getAgentId());
-			biddersValues.add(_sellers.get(j).getAtom(0).getValue());
 			bundles.add(_sellers.get(j).getAtom(0).getInterestingSet().get(0));
 			allocationProbabilities.add(1.0);
 		}
-		double auctioneerValue = 0.;
-		probAllocation.addAllocatedAgent(0, bidders, bundles, auctioneerValue, biddersValues, allocationProbabilities);
+		probAllocation.addAllocatedAgent(0, bidders, bundles, allocationProbabilities);
 		probAllocation.normalize();
+
+		int numberOfDBs = probAllocation.getNumberOfGoods();
+		double price = 0.;
 		
 		// Iterative price/allocation update procedure
-		for(int i = 0; i < 100; ++i)
+		double diff = 0.;
+		for(int i = 0; i < _MAX_ITER; ++i)
 		{
-			// List of allocations in auctions for different DBs
+			// List of outcomes in surplus optimal reverse auctions for different DBs
 			List<Allocation> allocations = new LinkedList<Allocation>();
 			List<Double> payments = new LinkedList<Double>();
 			
 			// For every DB solve the surplus optimal auction
-			for(int j = 0; j < numberOfDBs; ++j)
+			for(int j = 0; j < numberOfDBs; ++j)						// TODO: here I have an assumption that Ids of DBs are between 0 and 1
 			{
 				// First, find all sellers producing the DB
 				List<Type> sellersInvolved = new LinkedList<Type>();
@@ -97,39 +95,44 @@ public class MarketPlatform
 				}
 			}
 			
-			// Compute the gradient
+			// Compute the gradient for allocation probabilities
+			diff = 0.;
 			for(int j = 0; j < _sellers.size(); ++j)
 			{
-				double allocProb = 0.;
+				double allocProbNew = 0.;
 				
 				// Check if the seller is still allocated
 				for(int k = 0; k < allocations.size(); ++k)
 					if(allocations.get(k).getBiddersInvolved(0).contains( _sellers.get(j).getAgentId() ))
 					{
-						allocProb = 1;
+						allocProbNew = 1;
 						break;
 					}
 				
-				allocationProbabilities.set(j, allocationProbabilities.get(j) + (allocProb-allocationProbabilities.get(j)) * 0.1);				
+				diff += Math.pow((allocProbNew-allocationProbabilities.get(j)) * _STEP, 2);
+				
+				allocationProbabilities.set(j, allocationProbabilities.get(j) + (allocProbNew-allocationProbabilities.get(j)) * _STEP);				
 				_logger.debug("New allocation probability: " + allocationProbabilities.get(j));
 			}
 			
+			// Compute the gradient for the price
 			double totalPayment = 0.;
 			for(int j = 0; j < payments.size(); ++j)
 				totalPayment += payments.get(j);
 
-			double totalDemand = computeMarketDemand(price, probAllocation).get(1)*price;
-			_logger.debug("Total payment: " + totalPayment + "; Total received: " + totalDemand); 
-			_logger.debug("Old price: " + price);
-			price = price + (totalPayment - totalDemand)*0.1;
-			_logger.debug("New price: " + price);
+			double totalPaid = computeMarketDemand(price, probAllocation).get(1)*price;
+			//_logger.debug("Total payment: " + totalPayment + "; Total received: " + totalPaid); 
+			//_logger.debug("Old price: " + price);
+			price = price + (totalPayment - totalPaid)*_STEP;
+			//_logger.debug("New price: " + price);
+			diff += Math.pow((totalPayment - totalPaid)*_STEP, 2);
 			
 			probAllocation.resetAllocationProbabilities(allocationProbabilities);
-			
-			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
-			String s = bufferRead.readLine();
+			if ( diff < _TOL)
+				break;
 		}
 		
+		_logger.debug("Found price: " + price + "; diff="+ diff);
 		return price;
 	}
 	
@@ -222,8 +225,6 @@ public class MarketPlatform
 		allocationReduced.addAllocatedAgent(allocation.getAuctioneerId(0), 
 											allocation.getBiddersInvolved(0),
 				                            allocation.getAllocatedBundlesOfTrade(0), 
-				                            allocation.getAuctioneersAllocatedValue(0),
-				                            allocation.getBiddersValues(),
 				                            allocation.getAllocationProbabilities());
 		allocationReduced.deallocateBundle(dbId);
 		valueOfDB = computeAggregateValue(marketDemand, allocation) - computeAggregateValue(marketDemand, allocationReduced);
@@ -232,6 +233,9 @@ public class MarketPlatform
 		return valueOfDB;
 	}
 	
-	private List<ParametrizedQuasiLinearAgent> _buyers;				//Buyers
-	private List<SellerType> _sellers;								//Sellers
+	private List<ParametrizedQuasiLinearAgent> _buyers;				// Buyers
+	private List<SellerType> _sellers;								// Sellers
+	private int _MAX_ITER = 1000;									// Max number of gradient descent iterations
+	private double _STEP = 0.1;										// Step of the gradient descent
+	private double _TOL = 1e-6;										// Tolerance of the gradient descent
 }

@@ -40,7 +40,7 @@ public class testSurplusOptimalReverseAuction
 		List<Type> bids = Arrays.asList(seller1, seller2);
 		
 		double auctioneerValue = 3.2;
-		SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(bids.size(), bids, auctioneerValue);
+		SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(bids, auctioneerValue);
 		auction.computeWinnerDetermination();
 		Allocation allocation = auction.getAllocation();
 		
@@ -73,7 +73,7 @@ public class testSurplusOptimalReverseAuction
 		List<Type> bids = Arrays.asList(seller1, seller2);
 		
 		double auctioneerValue = 10.;
-		SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(bids.size(), bids, auctioneerValue);
+		SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(bids, auctioneerValue);
 		auction.computeWinnerDetermination();
 		Allocation allocation = auction.getAllocation();
 		
@@ -106,7 +106,7 @@ public class testSurplusOptimalReverseAuction
 		List<Type> bids = Arrays.asList(seller1, seller2);
 		
 		double auctioneerValue = 10.;
-		SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(bids.size(), bids, auctioneerValue);
+		SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(bids, auctioneerValue);
 		auction.computeWinnerDetermination();
 		Allocation allocation = auction.getAllocation();
 		
@@ -140,7 +140,7 @@ public class testSurplusOptimalReverseAuction
 		List<Type> bids = Arrays.asList(seller1, seller2);
 		
 		double auctioneerValue = 1.8;
-		SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(bids.size(), bids, auctioneerValue);
+		SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(bids, auctioneerValue);
 		auction.computeWinnerDetermination();
 		Allocation allocation = auction.getAllocation();
 		

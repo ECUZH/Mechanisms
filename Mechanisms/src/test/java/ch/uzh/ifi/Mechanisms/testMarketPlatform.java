@@ -180,7 +180,6 @@ public class testMarketPlatform {
 		
 		List<SellerType> sellers = Arrays.asList(seller1, seller2, seller3);
 		
-		
 		//2. Create 2 buyers
 		double endowment = 10;
 		int allocations[] = {0b00, 0b01, 0b10, 0b11};									// 4 possible deterministic allocations of DBs
@@ -214,80 +213,6 @@ public class testMarketPlatform {
 		MarketPlatform mp = new MarketPlatform(buyers, sellers);
 		
 		double price  = mp.tatonementPriceSearch();
-		
-		System.out.println("The resulting price is " + price);
-		/*int auctioneerId = 0; 															//The market platform, M
-		
-		List<Integer> bidders = new LinkedList<Integer>();
-		bidders.add(seller1.getAgentId());
-		bidders.add(seller2.getAgentId());
-		bidders.add(seller3.getAgentId());
-		
-		List<Integer> bundles = new LinkedList<Integer>();
-		bundles.add(dbID1);																//Id of the bundle allocated to the 1st bidder
-		bundles.add(dbID2);																//Id of the bundle allocated to the 2nd bidder
-		bundles.add(dbID2);																//Id of the bundle allocated to the 3rd bidder
-		
-		double auctioneerValue = 0;
-		List<Double> biddersValues = new LinkedList<Double>();
-		biddersValues.add(seller1.getAtom(0).getValue());
-		biddersValues.add(seller2.getAtom(0).getValue());
-		biddersValues.add(seller3.getAtom(0).getValue());
-		
-		ProbabilisticAllocation allocation = new ProbabilisticAllocation();				//Probabilistic allocation of sellers
-		List<Double> allocationProbabilities = new LinkedList<Double>();
-		allocationProbabilities.add(1.0);
-		allocationProbabilities.add(1.0);
-		
-		allocation.addAllocatedAgent(auctioneerId, bidders, bundles, auctioneerValue, biddersValues, allocationProbabilities);*/
-		
-		
-		
-		/*List<Double> marketDemand = mp.computeMarketDemand(0., allocation);
-		
-		assertTrue(Math.abs( marketDemand.get(1) - 3. ) < 1e-6);
-		assertTrue(Math.abs( marketDemand.get(0) - 20. ) < 1e-6);
-		
-		marketDemand = mp.computeMarketDemand(1. - 1e-8, allocation);
-		assertTrue(Math.abs( marketDemand.get(1) - 3. ) < 1e-6);
-		assertTrue(Math.abs( marketDemand.get(0) - 17. ) < 1e-6);
-		
-		marketDemand = mp.computeMarketDemand(1. + 1e-8, allocation);
-		assertTrue(Math.abs( marketDemand.get(1) - 1. ) < 1e-6);
-		assertTrue(Math.abs( marketDemand.get(0) - 19. ) < 1e-6);
-		
-		marketDemand = mp.computeMarketDemand(4. - 1e-8, allocation);
-		assertTrue(Math.abs( marketDemand.get(1) - 1. ) < 1e-6);
-		assertTrue(Math.abs( marketDemand.get(0) - 16. ) < 1e-6);
-		
-		marketDemand = mp.computeMarketDemand(4. + 1e-8, allocation);
-		assertTrue(Math.abs( marketDemand.get(1) - 0. ) < 1e-6);
-		assertTrue(Math.abs( marketDemand.get(0) - 20. ) < 1e-6);
-		
-		//4. Test aggregate value function
-		
-		assertTrue(Math.abs( mp.computeAggregateValue(123, allocation)-6 ) < 1e-6);
-		assertTrue(Math.abs( mp.computeAggregateValue(3+ 1e-8, allocation)-6 ) < 1e-6);
-		assertTrue(Math.abs( mp.computeAggregateValue(3- 0.1, allocation)-(5.9) ) < 1e-6);
-		assertTrue(Math.abs( mp.computeAggregateValue(1+ 0.1, allocation)-(4.1) ) < 1e-6);
-		assertTrue(Math.abs( mp.computeAggregateValue(1- 0.1, allocation)-(3.6) ) < 1e-6);
-		assertTrue(Math.abs( mp.computeAggregateValue(0.5, allocation)-(2) ) < 1e-6);
-		assertTrue(Math.abs( mp.computeAggregateValue(0, allocation)-0 ) < 1e-6);
-		
-		//5. Test values of DBs
-		assertTrue(Math.abs( mp.computeValueOfDB(dbID1, 1 - 1e-8, allocation)  - 0) < 1e-6);
-		assertTrue(Math.abs( mp.computeValueOfDB(dbID2, 1 - 1e-8, allocation)  - 6) < 1e-6);
-		
-		allocation.deallocateBundle(dbID1);
-		allocation.deallocateBundle(dbID2);
-		
-		assertTrue(Math.abs( mp.computeValueOfDB(dbID1, 1 - 1e-8, allocation)  - 0) < 1e-6);
-		assertTrue(Math.abs( mp.computeValueOfDB(dbID2, 1 - 1e-8, allocation)  - 0) < 1e-6);
-		
-		allocationProbabilities = Arrays.asList(1., 1.);
-		allocation.resetAllocationProbabilities(allocationProbabilities);
-		
-		assertTrue(Math.abs( mp.computeValueOfDB(dbID1, 1 - 1e-8, allocation)  - 4) < 1e-6);
-		assertTrue(Math.abs( mp.computeValueOfDB(dbID2, 1 - 1e-8, allocation)  - 4) < 1e-6);*/
+		assertTrue( Math.abs(price - 0.8) < 1e-3);
 	}
 }
