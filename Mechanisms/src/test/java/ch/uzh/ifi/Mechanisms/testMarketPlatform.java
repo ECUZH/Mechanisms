@@ -23,8 +23,7 @@ public class testMarketPlatform {
 	 * Different sellers produce different DBs.
 	 * @throws Exception 
 	 */
-	/*
-	@Test
+/*	@Test
 	public void testMarketDemandWithLargeEndowments() throws Exception 
 	{
 		//0. Define DBs
@@ -99,7 +98,7 @@ public class testMarketPlatform {
 		allocationProbabilities.add(0.);
 		allocationProbabilities.add(1.0);
 		
-		allocation.addAllocatedAgent(auctioneerId, bidders, bundles, auctioneerValue, biddersValues, allocationProbabilities);
+		allocation.addAllocatedAgent(auctioneerId, bidders, bundles, allocationProbabilities);
 		
 		List<Double> marketDemand = mp.computeMarketDemand(0., allocation);
 		
@@ -156,7 +155,7 @@ public class testMarketPlatform {
 	 * @throws Exception 
 	 */
 	@Test
-	public void testMarketDemandWithLargeEndowments() throws Exception 
+	public void testPriceFindingWithLargeEndowments() throws Exception 
 	{
 		//0. Define DBs
 		int dbID1 = 0;
@@ -166,17 +165,21 @@ public class testMarketPlatform {
 		List<Integer> bundle1 = Arrays.asList(dbID1);
 		List<Integer> bundle2 = Arrays.asList(dbID2);
 		
-		double cost1 = 1.5;
-		double cost2 = 2.;
-		double cost3 = 1.5;
+		double costMin = 0.;
+		double costMax = 2.;
+		double costMean = (costMax + costMin) / 2;
+		double costVar = Math.pow(costMax-costMin, 2) / 12.;
+		double cost1 = 1.5 * costMean;
+		double cost2 = 2. * costMean;
+		double cost3 = 1.5 * costMean;
 		
 		AtomicBid sellerBid1 = new AtomicBid(1, bundle1, cost1);
 		AtomicBid sellerBid2 = new AtomicBid(2, bundle2, cost2);
 		AtomicBid sellerBid3 = new AtomicBid(3, bundle2, cost3);
 		
-		SellerType seller1 = new SellerType(sellerBid1, Distribution.UNIFORM, 1., 1./3.);
-		SellerType seller2 = new SellerType(sellerBid2, Distribution.UNIFORM, 1., 1./3.);
-		SellerType seller3 = new SellerType(sellerBid3, Distribution.UNIFORM, 1., 1./3.);
+		SellerType seller1 = new SellerType(sellerBid1, Distribution.UNIFORM, costMean, costVar);
+		SellerType seller2 = new SellerType(sellerBid2, Distribution.UNIFORM, costMean, costVar);
+		SellerType seller3 = new SellerType(sellerBid3, Distribution.UNIFORM, costMean, costVar);
 		
 		List<SellerType> sellers = Arrays.asList(seller1, seller2, seller3);
 		
@@ -204,7 +207,7 @@ public class testMarketPlatform {
 		IParametrizedValueFunction[] valueFunctions2 = {v21, v22, v23, v24};
 		ParametrizedQuasiLinearAgent buyer1 = new ParametrizedQuasiLinearAgent(1, endowment, allocations, valueFunctions1);
 		ParametrizedQuasiLinearAgent buyer2 = new ParametrizedQuasiLinearAgent(2, endowment, allocations, valueFunctions2);
-		
+				
 		List<ParametrizedQuasiLinearAgent> buyers = new LinkedList<ParametrizedQuasiLinearAgent>();
 		buyers.add(buyer1);
 		buyers.add(buyer2);
@@ -214,5 +217,102 @@ public class testMarketPlatform {
 		
 		double price  = mp.tatonementPriceSearch();
 		assertTrue( Math.abs(price - 0.8) < 1e-3);
+	}
+	
+	/**
+	 * There are 2 sellers and many buyers in this scenario.
+	 * @throws Exception 
+	 */
+	@Test
+	public void testPriceFindingLarge() throws Exception 
+	{
+		//0. Define DBs
+		int dbID1 = 0;
+		int dbID2 = 1;
+		
+		//1. Create 2 sellers
+		List<Integer> bundle1 = Arrays.asList(dbID1);
+		List<Integer> bundle2 = Arrays.asList(dbID2);
+		
+		double costMin = 0.;
+		double costMax = 20.;
+		double costMean = (costMax + costMin) / 2;
+		double costVar = Math.pow(costMax-costMin, 2) / 12.;
+		double cost1 = 1.5 * costMean;
+		double cost2 = 2. * costMean;
+		double cost3 = 1.5 * costMean;
+		
+		AtomicBid sellerBid1 = new AtomicBid(1, bundle1, cost1);
+		AtomicBid sellerBid2 = new AtomicBid(2, bundle2, cost2);
+		AtomicBid sellerBid3 = new AtomicBid(3, bundle2, cost3);
+		
+		SellerType seller1 = new SellerType(sellerBid1, Distribution.UNIFORM, costMean, costVar);
+		SellerType seller2 = new SellerType(sellerBid2, Distribution.UNIFORM, costMean, costVar);
+		SellerType seller3 = new SellerType(sellerBid3, Distribution.UNIFORM, costMean, costVar);
+		
+		List<SellerType> sellers = Arrays.asList(seller1, seller2, seller3);
+		
+		//2. Create 2 buyers
+		double endowment = 10;
+		int allocations[] = {0b00, 0b01, 0b10, 0b11};									// 4 possible deterministic allocations of DBs
+		
+		double[] alloc1 = {0,0};
+		IParametrizedValueFunction v11 = new LinearThresholdValueFunction(0, 0, alloc1);
+		IParametrizedValueFunction v21 = new LinearThresholdValueFunction(0, 0, alloc1);
+		
+		double[] alloc2 = {0,1};
+		IParametrizedValueFunction v12 = new LinearThresholdValueFunction(4, 1, alloc2);
+		IParametrizedValueFunction v22 = new LinearThresholdValueFunction(1, 2, alloc2);
+		
+		double[] alloc3 = {1,0};
+		IParametrizedValueFunction v13 = new LinearThresholdValueFunction(4, 1, alloc3);
+		IParametrizedValueFunction v23 = new LinearThresholdValueFunction(1, 2, alloc3);
+		
+		double[] alloc4 = {1,1};
+		IParametrizedValueFunction v14 = new LinearThresholdValueFunction(6, 1, alloc4);
+		IParametrizedValueFunction v24 = new LinearThresholdValueFunction(1, 4, alloc4);
+		
+		IParametrizedValueFunction[] valueFunctions1 = {v11, v12, v13, v14};			//Parameterized value functions for both buyers 
+		IParametrizedValueFunction[] valueFunctions2 = {v21, v22, v23, v24};
+		ParametrizedQuasiLinearAgent buyer1 = new ParametrizedQuasiLinearAgent(1, endowment, allocations, valueFunctions1);
+		ParametrizedQuasiLinearAgent buyer2 = new ParametrizedQuasiLinearAgent(2, endowment, allocations, valueFunctions2);		
+		ParametrizedQuasiLinearAgent buyer3 = new ParametrizedQuasiLinearAgent(3, endowment, allocations, valueFunctions2);
+		ParametrizedQuasiLinearAgent buyer4 = new ParametrizedQuasiLinearAgent(4, endowment, allocations, valueFunctions2);
+		ParametrizedQuasiLinearAgent buyer5 = new ParametrizedQuasiLinearAgent(5, endowment, allocations, valueFunctions2);
+		ParametrizedQuasiLinearAgent buyer6 = new ParametrizedQuasiLinearAgent(6, endowment, allocations, valueFunctions2);
+		ParametrizedQuasiLinearAgent buyer7 = new ParametrizedQuasiLinearAgent(7, endowment, allocations, valueFunctions2);
+		ParametrizedQuasiLinearAgent buyer8 = new ParametrizedQuasiLinearAgent(8, endowment, allocations, valueFunctions2);
+		ParametrizedQuasiLinearAgent buyer9 = new ParametrizedQuasiLinearAgent(9, endowment, allocations, valueFunctions1);
+		ParametrizedQuasiLinearAgent buyer10 = new ParametrizedQuasiLinearAgent(10, endowment, allocations, valueFunctions1);
+		ParametrizedQuasiLinearAgent buyer11 = new ParametrizedQuasiLinearAgent(11, endowment, allocations, valueFunctions1);
+		ParametrizedQuasiLinearAgent buyer12 = new ParametrizedQuasiLinearAgent(12, endowment, allocations, valueFunctions1);
+		ParametrizedQuasiLinearAgent buyer13 = new ParametrizedQuasiLinearAgent(13, endowment, allocations, valueFunctions1);
+		ParametrizedQuasiLinearAgent buyer14 = new ParametrizedQuasiLinearAgent(14, endowment, allocations, valueFunctions1);
+		ParametrizedQuasiLinearAgent buyer15 = new ParametrizedQuasiLinearAgent(15, endowment, allocations, valueFunctions1);
+		ParametrizedQuasiLinearAgent buyer16 = new ParametrizedQuasiLinearAgent(16, endowment, allocations, valueFunctions1);
+		
+		List<ParametrizedQuasiLinearAgent> buyers = new LinkedList<ParametrizedQuasiLinearAgent>();
+		buyers.add(buyer1);
+		buyers.add(buyer2);
+		buyers.add(buyer3);
+		buyers.add(buyer4);
+		buyers.add(buyer5);
+		buyers.add(buyer6);
+		buyers.add(buyer7);
+		buyers.add(buyer8);
+		buyers.add(buyer9);
+		buyers.add(buyer10);
+		buyers.add(buyer11);
+		buyers.add(buyer12);
+		buyers.add(buyer13);
+		buyers.add(buyer14);
+		buyers.add(buyer15);
+		buyers.add(buyer16);
+		
+		//3. Create market platform and evaluate the market demand
+		MarketPlatform mp = new MarketPlatform(buyers, sellers);
+		
+		double price  = mp.tatonementPriceSearch();
+		//assertTrue( Math.abs(price - 0.8) < 1e-3);
 	}
 }

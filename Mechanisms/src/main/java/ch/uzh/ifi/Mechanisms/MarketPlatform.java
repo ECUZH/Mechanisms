@@ -82,6 +82,7 @@ public class MarketPlatform
 				
 				// Second, compute the value of the market platform for the DB
 				double dbValue = computeValueOfDB(j, price, probAllocation);
+				_logger.debug("Value for DB_"+j+" is " + dbValue);
 				
 				// Third, instantiate a surplus optimal reverse auction for these sellers
 				SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(sellersInvolved, dbValue);
@@ -109,9 +110,9 @@ public class MarketPlatform
 						break;
 					}
 				
-				diff += Math.pow((allocProbNew-allocationProbabilities.get(j)) * _STEP, 2);
+				diff += Math.pow((allocProbNew - allocationProbabilities.get(j)) * _STEP, 2);
 				
-				allocationProbabilities.set(j, allocationProbabilities.get(j) + (allocProbNew-allocationProbabilities.get(j)) * _STEP);				
+				allocationProbabilities.set(j, allocationProbabilities.get(j) + (allocProbNew - allocationProbabilities.get(j)) * _STEP);				
 				_logger.debug("New allocation probability: " + allocationProbabilities.get(j));
 			}
 			
@@ -122,12 +123,15 @@ public class MarketPlatform
 
 			double totalPaid = computeMarketDemand(price, probAllocation).get(1)*price;
 			//_logger.debug("Total payment: " + totalPayment + "; Total received: " + totalPaid); 
-			//_logger.debug("Old price: " + price);
 			price = price + (totalPayment - totalPaid)*_STEP;
-			//_logger.debug("New price: " + price);
 			diff += Math.pow((totalPayment - totalPaid)*_STEP, 2);
 			
 			probAllocation.resetAllocationProbabilities(allocationProbabilities);
+			
+			_logger.debug("New price" + price);
+			//BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
+			//String s = bufferRead.readLine();
+			
 			if ( diff < _TOL)
 				break;
 		}
@@ -153,9 +157,9 @@ public class MarketPlatform
 			List<Double> consumptionBundle = buyer.solveConsumptionProblem(prices, allocation);
 			marketDemand.set(0, marketDemand.get(0) + consumptionBundle.get(0));
 			marketDemand.set(1, marketDemand.get(1) + consumptionBundle.get(1));
-			_logger.debug("Demand of i=" + buyer.getAgentId() + " given price p= "+ price +" x0: " + consumptionBundle.get(0) + "; x1: " + consumptionBundle.get(1));
+			//_logger.debug("Demand of i=" + buyer.getAgentId() + " given price p= "+ price +" x0: " + consumptionBundle.get(0) + "; x1: " + consumptionBundle.get(1));
 		}
-		
+		_logger.debug("Market demand: " + marketDemand);
 		return marketDemand;
 	}
 	
@@ -178,8 +182,8 @@ public class MarketPlatform
 		Collections.sort(marginalValues);
 		Collections.reverse(marginalValues);
 		
-		for(int i = 1; i < marginalValues.size(); ++i)
-			if(marginalValues.get(i) == marginalValues.get(i-1))
+		for(int i = 1; i < marginalValues.size(); ++i)						// Remove duplicates
+			if( Math.abs(marginalValues.get(i) - marginalValues.get(i-1)) < 1e-6)
 			{
 				marginalValues.remove(i);
 				i -= 1;
@@ -229,13 +233,13 @@ public class MarketPlatform
 		allocationReduced.deallocateBundle(dbId);
 		valueOfDB = computeAggregateValue(marketDemand, allocation) - computeAggregateValue(marketDemand, allocationReduced);
 		
-		_logger.debug("Computed Value is " + valueOfDB);
+		_logger.debug("Computed Value is " + valueOfDB + " = " + computeAggregateValue(marketDemand, allocation) + " - " + computeAggregateValue(marketDemand, allocationReduced));
 		return valueOfDB;
 	}
 	
 	private List<ParametrizedQuasiLinearAgent> _buyers;				// Buyers
 	private List<SellerType> _sellers;								// Sellers
 	private int _MAX_ITER = 1000;									// Max number of gradient descent iterations
-	private double _STEP = 0.1;										// Step of the gradient descent
-	private double _TOL = 1e-6;										// Tolerance of the gradient descent
+	private double _STEP = 0.01;										// Step of the gradient descent
+	private double _TOL = 1e-7;										// Tolerance of the gradient descent
 }
