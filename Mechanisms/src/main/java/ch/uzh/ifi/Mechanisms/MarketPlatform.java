@@ -71,6 +71,16 @@ public class MarketPlatform
 			List<Allocation> allocations = new LinkedList<Allocation>();
 			List<Double> payments = new LinkedList<Double>();
 			
+			//-------
+			List<Double> externalitiesOfDBs = new LinkedList<Double>();			
+			for(int j = 0; j < _numberOfDBs; ++j)
+				externalitiesOfDBs.add( computeExternalityOfDB(j, price, probAllocation));
+			
+			double marketDemandForRows = computeMarketDemand(price, probAllocation).get(1);
+			double aggregateValue = computeAggregateValue(marketDemandForRows, probAllocation);
+			double externalitiesTotal = externalitiesOfDBs.stream().reduce(0., (i1, i2) -> i1+i2);
+			//-------
+			
 			// For every DB solve the surplus optimal auction
 			for(int j = 0; j < _numberOfDBs; ++j)						// TODO: here I have an assumption that Ids of DBs are between 0 and 1
 			{
@@ -81,7 +91,13 @@ public class MarketPlatform
 						sellersInvolved.add(_sellers.get(k));
 				
 				// Second, compute the value of the market platform for the DB
-				double dbValue = computeValueOfDB(j, price, probAllocation);
+				double dbValue = 0;//computeValueOfDB(j, price, probAllocation);
+				//---------------
+				if( Math.abs(externalitiesOfDBs.get(j)) < 1e-6 )
+					dbValue =  0.;
+				else
+					dbValue = externalitiesOfDBs.get(j) / externalitiesTotal * aggregateValue;
+				//---------------
 				//_logger.debug("Value for DB_"+j+" is " + dbValue);
 				
 				// Third, instantiate a surplus optimal reverse auction for these sellers
@@ -222,21 +238,22 @@ public class MarketPlatform
 	public double computeValueOfDB(int dbId, double price, ProbabilisticAllocation allocation) throws Exception
 	{
 		//_logger.debug("computeValueOfDB("+dbId + ", "+price +", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
-		double marketDemandForRows = computeMarketDemand(price, allocation).get(1);
+		//double marketDemandForRows = computeMarketDemand(price, allocation).get(1);
 		
 		double externality = computeExternalityOfDB(dbId, price, allocation);
-		List<Double> valuesOfDBs = new LinkedList<Double>();
+		double valueOfDB = externality;
+/*		List<Double> externalitiesOfDBs = new LinkedList<Double>();
 		
 		int numberOfDBs = allocation.getNumberOfGoods();
 		for(int i = 0; i < numberOfDBs; ++i)
-			valuesOfDBs.add( computeExternalityOfDB(i, price, allocation));
+			externalitiesOfDBs.add( computeExternalityOfDB(i, price, allocation));
 		
 		//_logger.debug("Externality = " + externality + ". Other externalities: " + valuesOfDBs.toString());
 		if( Math.abs(externality) < 1e-6 )
 			return 0.;
 		
-		double valueOfDB = externality / valuesOfDBs.stream().reduce(0., (i, j) -> i+j) * computeAggregateValue(marketDemandForRows, allocation);
-		//_logger.debug("Computed Value is " + valueOfDB + " = " + computeAggregateValue(marketDemand, allocation) + " - " + computeAggregateValue(marketDemand, allocationReduced));
+		double valueOfDB = externality / externalitiesOfDBs.stream().reduce(0., (i, j) -> i+j) * computeAggregateValue(marketDemandForRows, allocation);
+*/		//_logger.debug("Computed Value is " + valueOfDB + " = " + computeAggregateValue(marketDemand, allocation) + " - " + computeAggregateValue(marketDemand, allocationReduced));
 		return valueOfDB;
 	}
 	
