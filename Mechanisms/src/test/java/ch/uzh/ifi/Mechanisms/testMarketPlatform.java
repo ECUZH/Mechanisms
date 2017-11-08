@@ -20,7 +20,7 @@ import ch.uzh.ifi.MechanismDesignPrimitives.Type;
 public class testMarketPlatform {
 
 	/**
-	 * There are 2 sellers and 2 buyers in this scenario (see AAMAS'17 paper).
+	 * There are 2 sellers and 2 buyers in this scenario (see AAMAS'18 paper).
 	 * Different sellers produce different DBs.
 	 * @throws Exception 
 	 */
@@ -94,9 +94,9 @@ public class testMarketPlatform {
 		biddersValues.add(seller1.getAtom(0).getValue());
 		biddersValues.add(seller2.getAtom(0).getValue());
 		
-		ProbabilisticAllocation allocation = new ProbabilisticAllocation();				//Probabilistic allocation of sellers
+		ProbabilisticAllocation allocation = new ProbabilisticAllocation();				// Probabilistic allocation of sellers
 		List<Double> allocationProbabilities = new LinkedList<Double>();
-		allocationProbabilities.add(0.);
+		allocationProbabilities.add(0.);												// Allocate only the 2nd DB with p=1
 		allocationProbabilities.add(1.0);
 		
 		allocation.addAllocatedAgent(auctioneerId, bidders, bundles, allocationProbabilities);
@@ -138,15 +138,16 @@ public class testMarketPlatform {
 		
 		allocation.deallocateBundle(dbID1);
 		allocation.deallocateBundle(dbID2);
-		
+
 		assertTrue(Math.abs( mp.computeValueOfDB(dbID1, 1 - 1e-8, allocation)  - 0) < 1e-6);
 		assertTrue(Math.abs( mp.computeValueOfDB(dbID2, 1 - 1e-8, allocation)  - 0) < 1e-6);
 		
 		allocationProbabilities = Arrays.asList(1., 1.);
 		allocation.resetAllocationProbabilities(allocationProbabilities);
-		
-		assertTrue(Math.abs( mp.computeValueOfDB(dbID1, 1 - 1e-8, allocation)  - 4) < 1e-6);
-		assertTrue(Math.abs( mp.computeValueOfDB(dbID2, 1 - 1e-8, allocation)  - 4) < 1e-6);
+
+		//System.out.println(">>> " + mp.computeValueOfDB(dbID1, 1 - 1e-8, allocation));
+		assertTrue(Math.abs( mp.computeValueOfDB(dbID1, 1 - 1e-8, allocation)  - 5) < 1e-6);
+		assertTrue(Math.abs( mp.computeValueOfDB(dbID2, 1 - 1e-8, allocation)  - 5) < 1e-6);
 	}*/
 
 	
@@ -155,7 +156,7 @@ public class testMarketPlatform {
 	 * Different sellers produce different DBs.
 	 * @throws Exception 
 	 */
-/*	@Test
+	/*@Test
 	public void testPriceFindingWithLargeEndowments() throws Exception 
 	{
 		//0. Define DBs
@@ -215,8 +216,10 @@ public class testMarketPlatform {
 		
 		//3. Create market platform and evaluate the market demand
 		MarketPlatform mp = new MarketPlatform(buyers, sellers);
+		mp.setToleranceLvl(1e-7);
 		
 		double price  = mp.tatonementPriceSearch();
+		System.out.println("Price=" + price);
 		assertTrue( Math.abs(price - 0.8) < 1e-3);
 	}*/
 	
@@ -352,7 +355,7 @@ public class testMarketPlatform {
 		
 		List<Double> p = new LinkedList<Double>();
 		int nSamples = 10;
-		int numberOfBuyers = 65;
+		int numberOfBuyers = 15;
 		System.out.println("Number of buyers: " + numberOfBuyers);
 		for(int s = 0; s < nSamples; ++s)
 		{
