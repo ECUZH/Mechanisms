@@ -60,7 +60,7 @@ public class MarketPlatform
 		probAllocation.addAllocatedAgent(0, bidders, bundles, allocationProbabilities);
 		probAllocation.normalize();
 
-		int numberOfDBs = probAllocation.getNumberOfGoods();
+		_numberOfDBs = probAllocation.getNumberOfGoods();
 		double price = 0.;
 		
 		// Iterative price/allocation update procedure
@@ -72,7 +72,7 @@ public class MarketPlatform
 			List<Double> payments = new LinkedList<Double>();
 			
 			// For every DB solve the surplus optimal auction
-			for(int j = 0; j < numberOfDBs; ++j)						// TODO: here I have an assumption that Ids of DBs are between 0 and 1
+			for(int j = 0; j < _numberOfDBs; ++j)						// TODO: here I have an assumption that Ids of DBs are between 0 and 1
 			{
 				// First, find all sellers producing the DB
 				List<Type> sellersInvolved = new LinkedList<Type>();
@@ -82,7 +82,7 @@ public class MarketPlatform
 				
 				// Second, compute the value of the market platform for the DB
 				double dbValue = computeValueOfDB(j, price, probAllocation);
-				_logger.debug("Value for DB_"+j+" is " + dbValue);
+				//_logger.debug("Value for DB_"+j+" is " + dbValue);
 				
 				// Third, instantiate a surplus optimal reverse auction for these sellers
 				SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(sellersInvolved, dbValue);
@@ -113,7 +113,7 @@ public class MarketPlatform
 				diff += Math.pow((allocProbNew - allocationProbabilities.get(j)) * _STEP, 2);
 				
 				allocationProbabilities.set(j, allocationProbabilities.get(j) + (allocProbNew - allocationProbabilities.get(j)) * _STEP);				
-				_logger.debug("New allocation probability: " + allocationProbabilities.get(j));
+				//_logger.debug("New allocation probability: " + allocationProbabilities.get(j));
 			}
 			
 			// Compute the gradient for the price
@@ -128,7 +128,7 @@ public class MarketPlatform
 			
 			probAllocation.resetAllocationProbabilities(allocationProbabilities);
 			
-			_logger.debug("New price" + price);
+			//_logger.debug("New price" + price);
 			//BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
 			//String s = bufferRead.readLine();
 			
@@ -136,7 +136,7 @@ public class MarketPlatform
 				break;
 		}
 		
-		_logger.debug("Found price: " + price + "; diff="+ diff);
+		//_logger.debug("Found price: " + price + "; diff="+ diff);
 		return price;
 	}
 	
@@ -148,7 +148,7 @@ public class MarketPlatform
 	 */
 	public List<Double> computeMarketDemand(double price, ProbabilisticAllocation allocation)
 	{
-		_logger.debug("computeMarketDemand("+price + ", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) + ")");
+		//_logger.debug("computeMarketDemand("+price + ", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) + ")");
 		List<Double> marketDemand = Arrays.asList(0., 0.);
 		List<Double> prices = Arrays.asList(1., price);
 		
@@ -159,7 +159,7 @@ public class MarketPlatform
 			marketDemand.set(1, marketDemand.get(1) + consumptionBundle.get(1));
 			//_logger.debug("Demand of i=" + buyer.getAgentId() + " given price p= "+ price +" x0: " + consumptionBundle.get(0) + "; x1: " + consumptionBundle.get(1));
 		}
-		_logger.debug("Market demand: " + marketDemand);
+		//_logger.debug("Market demand: " + marketDemand);
 		return marketDemand;
 	}
 	
@@ -171,7 +171,7 @@ public class MarketPlatform
 	 */
 	public double computeAggregateValue(double quantity, ProbabilisticAllocation allocation)
 	{
-		_logger.debug("computeAggregateValue( "+quantity +", " + Arrays.toString(allocation.getAllocationProbabilities().toArray())+")");
+		//_logger.debug("computeAggregateValue( "+quantity +", " + Arrays.toString(allocation.getAllocationProbabilities().toArray())+")");
 		double value = 0.;
 		
 		//To analyze the maximal inverse demand, first one need to compute the maximal prices
@@ -206,7 +206,7 @@ public class MarketPlatform
 				break;
 			}	
 		}
-		_logger.debug("Computed Aggregate value is  " + value);
+		//_logger.debug("Computed Aggregate value is  " + value);
 		return value;
 	}
 	
@@ -221,25 +221,63 @@ public class MarketPlatform
 	 */
 	public double computeValueOfDB(int dbId, double price, ProbabilisticAllocation allocation) throws Exception
 	{
-		_logger.debug("computeValueOfDB("+dbId + ", "+price +", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
-		double valueOfDB = 0.;
-		double marketDemand = computeMarketDemand(price, allocation).get(1);
+		//_logger.debug("computeValueOfDB("+dbId + ", "+price +", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
+		double marketDemandForRows = computeMarketDemand(price, allocation).get(1);
 		
+		double externality = computeExternalityOfDB(dbId, price, allocation);
+		List<Double> valuesOfDBs = new LinkedList<Double>();
+		
+		int numberOfDBs = allocation.getNumberOfGoods();
+		for(int i = 0; i < numberOfDBs; ++i)
+			valuesOfDBs.add( computeExternalityOfDB(i, price, allocation));
+		
+		//_logger.debug("Externality = " + externality + ". Other externalities: " + valuesOfDBs.toString());
+		if( Math.abs(externality) < 1e-6 )
+			return 0.;
+		
+		double valueOfDB = externality / valuesOfDBs.stream().reduce(0., (i, j) -> i+j) * computeAggregateValue(marketDemandForRows, allocation);
+		//_logger.debug("Computed Value is " + valueOfDB + " = " + computeAggregateValue(marketDemand, allocation) + " - " + computeAggregateValue(marketDemand, allocationReduced));
+		return valueOfDB;
+	}
+	
+	/**
+	 * The method computes the value of the specified database as the positive externality the DB imposes
+	 * on buyers given current market prices and allocation of other DBs.
+	 * @param dbId id of the database
+	 * @param price current market price per row of a query answer
+	 * @param allocation current probabilistic allocation of sellers
+	 * @return the value of the specified DB.
+	 * @throws Exception 
+	 */
+	public double computeExternalityOfDB(int dbId, double price, ProbabilisticAllocation allocation) throws Exception
+	{
+		//_logger.debug("computeValueOfDB("+dbId + ", "+price +", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
+		double valueOfDB = 0.;
+		double marketDemandForRows = computeMarketDemand(price, allocation).get(1);
+		
+		// An allocation in which DB with id=dbId is not allocated
 		ProbabilisticAllocation allocationReduced = new ProbabilisticAllocation();
 		allocationReduced.addAllocatedAgent(allocation.getAuctioneerId(0), 
 											allocation.getBiddersInvolved(0),
 				                            allocation.getAllocatedBundlesOfTrade(0), 
 				                            allocation.getAllocationProbabilities());
 		allocationReduced.deallocateBundle(dbId);
-		valueOfDB = computeAggregateValue(marketDemand, allocation) - computeAggregateValue(marketDemand, allocationReduced);
 		
-		_logger.debug("Computed Value is " + valueOfDB + " = " + computeAggregateValue(marketDemand, allocation) + " - " + computeAggregateValue(marketDemand, allocationReduced));
+		double externality = computeAggregateValue(marketDemandForRows, allocation) - computeAggregateValue(marketDemandForRows, allocationReduced);
+		valueOfDB = externality;
+		//_logger.debug("Computed Value is " + valueOfDB + " = " + computeAggregateValue(marketDemand, allocation) + " - " + computeAggregateValue(marketDemand, allocationReduced));
 		return valueOfDB;
+	}
+	
+	public void setToleranceLvl(double tol)
+	{
+		_TOL = tol;
 	}
 	
 	private List<ParametrizedQuasiLinearAgent> _buyers;				// Buyers
 	private List<SellerType> _sellers;								// Sellers
+	private int _numberOfDBs;										// Number of databases
 	private int _MAX_ITER = 1000;									// Max number of gradient descent iterations
-	private double _STEP = 0.01;										// Step of the gradient descent
-	private double _TOL = 1e-7;										// Tolerance of the gradient descent
+	private double _STEP = 0.01;									// Step of the gradient descent
+	private double _TOL = 1e-5;										// Tolerance of the gradient descent
 }
