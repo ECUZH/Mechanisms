@@ -355,7 +355,7 @@ public class testMarketPlatform {
 		
 		List<Double> p = new LinkedList<Double>();
 		int nSamples = 10;
-		int numberOfBuyers = 15;
+		int numberOfBuyers = 35;
 		System.out.println("Number of buyers: " + numberOfBuyers);
 		for(int s = 0; s < nSamples; ++s)
 		{
@@ -367,6 +367,7 @@ public class testMarketPlatform {
 			
 			//3. Create market platform and evaluate the market demand
 			MarketPlatform mp = new MarketPlatform(buyers, sellers);
+			mp.setToleranceLvl(1e-7);
 			
 			double price  = mp.tatonementPriceSearch();
 			p.add(price);
