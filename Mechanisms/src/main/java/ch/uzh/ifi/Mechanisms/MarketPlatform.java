@@ -78,7 +78,8 @@ public class MarketPlatform
 			for(int j = 0; j < _numberOfDBs; ++j)
 				externalitiesOfDBs.add( computeExternalityOfDB(j, price, probAllocation));
 			
-			double marketDemandForRows = computeMarketDemand(price, probAllocation).get(1);
+			
+			double marketDemandForRows = computeMarketDemand(price, probAllocation, true).get(1);
 			double aggregateValue = computeAggregateValue(marketDemandForRows, probAllocation);
 			double externalitiesTotal = externalitiesOfDBs.stream().reduce(0., (i1, i2) -> i1+i2);
 			//-------
@@ -139,7 +140,7 @@ public class MarketPlatform
 			for(int j = 0; j < payments.size(); ++j)
 				totalPayment += payments.get(j);
 
-			double totalPaid = computeMarketDemand(price, probAllocation).get(1)*price;
+			double totalPaid = computeMarketDemand(price, probAllocation, false).get(1)*price;
 			//_logger.debug("Total payment: " + totalPayment + "; Total received: " + totalPaid); 
 			price = price + (totalPayment - totalPaid)*_STEP;
 			diff += Math.pow((totalPayment - totalPaid)*_STEP, 2);
@@ -164,11 +165,18 @@ public class MarketPlatform
 	 * @param allocation probabilistic allocation of sellers (DBs)
 	 * @return the market demand for all goods
 	 */
-	public List<Double> computeMarketDemand(double price, ProbabilisticAllocation allocation)
+	public List<Double> computeMarketDemand(double price, ProbabilisticAllocation allocation, boolean updateProbDistribution)
 	{
-		_logger.debug("computeMarketDemand("+price + ", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) + ")");
+		//_logger.debug("computeMarketDemand("+price + ", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) + ")");
 		List<Double> marketDemand = Arrays.asList(0., 0.);
 		List<Double> prices = Arrays.asList(1., price);
+		
+		if( updateProbDistribution )
+		{
+			_buyers.get(0).updateAllocProbabilityDistribution(allocation);
+			for(ParametrizedQuasiLinearAgent buyer: _buyers)
+				buyer.setAllocProbabilityDistribution( _buyers.get(0).getAllocProbabilityDistribution());
+		}
 		
 		for(ParametrizedQuasiLinearAgent buyer: _buyers)
 		{
@@ -194,9 +202,11 @@ public class MarketPlatform
 		
 		//To analyze the maximal inverse demand, first one need to compute the maximal prices
 		List<Double> marginalValues = new ArrayList<Double>();
+		
+		_buyers.get(0).updateAllocProbabilityDistribution(allocation);
 		for(ParametrizedQuasiLinearAgent buyer: _buyers)
 		{
-			buyer.updateAllocProbabilityDistribution(allocation);
+			buyer.setAllocProbabilityDistribution( _buyers.get(0).getAllocProbabilityDistribution());
 			marginalValues.add(buyer.computeExpectedMarginalValue(allocation));
 		}
 		
@@ -217,7 +227,7 @@ public class MarketPlatform
 		{
 			price = marginalValues.get(i);
 			double marketDemandLow = marketDemandHigh;//computeMarketDemand(price + 1e-8, allocation).get(1);
-			marketDemandHigh  = computeMarketDemand(price - 1e-8, allocation).get(1);
+			marketDemandHigh  = computeMarketDemand(price - 1e-8, allocation, false).get(1);
 
 			if( marketDemandHigh < quantity )
 			{
@@ -245,7 +255,7 @@ public class MarketPlatform
 	public double computeValueOfDB(int dbId, double price, ProbabilisticAllocation allocation) throws Exception
 	{
 		//_logger.debug("computeValueOfDB("+dbId + ", "+price +", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
-		double marketDemandForRows = computeMarketDemand(price, allocation).get(1);
+		double marketDemandForRows = computeMarketDemand(price, allocation, true).get(1);
 		
 		double externality = computeExternalityOfDB(dbId, price, allocation);
 //		double valueOfDB = externality;
@@ -276,7 +286,7 @@ public class MarketPlatform
 	public double computeExternalityOfDB(int dbId, double price, ProbabilisticAllocation allocation) throws Exception
 	{
 		_logger.debug("computeValueOfDB("+dbId + ", "+price +", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
-		double marketDemandForRows = computeMarketDemand(price, allocation).get(1);
+		double marketDemandForRows = computeMarketDemand(price, allocation, true).get(1);
 		
 		// An allocation in which DB with id=dbId is not allocated
 		ProbabilisticAllocation allocationReduced = new ProbabilisticAllocation();
@@ -286,7 +296,7 @@ public class MarketPlatform
 				                            allocation.getAllocationProbabilities());
 		allocationReduced.deallocateBundle(dbId);
 		
-		double marketDemandForRowsReduced = computeMarketDemand(price, allocationReduced).get(1);
+		double marketDemandForRowsReduced = computeMarketDemand(price, allocationReduced, true).get(1);
 		
 		double externality = computeAggregateValue(marketDemandForRows, allocation) - computeAggregateValue(marketDemandForRowsReduced, allocationReduced);
 		if( externality < 0 ) throw new RuntimeException("DB has a neggative externality.");
