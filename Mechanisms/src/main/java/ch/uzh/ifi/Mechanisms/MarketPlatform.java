@@ -19,8 +19,8 @@ import ch.uzh.ifi.MechanismDesignPrimitives.SellerType;
 import ch.uzh.ifi.MechanismDesignPrimitives.Type;
 
 /**
- * The class corresponds to the market platform entity. It provides methods for evaluation of the market demand, 
- * estimation of the aggregate market value, computation of values of DBs etc.
+ * The class models the market platform. It provides methods for evaluation of the market demand, 
+ * estimation of the aggregate market value, computation of values of DBs, equilibrium search etc.
  * @author Dmitry Moor
  *
  */
@@ -28,6 +28,7 @@ public class MarketPlatform
 {
 
 	private static final Logger _logger = LogManager.getLogger(MarketPlatform.class);
+	
 	/**
 	 * Constructor.
 	 * @param buyers list of buyers
@@ -60,6 +61,7 @@ public class MarketPlatform
 		probAllocation.addAllocatedAgent(0, bidders, bundles, allocationProbabilities);
 		probAllocation.normalize();
 
+		// Initialization
 		_numberOfDBs = probAllocation.getNumberOfGoods();
 		double price = 0.;
 		
@@ -157,14 +159,14 @@ public class MarketPlatform
 	}
 	
 	/**
-	 * The method computes the market demand at the given price.
-	 * @param price the price of the good
+	 * The method computes the market demand for both goods at the given price level and given allocation of DBs.
+	 * @param price the price of the good 1 (good 0 is money with p0 = 1 - normalized)
 	 * @param allocation probabilistic allocation of sellers (DBs)
-	 * @return the market demand
+	 * @return the market demand for all goods
 	 */
 	public List<Double> computeMarketDemand(double price, ProbabilisticAllocation allocation)
 	{
-		//_logger.debug("computeMarketDemand("+price + ", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) + ")");
+		_logger.debug("computeMarketDemand("+price + ", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) + ")");
 		List<Double> marketDemand = Arrays.asList(0., 0.);
 		List<Double> prices = Arrays.asList(1., price);
 		
@@ -173,9 +175,9 @@ public class MarketPlatform
 			List<Double> consumptionBundle = buyer.solveConsumptionProblem(prices, allocation);
 			marketDemand.set(0, marketDemand.get(0) + consumptionBundle.get(0));
 			marketDemand.set(1, marketDemand.get(1) + consumptionBundle.get(1));
-			//_logger.debug("Demand of i=" + buyer.getAgentId() + " given price p= "+ price +" x0: " + consumptionBundle.get(0) + "; x1: " + consumptionBundle.get(1));
+			_logger.debug("Demand of i=" + buyer.getAgentId() + " given price p= "+ price +" x0: " + consumptionBundle.get(0) + "; x1: " + consumptionBundle.get(1));
 		}
-		//_logger.debug("Market demand: " + marketDemand);
+		_logger.debug("Market demand: " + marketDemand);
 		return marketDemand;
 	}
 	
@@ -193,7 +195,10 @@ public class MarketPlatform
 		//To analyze the maximal inverse demand, first one need to compute the maximal prices
 		List<Double> marginalValues = new ArrayList<Double>();
 		for(ParametrizedQuasiLinearAgent buyer: _buyers)
+		{
+			buyer.updateAllocProbabilityDistribution(allocation);
 			marginalValues.add(buyer.computeExpectedMarginalValue(allocation));
+		}
 		
 		Collections.sort(marginalValues);
 		Collections.reverse(marginalValues);
@@ -207,11 +212,13 @@ public class MarketPlatform
 		
 		//Now integrate the maximal inverse demand
 		double price = 0.;
+		double marketDemandHigh = 0.;
 		for( int i = 0; i < marginalValues.size(); ++i )
 		{
 			price = marginalValues.get(i);
-			double marketDemandHigh  = computeMarketDemand(price - 1e-8, allocation).get(1);
-			double marketDemandLow = computeMarketDemand(price + 1e-8, allocation).get(1);
+			double marketDemandLow = marketDemandHigh;//computeMarketDemand(price + 1e-8, allocation).get(1);
+			marketDemandHigh  = computeMarketDemand(price - 1e-8, allocation).get(1);
+
 			if( marketDemandHigh < quantity )
 			{
 				value += price * (marketDemandHigh - marketDemandLow);
@@ -227,7 +234,7 @@ public class MarketPlatform
 	}
 	
 	/**
-	 * The method computes the value of the specified database as the positive externality the DB imposes
+	 * The method computes the value of the specified database that is proportional to the positive externality the DB imposes
 	 * on buyers given current market prices and allocation of other DBs.
 	 * @param dbId id of the database
 	 * @param price current market price per row of a query answer
@@ -238,11 +245,11 @@ public class MarketPlatform
 	public double computeValueOfDB(int dbId, double price, ProbabilisticAllocation allocation) throws Exception
 	{
 		//_logger.debug("computeValueOfDB("+dbId + ", "+price +", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
-		//double marketDemandForRows = computeMarketDemand(price, allocation).get(1);
+		double marketDemandForRows = computeMarketDemand(price, allocation).get(1);
 		
 		double externality = computeExternalityOfDB(dbId, price, allocation);
-		double valueOfDB = externality;
-/*		List<Double> externalitiesOfDBs = new LinkedList<Double>();
+//		double valueOfDB = externality;
+		List<Double> externalitiesOfDBs = new LinkedList<Double>();
 		
 		int numberOfDBs = allocation.getNumberOfGoods();
 		for(int i = 0; i < numberOfDBs; ++i)
@@ -253,23 +260,22 @@ public class MarketPlatform
 			return 0.;
 		
 		double valueOfDB = externality / externalitiesOfDBs.stream().reduce(0., (i, j) -> i+j) * computeAggregateValue(marketDemandForRows, allocation);
-*/		//_logger.debug("Computed Value is " + valueOfDB + " = " + computeAggregateValue(marketDemand, allocation) + " - " + computeAggregateValue(marketDemand, allocationReduced));
+		//_logger.debug("Computed Value is " + valueOfDB + " = " + computeAggregateValue(marketDemand, allocation) + " - " + computeAggregateValue(marketDemand, allocationReduced));
 		return valueOfDB;
 	}
 	
 	/**
-	 * The method computes the value of the specified database as the positive externality the DB imposes
+	 * The method computes the positive externality that the DB imposes
 	 * on buyers given current market prices and allocation of other DBs.
 	 * @param dbId id of the database
 	 * @param price current market price per row of a query answer
 	 * @param allocation current probabilistic allocation of sellers
-	 * @return the value of the specified DB.
+	 * @return the positive externality of the specified DB.
 	 * @throws Exception 
 	 */
 	public double computeExternalityOfDB(int dbId, double price, ProbabilisticAllocation allocation) throws Exception
 	{
-		//_logger.debug("computeValueOfDB("+dbId + ", "+price +", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
-		double valueOfDB = 0.;
+		_logger.debug("computeValueOfDB("+dbId + ", "+price +", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
 		double marketDemandForRows = computeMarketDemand(price, allocation).get(1);
 		
 		// An allocation in which DB with id=dbId is not allocated
@@ -280,12 +286,18 @@ public class MarketPlatform
 				                            allocation.getAllocationProbabilities());
 		allocationReduced.deallocateBundle(dbId);
 		
-		double externality = computeAggregateValue(marketDemandForRows, allocation) - computeAggregateValue(marketDemandForRows, allocationReduced);
-		valueOfDB = externality;
-		//_logger.debug("Computed Value is " + valueOfDB + " = " + computeAggregateValue(marketDemand, allocation) + " - " + computeAggregateValue(marketDemand, allocationReduced));
-		return valueOfDB;
+		double marketDemandForRowsReduced = computeMarketDemand(price, allocationReduced).get(1);
+		
+		double externality = computeAggregateValue(marketDemandForRows, allocation) - computeAggregateValue(marketDemandForRowsReduced, allocationReduced);
+		if( externality < 0 ) throw new RuntimeException("DB has a neggative externality.");
+		//_logger.debug("Computed externality is " + externality + " = " + computeAggregateValue(marketDemandForRows, allocation) + " - " + computeAggregateValue(marketDemandForRowsReduced, allocationReduced));
+		return externality;
 	}
 	
+	/**
+	 * The method sets the tolerance level for the gradient descent.
+	 * @param tol tolerance level
+	 */
 	public void setToleranceLvl(double tol)
 	{
 		_TOL = tol;
