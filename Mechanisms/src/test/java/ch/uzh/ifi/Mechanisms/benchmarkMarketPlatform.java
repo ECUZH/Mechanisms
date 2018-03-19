@@ -71,7 +71,7 @@ public class benchmarkMarketPlatform {
 			p.add(price);
 			System.out.println("Price = " + price);
 		}
-				
+		
 		System.out.println("Equilibrium Prices: " + p.toString());
 				
 		List<Integer> bidders = new LinkedList<Integer>();
@@ -140,74 +140,73 @@ public class benchmarkMarketPlatform {
 					
 			//4.5. Run BORA for the 2nd DB
 			auction = new SurplusOptimalReverseAuction(sellersInvolved2, dbValue2);
-					auction.solveIt();
-					int isAllocated2 = auction.getAllocation().getNumberOfAllocatedAuctioneers();
-					if( isAllocated2 > 0 && p.get(s) > 0.01 )
-					{
-						double payment = auction.getPayments()[0];
-						profitsS3.add(payment - cost3);
-					}
-					else
-						profitsS3.add(0.);
+			auction.solveIt();
+			int isAllocated2 = auction.getAllocation().getNumberOfAllocatedAuctioneers();
+			if( isAllocated2 > 0 && p.get(s) > 0.01 )
+			{
+				double payment = auction.getPayments()[0];
+				profitsS3.add(payment - cost3);
+			}
+			else
+				profitsS3.add(0.);
 					
-					if( isAllocated1 > 0 && isAllocated2 == 0 && p.get(s) > 0.01)
-					{
-						List<Double> newAlloc = Arrays.asList(1., 0., 0.);
-						allocationOfSellers.resetAllocationProbabilities( newAlloc );
-					}
-					else if ( isAllocated1 == 0 && isAllocated2 > 0 && p.get(s) > 0.01)
-					{
-						List<Double> newAlloc = Arrays.asList(0., 0., 1.);
-						allocationOfSellers.resetAllocationProbabilities( newAlloc );
-					}
-					else if ( (isAllocated1 == 0 && isAllocated2 == 0) || p.get(s) < 0.01)
-					{
-						List<Double> newAlloc = Arrays.asList(0., 0., 0.);
-						allocationOfSellers.resetAllocationProbabilities( newAlloc );
-					}
+			if( isAllocated1 > 0 && isAllocated2 == 0 && p.get(s) > 0.01)
+			{
+				List<Double> newAlloc = Arrays.asList(1., 0., 0.);
+				allocationOfSellers.resetAllocationProbabilities( newAlloc );
+			}
+			else if ( isAllocated1 == 0 && isAllocated2 > 0 && p.get(s) > 0.01)
+			{
+				List<Double> newAlloc = Arrays.asList(0., 0., 1.);
+				allocationOfSellers.resetAllocationProbabilities( newAlloc );
+			}
+			else if ( (isAllocated1 == 0 && isAllocated2 == 0) || p.get(s) < 0.01)
+			{
+				List<Double> newAlloc = Arrays.asList(0., 0., 0.);
+				allocationOfSellers.resetAllocationProbabilities( newAlloc );
+			}
 					
-
-					for(int i = 0; i < numberOfBuyers; ++i)
-					{
-						List<Double> consumptionBundle = buyers.get(i).solveConsumptionProblem(prices, allocationOfSellers);
-						totalUtility += buyers.get(i).computeUtility(allocationOfSellers, consumptionBundle) - buyers.get(i).getEndowment();
-						totalValue += buyers.get(i).computeUtility(allocationOfSellers, consumptionBundle) - consumptionBundle.get(0);
-					}
-					surplusP.add(totalUtility);
-					welfareP.add( (totalValue-cost1 - cost3 < 0) ? 0. : (totalValue-cost1 - cost3));
+			for(int i = 0; i < numberOfBuyers; ++i)
+			{
+				List<Double> consumptionBundle = buyers.get(i).solveConsumptionProblem(prices, allocationOfSellers);
+				totalUtility += buyers.get(i).computeUtility(allocationOfSellers, consumptionBundle) - buyers.get(i).getEndowment();
+				totalValue += buyers.get(i).computeUtility(allocationOfSellers, consumptionBundle) - consumptionBundle.get(0);
+			}
+			surplusP.add(totalUtility);
+			welfareP.add( (totalValue-cost1 - cost3 < 0) ? 0. : (totalValue-cost1 - cost3));
 						
-					// Buyers' surplus if p==0
-					totalUtility = 0.;
-					totalValue = 0.;
-					prices = new LinkedList<Double>();
-					prices.add(1.);
-					prices.add(0.);
+			// Buyers' surplus if p==0
+			totalUtility = 0.;
+			totalValue = 0.;
+			prices = new LinkedList<Double>();
+			prices.add(1.);
+			prices.add(0.);
 									
-					for(int i = 0; i < numberOfBuyers; ++i)
-					{
-						List<Double> consumptionBundle = buyers.get(i).solveConsumptionProblem(prices, allocationOfSellers);
-						totalUtility += buyers.get(i).computeUtility(allocationOfSellers, consumptionBundle) - buyers.get(i).getEndowment();
-						totalValue += buyers.get(i).computeUtility(allocationOfSellers, consumptionBundle) - consumptionBundle.get(0);
-					}
-					surplus0.add(totalUtility);
-					welfare0.add( (totalValue-cost1 - cost3) < 0 ? 0 : (totalValue-cost1 - cost3));
-					
-					List<Double> newAlloc = Arrays.asList(1., 0., 1.);
-					allocationOfSellers.resetAllocationProbabilities( newAlloc );
-				}
-				System.out.println("pi(s1): " + profitsS1.toString());
-				System.out.println("pi(s3): " + profitsS3.toString());
-				System.out.println("surp(p): " + surplusP.toString());
-				System.out.println("surp(0): " + surplus0.toString());
-				System.out.println("sw(p): " + welfareP.toString());
-				System.out.println("sw(0): " + welfare0.toString());
-				System.out.println("mean(price) = " + p.stream().reduce(0., (i, j) -> i+j) / nSamples );
-				System.out.println("mean((profitsS1) ) = " + profitsS1.stream().reduce(0., (i, j) -> i+j) / nSamples );
-				System.out.println("mean((profitsS3) ) = " + profitsS3.stream().reduce(0., (i, j) -> i+j) / nSamples );
-				System.out.println("mean((surp(p)) ) = " + surplusP.stream().reduce(0., (i, j) -> i+j) / nSamples );
-				System.out.println("mean((surp(0)) ) = " + surplus0.stream().reduce(0., (i, j) -> i+j) / nSamples );
-				System.out.println("mean((sw(p)) ) = " + welfareP.stream().reduce(0., (i, j) -> i+j) / nSamples );
-				System.out.println("mean((sw(0)) ) = " + welfare0.stream().reduce(0., (i, j) -> i+j) / nSamples );
+			for(int i = 0; i < numberOfBuyers; ++i)
+			{
+				List<Double> consumptionBundle = buyers.get(i).solveConsumptionProblem(prices, allocationOfSellers);
+				totalUtility += buyers.get(i).computeUtility(allocationOfSellers, consumptionBundle) - buyers.get(i).getEndowment();
+				totalValue += buyers.get(i).computeUtility(allocationOfSellers, consumptionBundle) - consumptionBundle.get(0);
+			}
+			surplus0.add(totalUtility);
+			welfare0.add( (totalValue-cost1 - cost3) < 0 ? 0 : (totalValue-cost1 - cost3));
+			
+			List<Double> newAlloc = Arrays.asList(1., 0., 1.);
+			allocationOfSellers.resetAllocationProbabilities( newAlloc );
+		}
+		System.out.println("pi(s1): " + profitsS1.toString());
+		System.out.println("pi(s3): " + profitsS3.toString());
+		System.out.println("surp(p): " + surplusP.toString());
+		System.out.println("surp(0): " + surplus0.toString());
+		System.out.println("sw(p): " + welfareP.toString());
+		System.out.println("sw(0): " + welfare0.toString());
+		System.out.println("mean(price) = " + p.stream().reduce(0., (i, j) -> i+j) / nSamples );
+		System.out.println("mean((profitsS1) ) = " + profitsS1.stream().reduce(0., (i, j) -> i+j) / nSamples );
+		System.out.println("mean((profitsS3) ) = " + profitsS3.stream().reduce(0., (i, j) -> i+j) / nSamples );
+		System.out.println("mean((surp(p)) ) = " + surplusP.stream().reduce(0., (i, j) -> i+j) / nSamples );
+		System.out.println("mean((surp(0)) ) = " + surplus0.stream().reduce(0., (i, j) -> i+j) / nSamples );
+		System.out.println("mean((sw(p)) ) = " + welfareP.stream().reduce(0., (i, j) -> i+j) / nSamples );
+		System.out.println("mean((sw(0)) ) = " + welfare0.stream().reduce(0., (i, j) -> i+j) / nSamples );
 	}
 
 }
