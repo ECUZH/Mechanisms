@@ -17,14 +17,16 @@ public class benchmarkMarketPlatform3DBs {
 	{
 		System.out.println("BENCHMARK");
 		//0. Define DBs
-		int nDBs  = 2;
+		int nDBs  = 3;
 		int dbID1 = 0;
 		int dbID2 = 1;
+		int dbID3 = 2;
 				
-		//1. Create 2 sellers
 		List<Integer> bundle1 = Arrays.asList(dbID1);
 		List<Integer> bundle2 = Arrays.asList(dbID2);
-				
+		List<Integer> bundle3 = Arrays.asList(dbID3);
+		
+		//1. Create 2 sellers
 		double costMin = 0.;										// Min of the costs distribution support
 		double costMax = 20.;										// Max of the costs distribution support
 		double costMean = (costMax + costMin) / 2;
@@ -32,16 +34,22 @@ public class benchmarkMarketPlatform3DBs {
 		double cost1 = 1.5 * costMean;								// Actual cost of seller 1
 		double cost2 = 2. * costMean;								// Actual cost of seller 2
 		double cost3 = 1.5 * costMean;								// Actual cost of seller 3
+		double cost4 = 0.9 * costMean;
+		double cost5 = 1.1 * costMean;
 				
 		AtomicBid sellerBid1 = new AtomicBid(1, bundle1, cost1);
 		AtomicBid sellerBid2 = new AtomicBid(2, bundle2, cost2);
 		AtomicBid sellerBid3 = new AtomicBid(3, bundle2, cost3);
+		AtomicBid sellerBid4 = new AtomicBid(4, bundle3, cost4);
+		AtomicBid sellerBid5 = new AtomicBid(5, bundle3, cost5);
 				
 		SellerType seller1 = new SellerType(sellerBid1, Distribution.UNIFORM, costMean, costVar);
 		SellerType seller2 = new SellerType(sellerBid2, Distribution.UNIFORM, costMean, costVar);
 		SellerType seller3 = new SellerType(sellerBid3, Distribution.UNIFORM, costMean, costVar);
+		SellerType seller4 = new SellerType(sellerBid4, Distribution.UNIFORM, costMean, costVar);
+		SellerType seller5 = new SellerType(sellerBid5, Distribution.UNIFORM, costMean, costVar);
 				
-		List<SellerType> sellers = Arrays.asList(seller1, seller2, seller3);
+		List<SellerType> sellers = Arrays.asList(seller1, seller2, seller3, seller4, seller5);
 				
 		//2. Create 2 buyers
 		double endowment = 10;

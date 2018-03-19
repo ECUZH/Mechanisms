@@ -3,8 +3,10 @@ package ch.uzh.ifi.Mechanisms;
 import static org.junit.Assert.*;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
 
@@ -51,26 +53,37 @@ public class testMarketPlatform {
 		double endowment = 10;
 		int allocations[] = {0b00, 0b01, 0b10, 0b11};									// 4 possible deterministic allocations
 		
-		double[] alloc1 = {0,0};
-		IParametrizedValueFunction v11 = new LinearThresholdValueFunction(0, 0, alloc1);
-		IParametrizedValueFunction v21 = new LinearThresholdValueFunction(0, 0, alloc1);
+		List<Double> alloc1 = Arrays.asList(0., 0.);
+		LinearThresholdValueFunction v11 = new LinearThresholdValueFunction(0, 0, alloc1);
+		LinearThresholdValueFunction v21 = new LinearThresholdValueFunction(0, 0, alloc1);
 		
-		double[] alloc2 = {0,1};
-		IParametrizedValueFunction v12 = new LinearThresholdValueFunction(4, 1, alloc2);
-		IParametrizedValueFunction v22 = new LinearThresholdValueFunction(1, 2, alloc2);
+		List<Double> alloc2 = Arrays.asList(0., 1.);
+		LinearThresholdValueFunction v12 = new LinearThresholdValueFunction(4, 1, alloc2);
+		LinearThresholdValueFunction v22 = new LinearThresholdValueFunction(1, 2, alloc2);
 		
-		double[] alloc3 = {1,0};
-		IParametrizedValueFunction v13 = new LinearThresholdValueFunction(4, 1, alloc3);
-		IParametrizedValueFunction v23 = new LinearThresholdValueFunction(1, 2, alloc3);
+		List<Double> alloc3 = Arrays.asList(1., 0.);
+		LinearThresholdValueFunction v13 = new LinearThresholdValueFunction(4, 1, alloc3);
+		LinearThresholdValueFunction v23 = new LinearThresholdValueFunction(1, 2, alloc3);
 		
-		double[] alloc4 = {1,1};
-		IParametrizedValueFunction v14 = new LinearThresholdValueFunction(6, 1, alloc4);
-		IParametrizedValueFunction v24 = new LinearThresholdValueFunction(1, 4, alloc4);
+		List<Double> alloc4 = Arrays.asList(1., 1.);
+		LinearThresholdValueFunction v14 = new LinearThresholdValueFunction(6, 1, alloc4);
+		LinearThresholdValueFunction v24 = new LinearThresholdValueFunction(1, 4, alloc4);
 		
-		IParametrizedValueFunction[] valueFunctions1 = {v11, v12, v13, v14};			//Parameterized value functions for both buyers 
-		IParametrizedValueFunction[] valueFunctions2 = {v21, v22, v23, v24};
-		ParametrizedQuasiLinearAgent buyer1 = new ParametrizedQuasiLinearAgent(1, endowment, allocations, valueFunctions1);
-		ParametrizedQuasiLinearAgent buyer2 = new ParametrizedQuasiLinearAgent(2, endowment, allocations, valueFunctions2);
+		Map<Integer, LinearThresholdValueFunction> valueFunctions1 = new HashMap<Integer, LinearThresholdValueFunction>();
+		Map<Integer, LinearThresholdValueFunction> valueFunctions2 = new HashMap<Integer, LinearThresholdValueFunction>();
+		valueFunctions1.put(0, v11);
+		valueFunctions1.put(1, v12);
+		valueFunctions1.put(2, v13);
+		valueFunctions1.put(3, v14);
+		
+		valueFunctions2.put(0, v21);
+		valueFunctions2.put(1, v22);
+		valueFunctions2.put(2, v23);
+		valueFunctions2.put(3, v24);
+		//IParametrizedValueFunction[] valueFunctions1 = {v11, v12, v13, v14};			//Parameterized value functions for both buyers 
+		//IParametrizedValueFunction[] valueFunctions2 = {v21, v22, v23, v24};
+		ParametrizedQuasiLinearAgent buyer1 = new ParametrizedQuasiLinearAgent(1, endowment, valueFunctions1);
+		ParametrizedQuasiLinearAgent buyer2 = new ParametrizedQuasiLinearAgent(2, endowment, valueFunctions2);
 		
 		List<ParametrizedQuasiLinearAgent> buyers = new LinkedList<ParametrizedQuasiLinearAgent>();
 		buyers.add(buyer1);
