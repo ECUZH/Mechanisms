@@ -1,8 +1,13 @@
 package ch.uzh.ifi.Mechanisms;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import ch.uzh.ifi.MechanismDesignPrimitives.AtomicBid;
 import ch.uzh.ifi.MechanismDesignPrimitives.Distribution;
@@ -13,54 +18,94 @@ import ch.uzh.ifi.MechanismDesignPrimitives.Type;
 
 public class benchmarkMarketPlatform {
 
+	private static final Logger _logger = LogManager.getLogger(benchmarkMarketPlatform.class);
+	
 	public static void main(String[] args) throws Exception 
 	{
-		System.out.println("BENCHMARK");
+		_logger.debug("BENCHMARK START");
+		
+		int numberOfArguments = 9;
+		int offset = 0;
+		if( args.length == numberOfArguments)
+			offset = 0;
+		else if( args.length == numberOfArguments + 3 )	//offset caused by MPI parameters
+			offset = 3;
+		else
+			throw new RuntimeException("Wrong number of input parameters: " + args.length);
+			
+		//1. Parse command line arguments
+		int numberOfDBs = Integer.parseInt(args[0 + offset]);			if( numberOfDBs <= 0)		throw new RuntimeException("The number of DBs should be posititve.");
+		int numberOfSellers = Integer.parseInt( args[1 + offset]);		if( numberOfSellers <= 0 )	throw new RuntimeException("The number of sellers should be positive.");
+		String competition = args[2 + offset];							if( !(competition.toUpperCase().equals("UNIFORM") || competition.toUpperCase().equals("LINEAR")) ) throw new RuntimeException("Wrong competition structure: " + competition.toUpperCase());
+		double costMin = Double.parseDouble( args[3 + offset] );		if( costMin < 0) 			throw new RuntimeException("Negative min cost.");				// Min of the costs distribution support
+		double costMax = Double.parseDouble( args[4 + offset] );		if( costMax <= costMin ) 	throw new RuntimeException("Max cost smaller than min cost.");	// Max of the costs distribution support
+		String costDistribution = args[5 + offset];						if( !(costDistribution.toUpperCase().equals("UNIFORM") || costDistribution.toUpperCase().equals("NORMAL"))) throw new RuntimeException("Wrong costs distribution specified.");
+		int numberOfBuyers = Integer.parseInt( args[6 + offset] );		if( numberOfBuyers <= 0 )	throw new RuntimeException("The number of sellers should be positive.");
+		double endowment = Double.parseDouble( args[7 + offset] );		if( endowment < 0 )			throw new RuntimeException("Negative endowments.");
+		int nSamples = Integer.parseInt( args[8 + offset] );			if( nSamples <= 0 )			throw new RuntimeException("Negative number of samples.");		
+		
 		//0. Define DBs
-		int nDBs  = 2;
-		int dbID1 = 0;
-		int dbID2 = 1;
-				
-		//1. Create 2 sellers
-		List<Integer> bundle1 = Arrays.asList(dbID1);
-		List<Integer> bundle2 = Arrays.asList(dbID2);
-				
-		double costMin = 0.;										// Min of the costs distribution support
-		double costMax = 20.;										// Max of the costs distribution support
+		int[] dbIDs = new int[numberOfDBs];
+		for(int i = 0; i < numberOfDBs; ++i)
+			dbIDs[i] = i;
+
+		//1. Create sellers
 		double costMean = (costMax + costMin) / 2;
-		double costVar = Math.pow(costMax-costMin, 2) / 12.;
-		double cost1 = 1.5 * costMean;								// Actual cost of seller 1
-		double cost2 = 2. * costMean;								// Actual cost of seller 2
-		double cost3 = 1.5 * costMean;								// Actual cost of seller 3
+		double costVar = 0.;
+		double[] costs = new double[numberOfSellers];
+		
+		if( costDistribution.toUpperCase().equals("UNIFORM") )  
+			costVar = Math.pow(costMax-costMin, 2) / 12. ;
+		else throw new RuntimeException("Not implemented");
 				
-		AtomicBid sellerBid1 = new AtomicBid(1, bundle1, cost1);
-		AtomicBid sellerBid2 = new AtomicBid(2, bundle2, cost2);
-		AtomicBid sellerBid3 = new AtomicBid(3, bundle2, cost3);
-				
-		SellerType seller1 = new SellerType(sellerBid1, Distribution.UNIFORM, costMean, costVar);
-		SellerType seller2 = new SellerType(sellerBid2, Distribution.UNIFORM, costMean, costVar);
-		SellerType seller3 = new SellerType(sellerBid3, Distribution.UNIFORM, costMean, costVar);
-				
-		List<SellerType> sellers = Arrays.asList(seller1, seller2, seller3);
-				
-		//2. Create 2 buyers
-		double endowment = 10;
-				
+		//2. Create 2 buyers				
 		List<Double> p = new LinkedList<Double>();
-		int numberOfBuyers = 20;
-		System.out.println("Number of buyers: " + numberOfBuyers);
 				
-		//3. Compute equilibrium prices for a sample of 10 
-		int nSamples = 10;
-				
+		//3. Compute equilibrium prices for the sample				
 		for(int s = 0; s < nSamples; ++s)
 		{
-			BuyersGenerator gen = new BuyersGenerator(nDBs, endowment, s);
-			List<ParametrizedQuasiLinearAgent> buyers = new LinkedList<ParametrizedQuasiLinearAgent>();
+			Random gen = new Random( s * 1000 );
+			List<SellerType> sellers = new ArrayList<SellerType>();
+			
+			// 3.1 Generate sellers
+			for(int i = 0; i < numberOfSellers; ++i)
+			{
+				// 3.1.1. Generate cost
+				if( costDistribution.toUpperCase().equals("UNIFORM") )
+					costs[i] = costMin + gen.nextDouble() * (costMax - costMin);
+				else throw new RuntimeException("Not implemented.");
 				
-			//3.1. Generate buyers
+				// 3.1.2. Choose the bundle (DB produced by the seller)
+				if( competition.toUpperCase().equals("UNIFORM"))
+				{
+					AtomicBid sellerBid = new AtomicBid(i+1, Arrays.asList( dbIDs[ i % numberOfDBs ] ), costs[i]);
+					SellerType seller = new SellerType(sellerBid, Distribution.UNIFORM, costMean, costVar);
+					sellers.add(seller);
+				}
+				else if( competition.toUpperCase().equals("LINEAR"))						// 1 + d + 2d + ... + (#DBs-1)*d = #sellers     (arithmetic progression)
+				{
+					int d = 2 * (numberOfSellers - 1) / numberOfDBs / (numberOfDBs - 1);	// Increment of the number of sellers per DB 
+					
+					int producedDB = 0;
+					if( i+1 == 1 )
+						producedDB = dbIDs[0];
+					else
+						for(int j = 1; j < numberOfDBs; ++j)
+							if( 1 + d*j*(j-1)/2 < i+1 && i+1 <= 1 + d*j*(j+1)/2)
+								producedDB = dbIDs[j];
+							
+					AtomicBid sellerBid = new AtomicBid(i+1, Arrays.asList( producedDB ), costs[i]);
+					SellerType seller = new SellerType(sellerBid, Distribution.UNIFORM, costMean, costVar);
+					sellers.add(seller);
+				}	
+			}
+				
+			//3.2. Generate buyers
+			BuyersGenerator buyersGenerator = new BuyersGenerator(numberOfDBs, endowment, s);
+			List<ParametrizedQuasiLinearAgent> buyers = new LinkedList<ParametrizedQuasiLinearAgent>();
+			
 			for(int i = 0; i < numberOfBuyers; ++i)
-				buyers.add(gen.generateBuyer(i+1));
+				buyers.add(buyersGenerator.generateBuyer(i+1));
 					
 			//3.2. Create market platform and evaluate the market demand
 			MarketPlatform mp = new MarketPlatform(buyers, sellers);
@@ -69,12 +114,12 @@ public class benchmarkMarketPlatform {
 			//3.3. Compute the equilibrium price
 			double price  = mp.tatonementPriceSearch();
 			p.add(price);
-			System.out.println("Price = " + price);
+			_logger.debug("Price = " + price);
 		}
 		
 		System.out.println("Equilibrium Prices: " + p.toString());
 				
-		List<Integer> bidders = new LinkedList<Integer>();
+		/*List<Integer> bidders = new LinkedList<Integer>();
 		List<Integer> bundles = new LinkedList<Integer>();
 		for(int j = 0; j < sellers.size(); ++j)
 		{
@@ -100,7 +145,7 @@ public class benchmarkMarketPlatform {
 		for(int s = 0; s < nSamples; ++s)
 		{
 			//4.1. Instantiate same buyers (same random seed is used)
-			BuyersGenerator gen = new BuyersGenerator(nDBs, endowment, s);
+			BuyersGenerator gen = new BuyersGenerator(numberOfDBs, endowment, s);
 			List<ParametrizedQuasiLinearAgent> buyers = new LinkedList<ParametrizedQuasiLinearAgent>();
 			for(int i = 0; i < numberOfBuyers; ++i)
 				buyers.add(gen.generateBuyer(i+1));
@@ -206,7 +251,7 @@ public class benchmarkMarketPlatform {
 		System.out.println("mean((surp(p)) ) = " + surplusP.stream().reduce(0., (i, j) -> i+j) / nSamples );
 		System.out.println("mean((surp(0)) ) = " + surplus0.stream().reduce(0., (i, j) -> i+j) / nSamples );
 		System.out.println("mean((sw(p)) ) = " + welfareP.stream().reduce(0., (i, j) -> i+j) / nSamples );
-		System.out.println("mean((sw(0)) ) = " + welfare0.stream().reduce(0., (i, j) -> i+j) / nSamples );
+		System.out.println("mean((sw(0)) ) = " + welfare0.stream().reduce(0., (i, j) -> i+j) / nSamples );*/
 	}
 
 }
