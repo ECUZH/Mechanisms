@@ -6,7 +6,7 @@ import ch.uzh.ifi.MechanismDesignPrimitives.ComplexSemanticWebType;
 import java.util.LinkedList;
 import java.util.List;
 
-public class SecondPricePayments implements PaymentRule
+public class SecondPricePayments implements IPaymentRule
 {
 	/*
 	 * Constructor

@@ -22,7 +22,7 @@ import edu.harvard.econcs.jopt.solver.mip.VarType;
 import edu.harvard.econcs.jopt.solver.mip.Variable;
 
 
-public class ProbabilisticCorePayments implements PaymentRule
+public class ProbabilisticCorePayments implements IPaymentRule
 {
 
 	public ProbabilisticCorePayments(AllocationWoD allocation, List<Type> plans, int numberOfSellers)

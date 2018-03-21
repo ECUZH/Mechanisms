@@ -199,9 +199,9 @@ public class ZollingerMechanism implements Auction
 	 * @param pr - payment rule to be used
 	 * @return a vector of prices for bidders
 	 */
-	public List<Double> computePayments(PaymentRule pr) throws Exception
+	public List<Double> computePayments(IPaymentRule pr) throws Exception
 	{	
-		PaymentRule paymentRule = pr;
+		IPaymentRule paymentRule = pr;
 		try
 		{
 			if( _allocation.getNumberOfAllocatedAuctioneers() > 0 )

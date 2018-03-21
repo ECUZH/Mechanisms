@@ -7,7 +7,7 @@ import ch.uzh.ifi.MechanismDesignPrimitives.AtomicBid;
 import java.util.LinkedList;
 import java.util.List;
 
-public class ThresholdPayments implements PaymentRule 
+public class ThresholdPayments implements IPaymentRule 
 {
 
 	/*

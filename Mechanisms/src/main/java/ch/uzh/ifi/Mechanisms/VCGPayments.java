@@ -16,7 +16,7 @@ import org.apache.logging.log4j.Logger;
  * The class provides methods to compute VCG payments.
  * @author Dmitry Moor
  */
-public class VCGPayments implements PaymentRule
+public class VCGPayments implements IPaymentRule
 {
 
 	private static final Logger _logger = LogManager.getLogger(VCGPayments.class);
@@ -54,7 +54,7 @@ public class VCGPayments implements PaymentRule
 	
 	/**
 	 * (non-Javadoc)
-	 * @see ch.uzh.ifi.Mechanisms.PaymentRule#computePayments()
+	 * @see ch.uzh.ifi.Mechanisms.IPaymentRule#computePayments()
 	 */
 	@Override
 	public List<Double> computePayments() throws Exception 
@@ -130,7 +130,7 @@ public class VCGPayments implements PaymentRule
 	
 	/**
 	 * (non-Javadoc)
-	 * @see ch.uzh.ifi.Mechanisms.PaymentRule#isBudgetBalanced()
+	 * @see ch.uzh.ifi.Mechanisms.IPaymentRule#isBudgetBalanced()
 	 */
 	@Override
 	public boolean isBudgetBalanced() 

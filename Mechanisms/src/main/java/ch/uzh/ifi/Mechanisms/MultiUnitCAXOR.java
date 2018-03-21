@@ -267,7 +267,7 @@ public class MultiUnitCAXOR implements Auction
 	 */
 	public List<Double> computeCorePayments()
 	{
-		PaymentRule paymentRule = new CorePayments( _allocation, _bids, _unitsOfItems, _numberOfItems, _binaryBids, null);
+		IPaymentRule paymentRule = new CorePayments( _allocation, _bids, _unitsOfItems, _numberOfItems, _binaryBids, null);
 		try 
 		{
 			_payments = paymentRule.computePayments();
@@ -286,7 +286,7 @@ public class MultiUnitCAXOR implements Auction
 	 */
 	public List<Double> computeVCG()
 	{
-		PaymentRule paymentRule = new VCGPayments(_allocation, _bids, _unitsOfItems, _numberOfItems, null);
+		IPaymentRule paymentRule = new VCGPayments(_allocation, _bids, _unitsOfItems, _numberOfItems, null);
 		try 
 		{
 			_payments = paymentRule.computePayments();
@@ -303,7 +303,7 @@ public class MultiUnitCAXOR implements Auction
 	 */
 	public List<Double> computeNearestVCG2()
 	{
-		PaymentRule paymentRule = new CoreNearestVCG2(_allocation, _bids, _unitsOfItems, _numberOfItems, null);
+		IPaymentRule paymentRule = new CoreNearestVCG2(_allocation, _bids, _unitsOfItems, _numberOfItems, null);
 		try {
 			_payments = paymentRule.computePayments();
 		} catch (Exception e) 
@@ -381,7 +381,7 @@ public class MultiUnitCAXOR implements Auction
 	}
 	
 	private String _paymentRule;
-	private PaymentRule _paymentRuleObj;
+	private IPaymentRule _paymentRuleObj;
 	
 	private int _numberOfAgents;									//The number of bidders in the CA
 	private int _numberOfItems;										//The number of different items to be sold

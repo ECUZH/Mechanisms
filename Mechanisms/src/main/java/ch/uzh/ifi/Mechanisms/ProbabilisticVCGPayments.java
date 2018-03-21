@@ -7,7 +7,7 @@ import ch.uzh.ifi.MechanismDesignPrimitives.SemanticWebType;
 import java.util.LinkedList;
 import java.util.List;
 
-public class ProbabilisticVCGPayments implements PaymentRule 
+public class ProbabilisticVCGPayments implements IPaymentRule 
 {
 	/*
 	 * 
