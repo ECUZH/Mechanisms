@@ -4,6 +4,11 @@
     <Console name="Console" target="SYSTEM_OUT">
       <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
     </Console>
+    <File name="File" fileName="logfile">
+      <PatternLayout>
+        <pattern>%d %p %C{1.} [%t] %m%n</pattern>
+      </PatternLayout>
+    </File>
   </Appenders>
   <Loggers>
     <Logger name="ch.uzh.ifi.MechanismDesignPrimitives.AtomicBid" level="ERROR" additivity="false">
@@ -60,11 +65,11 @@
     <Logger name="ch.uzh.ifi.Mechanisms.benchmarkDomainGeneratorCATSRegions" level="ERROR" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
-    <Logger name="ch.uzh.ifi.Mechanisms.SurplusOptimalReverseAuction" level="DEBUG" additivity="false">
+    <Logger name="ch.uzh.ifi.Mechanisms.SurplusOptimalReverseAuction" level="ERROR" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
     <Logger name="ch.uzh.ifi.Mechanisms.MarketPlatform" level="DEBUG" additivity="false">
-      <AppenderRef ref="Console"/>
+      <AppenderRef ref="File"/>
     </Logger>
     <Logger name="ch.uzh.ifi.MechanismDesignPrimitives.LinearThresholdValueFunction" level="ERROR" additivity="false">
       <AppenderRef ref="Console"/>
