@@ -185,7 +185,7 @@ public class MarketPlatform
 			marketDemand.set(1, marketDemand.get(1) + consumptionBundle.get(1));
 			_logger.debug("Demand of i=" + buyer.getAgentId() + " given price p= "+ price +" x0: " + consumptionBundle.get(0) + "; x1: " + consumptionBundle.get(1));
 		}
-		_logger.debug("Market demand: " + marketDemand);
+		//_logger.debug("Market demand: " + marketDemand);
 		return marketDemand;
 	}
 	
@@ -298,9 +298,13 @@ public class MarketPlatform
 		
 		double marketDemandForRowsReduced = computeMarketDemand(price, allocationReduced, true).get(1);
 		
-		double externality = computeAggregateValue(marketDemandForRows, allocation) - computeAggregateValue(marketDemandForRowsReduced, allocationReduced);
-		if( externality < 0 ) throw new RuntimeException("DB has a neggative externality.");
-		//_logger.debug("Computed externality is " + externality + " = " + computeAggregateValue(marketDemandForRows, allocation) + " - " + computeAggregateValue(marketDemandForRowsReduced, allocationReduced));
+		double aggregateValue = computeAggregateValue(marketDemandForRows, allocation);
+		double aggregateValueReduced = computeAggregateValue(marketDemandForRowsReduced, allocationReduced);
+		double externality = aggregateValue - aggregateValueReduced;
+		
+		_logger.debug("Computed externality is " + externality + " = " + aggregateValue + " - " + aggregateValueReduced);
+		if( externality < 0 ) throw new RuntimeException("DB has a neggative externality: " + externality);
+		
 		return externality;
 	}
 	
