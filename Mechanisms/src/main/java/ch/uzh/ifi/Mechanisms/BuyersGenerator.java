@@ -68,7 +68,7 @@ public class BuyersGenerator
 				double maxMarginalValue = subsetKeys.stream().map( k -> valueFunctions.get(k).getMarginalValue()).mapToDouble(v -> v).max().orElse(0.);
 				double maxThreshold = maxMarginalValue != 0 ? subsetKeys.stream().map( k -> valueFunctions.get(k).getMarginalValue() * valueFunctions.get(k).getThreshold()).mapToDouble( v -> v ).max().orElse(0.) / maxMarginalValue : 0.;
 				
-				marginalValue = _valFactor * gen.nextDouble() + marginalValue;
+				marginalValue = _valFactor * gen.nextDouble() + maxMarginalValue;
 				threshold = (int) Math.floor(maxThreshold + _thresholdFactor * gen.nextDouble());
 			}
 			
