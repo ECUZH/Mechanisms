@@ -22,7 +22,7 @@ public class benchmarkMarketPlatform {
 	
 	public static void main(String[] args) throws Exception 
 	{
-		_logger.debug("BENCHMARK START");
+		System.out.println("BENCHMARK START");
 		
 		int numberOfArguments = 9;
 		int offset = 0;
@@ -48,6 +48,25 @@ public class benchmarkMarketPlatform {
 		int[] dbIDs = new int[numberOfDBs];
 		for(int i = 0; i < numberOfDBs; ++i)
 			dbIDs[i] = i;
+		
+		//0.1. Define gradient descent parameters
+		double TOL = 1e-6;
+		double step = 1e-2;
+		if( numberOfDBs == 2 )
+			TOL = 1e-7;
+		else if ( numberOfDBs == 3)
+			TOL = 6 * 1e-6;
+		else if (numberOfDBs == 4 || numberOfDBs == 5)
+		{
+			TOL = 5*1e-6;
+			step = 2*1e-2;
+		}
+		else if (numberOfDBs == 10)
+		{
+			TOL = 1e-4;
+			step = 5*1e-2;
+		}
+		else throw new RuntimeException("Unspecified TOL.");
 
 		//1. Create sellers
 		double costMean = (costMax + costMin) / 2;
@@ -84,18 +103,19 @@ public class benchmarkMarketPlatform {
 				}
 				else if( competition.toUpperCase().equals("LINEAR"))						// 1 + d + 2d + ... + (#DBs-1)*d = #sellers     (arithmetic progression)
 				{
-					int d = 2 * (numberOfSellers - 1) / numberOfDBs / (numberOfDBs - 1);	// Increment of the number of sellers per DB 
+					int d = (int)Math.floor(2. * (numberOfSellers - 1) / numberOfDBs / (numberOfDBs - 1));	// Increment of the number of sellers per DB 
 					
 					int producedDB = 0;
 					if( i+1 == 1 )
 						producedDB = dbIDs[0];
 					else
-						for(int j = 1; j < numberOfDBs; ++j)
-							if( 1 + d*j*(j-1)/2 < i+1 && i+1 <= 1 + d*j*(j+1)/2)
-								producedDB = dbIDs[j];
+						for(int j = 1; j <= numberOfDBs; ++j)
+							if( 1 + d*j*(j-1)/2 <= i+1 && i+1 < 1 + d*j*(j+1)/2)
+								producedDB = dbIDs[j-1];
 							
 					AtomicBid sellerBid = new AtomicBid(i+1, Arrays.asList( producedDB ), costs[i]);
 					SellerType seller = new SellerType(sellerBid, Distribution.UNIFORM, costMean, costVar);
+					//_logger.debug("Create seller id=" + (i+1) + ". DB produced: " + producedDB);
 					sellers.add(seller);
 				}	
 			}
@@ -109,7 +129,8 @@ public class benchmarkMarketPlatform {
 					
 			//3.2. Create market platform and evaluate the market demand
 			MarketPlatform mp = new MarketPlatform(buyers, sellers);
-			mp.setToleranceLvl(1e-7);
+			mp.setToleranceLvl(TOL);
+			mp.setStep(step);
 					
 			//3.3. Compute the equilibrium price
 			double price  = mp.tatonementPriceSearch();
