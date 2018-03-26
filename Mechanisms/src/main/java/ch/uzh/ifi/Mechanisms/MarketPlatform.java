@@ -133,6 +133,7 @@ public class MarketPlatform
 				
 				allocationProbabilities.set(j, allocationProbabilities.get(j) + (allocProbNew - allocationProbabilities.get(j)) * _STEP);				
 				//_logger.debug("New allocation probability: " + allocationProbabilities.get(j));
+				System.out.println("New allocation probability: " + allocationProbabilities.get(j));
 			}
 			
 			// Compute the gradient for the price
@@ -142,17 +143,19 @@ public class MarketPlatform
 
 			double totalPaid = computeMarketDemand(price, probAllocation, false).get(1)*price;
 			//_logger.debug("Total payment: " + totalPayment + "; Total received: " + totalPaid); 
-			price = price + (totalPayment - totalPaid)*_STEP;
-			diff += Math.pow((totalPayment - totalPaid)*_STEP, 2);
+			price = price + (totalPayment - totalPaid)*_STEP/10;
+			diff += Math.pow((totalPayment - totalPaid)*_STEP/10, 2);
 			
 			probAllocation.resetAllocationProbabilities(allocationProbabilities);
 			
 			//_logger.debug("New price" + price);
+			System.out.println("New price: " + price + " z="+diff);
 			//BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
 			//String s = bufferRead.readLine();
 			
 			if ( diff < _TOL)
 				break;
+			if(i == _MAX_ITER - 1) System.out.println("Reached MAX_ITER.");
 		}
 		
 		//_logger.debug("Found price: " + price + "; diff="+ diff);
@@ -183,7 +186,8 @@ public class MarketPlatform
 			List<Double> consumptionBundle = buyer.solveConsumptionProblem(prices, allocation);
 			marketDemand.set(0, marketDemand.get(0) + consumptionBundle.get(0));
 			marketDemand.set(1, marketDemand.get(1) + consumptionBundle.get(1));
-			_logger.debug("Demand of i=" + buyer.getAgentId() + " given price p= "+ price +" x0: " + consumptionBundle.get(0) + "; x1: " + consumptionBundle.get(1));
+			_logger.debug("Demand of i=" + buyer.getAgentId() + " given price p= "+ price +" x0: " + consumptionBundle.get(0) + "; x1: " + consumptionBundle.get(1) + 
+					      " (his marginal value is "+ buyer.computeExpectedMarginalValue(allocation) +", threshold: "+ buyer.computeExpectedThreshold(allocation) +")");
 		}
 		//_logger.debug("Market demand: " + marketDemand);
 		return marketDemand;
@@ -197,7 +201,7 @@ public class MarketPlatform
 	 */
 	public double computeAggregateValue(double quantity, ProbabilisticAllocation allocation)
 	{
-		//_logger.debug("computeAggregateValue( "+quantity +", " + Arrays.toString(allocation.getAllocationProbabilities().toArray())+")");
+		_logger.debug("computeAggregateValue( "+quantity +", " + Arrays.toString(allocation.getAllocationProbabilities().toArray())+")");
 		double value = 0.;
 		
 		//To analyze the maximal inverse demand, first one need to compute the maximal prices
@@ -223,23 +227,32 @@ public class MarketPlatform
 		//Now integrate the maximal inverse demand
 		double price = 0.;
 		double marketDemandHigh = 0.;
+		_logger.debug("The number of integration steps: " + marginalValues.size());
 		for( int i = 0; i < marginalValues.size(); ++i )
 		{
 			price = marginalValues.get(i);
 			double marketDemandLow = marketDemandHigh;//computeMarketDemand(price + 1e-8, allocation).get(1);
-			marketDemandHigh  = computeMarketDemand(price - 1e-8, allocation, false).get(1);
+			
+			List<Double> marketDemandHighList = computeMarketDemand(price /*- 1e-8*/, allocation, false);
+			marketDemandHigh = marketDemandHighList.get(1);
+			double marketDemandMoney= marketDemandHighList.get(0);
 
 			if( marketDemandHigh < quantity )
 			{
-				value += price * (marketDemandHigh - marketDemandLow);
+				//value += price * (marketDemandHigh - marketDemandLow);
+				value += _buyers.get(0).getEndowment()*_buyers.size() - marketDemandMoney;
+				_logger.debug("Given price p="+price+" the marketDemandLow="+marketDemandLow+", marketDemandHigh="+marketDemandHigh + 
+						      ", dV=" + price * (marketDemandHigh - marketDemandLow) + " value="+value + "(q= "+quantity+ ")" + " m*="+marketDemandMoney);
 			}
 			else
 			{
 				value += price * (quantity - marketDemandLow);
+				_logger.debug("Given price p="+price+" the marketDemandLow="+marketDemandLow+", marketDemandHigh="+marketDemandHigh + 
+					      ", dV=" + price * (marketDemandHigh - marketDemandLow) + " value="+value + "(q= "+quantity+ ")");
 				break;
 			}	
 		}
-		//_logger.debug("Computed Aggregate value is  " + value);
+		_logger.debug("Computed Aggregate value is  " + value);
 		return value;
 	}
 	
@@ -285,7 +298,7 @@ public class MarketPlatform
 	 */
 	public double computeExternalityOfDB(int dbId, double price, ProbabilisticAllocation allocation) throws Exception
 	{
-		_logger.debug("computeValueOfDB("+dbId + ", "+price +", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
+		_logger.debug("computeValueOfDB(dbId="+dbId + ", p="+price +", alloc=" + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
 		double marketDemandForRows = computeMarketDemand(price, allocation, true).get(1);
 		
 		// An allocation in which DB with id=dbId is not allocated
@@ -302,8 +315,10 @@ public class MarketPlatform
 		double aggregateValueReduced = computeAggregateValue(marketDemandForRowsReduced, allocationReduced);
 		double externality = aggregateValue - aggregateValueReduced;
 		
-		_logger.debug("Computed externality is " + externality + " = " + aggregateValue + " - " + aggregateValueReduced);
-		if( externality < 0 ) throw new RuntimeException("DB has a neggative externality: " + externality);
+		_logger.debug("Computed externality for dbID=" + dbId + " is " + externality + " = " + aggregateValue + " - " + aggregateValueReduced);
+		if( externality < 0 && Math.abs(externality/aggregateValue) > 0.02 ) throw new RuntimeException("DB has a neggative externality: " + externality + " aggregateValue="+aggregateValue);
+		else if(externality < 0)
+			externality = 0;
 		
 		return externality;
 	}
@@ -317,10 +332,19 @@ public class MarketPlatform
 		_TOL = tol;
 	}
 	
+	/**
+	 * 
+	 * @param step
+	 */
+	public void setStep(double step)
+	{
+		_STEP = step;
+	}
+	
 	private List<ParametrizedQuasiLinearAgent> _buyers;				// Buyers
 	private List<SellerType> _sellers;								// Sellers
 	private int _numberOfDBs;										// Number of databases
-	private int _MAX_ITER = 1000;									// Max number of gradient descent iterations
+	private int _MAX_ITER = 10000;									// Max number of gradient descent iterations
 	private double _STEP = 0.01;									// Step of the gradient descent
-	private double _TOL = 1e-5;										// Tolerance of the gradient descent
+	private double _TOL = 1e-7;										// Tolerance of the gradient descent
 }
