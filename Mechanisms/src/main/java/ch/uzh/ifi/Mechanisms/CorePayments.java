@@ -34,7 +34,7 @@ import edu.harvard.econcs.jopt.solver.mip.Variable;
  * The bids should be specified using the XOR bidding language.
  * @author Dmitry Moor
  */
-public class CorePayments implements PaymentRule
+public class CorePayments implements IPaymentRule
 {
 	
 	private static final Logger _logger = LogManager.getLogger(CorePayments.class);
@@ -73,7 +73,7 @@ public class CorePayments implements PaymentRule
 	
 	/**
 	 * (non-Javadoc)
-	 * @see ch.uzh.ifi.Mechanisms.PaymentRule#computePayments()
+	 * @see ch.uzh.ifi.Mechanisms.IPaymentRule#computePayments()
 	 */
 	@Override
 	public List<Double> computePayments() throws PaymentException, Exception
@@ -493,7 +493,7 @@ public class CorePayments implements PaymentRule
 
 	/**
 	 * (non-Javadoc)
-	 * @see ch.uzh.ifi.Mechanisms.PaymentRule#isBudgetBalanced()
+	 * @see ch.uzh.ifi.Mechanisms.IPaymentRule#isBudgetBalanced()
 	 */
 	@Override
 	public boolean isBudgetBalanced() 

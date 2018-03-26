@@ -55,23 +55,14 @@ public class benchmarkProbabilisticCAXOR_CATS
 		double[] shadeECRHB= {																			   };  //ECR with high variance and big problem size (16 goods, 8 bidders)
 		
 		//Shading factors for ECR-CORE:
-		double[] shadeExpLS= {0.,    0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.					   };  //Exp with low variance and small problem size (9 goods, 5 bidders)
+		double[] shadeExpLS= {0.96,    0.96,   0.97,  0.975,  0.967,   0.99,   0.98,   0.99,   0.99,   0.99};  //Exp with low variance and small problem size (9 goods, 5 bidders)
 		double[] shadeExpHS= {																			   };  //Exp with high variance and small problem size (9 goods, 5 bidders)
-		double[] shadeExpLB= {																			   };  //Exp with low variance and big problem size (16 goods, 8 bidders)
+		double[] shadeExpLB= {   0,    0.89,   0.96,   0.98,  0.979,   0.98,   0.99,   0.99,   0.99,   0.99};  //Exp with low variance and big problem size (16 goods, 8 bidders)
 		double[] shadeExpHB= {																			   };  //Exp with high variance and big problem size (16 goods, 8 bidders)
-				
-		//double[] shadeECRL = {0.185,   0.132,  0.104,  0.098,  0.077,  0.054,  0.046,  0.026,  0.028,  0.011, 0.008};
-		//double[] shadeExpL = {0.165,   0.132,  0.108,  0.093,  0.075,  0.053,  0.045,  0.032,  0.021,  0.012, 0.004};
-		//double[] shadeSML  = {0.107,   0.098,  0.066,  0.068,  0.028,  0.020,  0.005,  0.006,  0.000,  0.000, 0.000};
-		
-		//double[] shadeECCH = {0.125,   0.085,  0.085,  0.066,  0.047,  0.038,  0.028,  0.030,  0.020,  0.014, 0.003};
-		//double[] shadeECRH = {0.144,   0.142,  0.073,  0.072,  0.067,  0.064,  0.032,  0.030,  0.011,  0.016, 0.012};
-		//double[] shadeExpH = {0.164,   0.131,  0.105,  0.096,  0.068,  0.058,  0.048,  0.032,  0.024,  0.019, 0.010};
-		//double[] shadeSMH  = {0.058,   0.046,  0.042,  0.033,  0.033,  0.009,  0.004,  0.002,  0.005,  0.004, 0.000};
 
 		int numberOfGoods = problemSize.equals("small") ? 9 : 16;
 		int numberOfAgents= problemSize.equals("small") ? 5 : 8;
-		int numberOfSampleGames = 1000;
+		int numberOfSampleGames = 100;
 		int numberOfRuns = 1;
 		double primaryReductionCoef = isLowVariance ? 0.3 : 0.6;
 		double secondaryReductionCoef = isLowVariance ? 0.2 : 0.1;
@@ -100,22 +91,31 @@ public class benchmarkProbabilisticCAXOR_CATS
 									else if(problemSize.equals("big") && !isLowVariance)
 										shadingFactor = shadeECRHB[k];
 									break;
-				case "Exp-CORE":	break;
+				case "Exp-CORE":	if(problemSize.equals("small") && isLowVariance)  
+										shadingFactor = shadeExpLS[k];
+									else if(problemSize.equals("small") && !isLowVariance)
+										shadingFactor = shadeExpHS[k];
+									else if(problemSize.equals("big") && isLowVariance)
+										shadingFactor = shadeExpLB[k];
+									else if(problemSize.equals("big") && !isLowVariance)
+										shadingFactor = shadeExpHB[k];
+									break;
 				default: 			throw new RuntimeException("Incorrect payment rule specified.");
 			}
 			
 			if( isTruthful == 1 )
 				shadingFactor = 1.; 
+			//System.out.println("Shading factor: " + shadingFactor);
 			
 			List<Type> types = new ArrayList<Type>();
 			IntStream.range(0, numberOfAgents).boxed().forEach( i -> types.add( new CombinatorialType( new AtomicBid(i+1, Arrays.asList(0), 0.) ) ) ); 	//Add dummy types
 
 			IloCplex solver = new IloCplex();
 			
-			int[] irViolation  =  new int[numberOfRuns];
-			double[] efficiency = new double[numberOfRuns];
-			int[] emptyCoreCounter = new int[numberOfRuns];
-			int[] vcgInCoreCounter = new int[numberOfRuns];
+			int[] irViolation  =  new int[numberOfSampleGames];
+			double[] efficiency = new double[numberOfSampleGames];
+			int[] emptyCoreCounter = new int[numberOfSampleGames];
+			int[] vcgInCoreCounter = new int[numberOfSampleGames];
 			
 			for(int j = 0; j < numberOfRuns; ++j)
 			{
@@ -130,7 +130,7 @@ public class benchmarkProbabilisticCAXOR_CATS
 				
 					for(int i = 0; i < numberOfSampleGames; ++i)
 					{
-						System.out.println("i="+i);
+						//System.out.println("i="+i);
 						Random generator = new Random(j*10000 + i);
 						//generator.setSeed(System.nanoTime());
 					
@@ -138,6 +138,8 @@ public class benchmarkProbabilisticCAXOR_CATS
 						for(int q = 0; q < numberOfAgents; ++q)
 						{
 							Type ct = domainGenerator.generateBid(j*10000 + i*100 + q*10, types.get(q).getAgentId());
+							for(int s = 0; s < ct.getNumberOfAtoms(); ++s)
+								ct.getAtom(s).setValue( ct.getAtom(s).getValue() * shadingFactor );
 							bids.add(ct);
 						}
 					
@@ -159,9 +161,9 @@ public class benchmarkProbabilisticCAXOR_CATS
 							catch(PaymentException e)
 							{
 								if(e.getMessage().equals("Empty Core"))
-									emptyCoreCounter[j] += 1;
+									emptyCoreCounter[i] += 1;
 								else if(e.getMessage().equals("VCG is in the Core"))
-									vcgInCoreCounter[j] += 1;
+									vcgInCoreCounter[i] += 1;
 							}
 							AllocationEC allocation = (AllocationEC)auction.getAllocation();
 							double[] payments = auction.getPayments();
@@ -177,11 +179,11 @@ public class benchmarkProbabilisticCAXOR_CATS
 								double value = bids.get(allocatedBidderId-1).getAtom(allocatedBundleIdx).getValue() / shadingFactor;
 								double realizedAvailability = allocation.getRealizedRV(0, q);
 								if( value*realizedAvailability - payments[q] < 0 )
-									irViolation[j]+=1;
+									irViolation[i]+=1;
 							
 								double realizedValue = value*realizedAvailability; 
 								double realizedCost = bids.get(allocatedBidderId-1).getAtom(allocatedBundleIdx).computeCost(costs)*realizedAvailability;
-								efficiency[j] += realizedValue - realizedCost;
+								efficiency[i] += realizedValue - realizedCost;
 							}
 						}
 						catch (Exception e) 
@@ -203,44 +205,42 @@ public class benchmarkProbabilisticCAXOR_CATS
 			double irMean = 0.;
 			double effMean = 0.;
 			double emptyCoreMean = 0.;
-			for(int j = 0; j < numberOfRuns; ++j)
+			for(int j = 0; j < numberOfSampleGames; ++j)
 			{
 				irMean += irViolation[j];
 				effMean+= efficiency[j];
 				emptyCoreMean += emptyCoreCounter[j];
 			}
-			irMean /= numberOfRuns;
 			irMean /= numberOfSampleGames;
 			irMean *= 100;
 			effMean/= numberOfSampleGames;
-			emptyCoreMean /= numberOfRuns;
 			emptyCoreMean /=numberOfSampleGames;
 			
 			double effStdErr = 0.;
-			for(int j = 0; j < numberOfRuns; ++j)
+			for(int j = 0; j < numberOfSampleGames; ++j)
 				effStdErr += Math.pow(efficiency[j] - effMean, 2);
 
-			effStdErr /= numberOfRuns;
+			effStdErr /= numberOfSampleGames;
 			effStdErr = Math.sqrt(effStdErr);
-			effStdErr = effStdErr / Math.sqrt(numberOfRuns);
+			effStdErr = effStdErr / Math.sqrt(numberOfSampleGames);
 
 			
 			double irStdErr = 0.;
-			for(int j = 0; j < numberOfRuns; ++j)
+			for(int j = 0; j < numberOfSampleGames; ++j)
 				irStdErr += Math.pow(irViolation[j] - irMean, 2);
 
-			irStdErr /= numberOfRuns;
+			irStdErr /= numberOfSampleGames;
 			irStdErr = Math.sqrt(irStdErr);
-			irStdErr = irStdErr / Math.sqrt(numberOfRuns);
+			irStdErr = irStdErr / Math.sqrt(numberOfSampleGames);
 
 			
 			double emptyCoreStdErr = 0.;
-			for(int j = 0; j < numberOfRuns; ++j)
+			for(int j = 0; j < numberOfSampleGames; ++j)
 				emptyCoreStdErr += Math.pow(emptyCoreCounter[j] - emptyCoreMean, 2);
 
-			emptyCoreStdErr /= numberOfRuns;
+			emptyCoreStdErr /= numberOfSampleGames;
 			emptyCoreStdErr = Math.sqrt(emptyCoreStdErr);
-			emptyCoreStdErr = emptyCoreStdErr / Math.sqrt(numberOfRuns);
+			emptyCoreStdErr = emptyCoreStdErr / Math.sqrt(numberOfSampleGames);
 
 			switch(testName)
 			{

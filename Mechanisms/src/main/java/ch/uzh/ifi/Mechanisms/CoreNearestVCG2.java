@@ -7,7 +7,7 @@ import ch.uzh.ifi.MechanismDesignPrimitives.Type;
 import java.util.LinkedList;
 import java.util.List;
 
-public class CoreNearestVCG2 implements PaymentRule
+public class CoreNearestVCG2 implements IPaymentRule
 {
 
 	/*
@@ -27,12 +27,12 @@ public class CoreNearestVCG2 implements PaymentRule
 	
 	/**
 	 * (non-Javadoc)
-	 * @see ch.uzh.ifi.Mechanisms.PaymentRule#computePayments()
+	 * @see ch.uzh.ifi.Mechanisms.IPaymentRule#computePayments()
 	 */
 	@Override
 	public List<Double> computePayments() throws Exception 
 	{
-		PaymentRule vcgRule = new VCGPayments(_allocation, _bids, _unitsOfItems, _numberOfItems, _costs); 
+		IPaymentRule vcgRule = new VCGPayments(_allocation, _bids, _unitsOfItems, _numberOfItems, _costs); 
 		List<Double> vcg = vcgRule.computePayments();
 		
 		if( _allocation.getBiddersInvolved(0).size() == 1)					//Only one winner => VCG payment
@@ -74,7 +74,7 @@ public class CoreNearestVCG2 implements PaymentRule
 
 	/**
 	 * (non-Javadoc)
-	 * @see ch.uzh.ifi.Mechanisms.PaymentRule#isBudgetBalanced()
+	 * @see ch.uzh.ifi.Mechanisms.IPaymentRule#isBudgetBalanced()
 	 */
 	@Override
 	public boolean isBudgetBalanced() 
