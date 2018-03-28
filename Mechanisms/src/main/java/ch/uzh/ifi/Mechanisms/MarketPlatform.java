@@ -57,7 +57,7 @@ public class MarketPlatform
 		{
 			bidders.add(_sellers.get(j).getAgentId());
 			bundles.add(_sellers.get(j).getAtom(0).getInterestingSet().get(0));
-			allocationProbabilities.add(1.0 - 0.1*Math.random());
+			allocationProbabilities.add(1.0/* - 0.1*Math.random()*/);
 		}
 		probAllocation.addAllocatedAgent(0, bidders, bundles, allocationProbabilities);
 		probAllocation.normalize();
@@ -184,7 +184,7 @@ public class MarketPlatform
 		
 		for(ParametrizedQuasiLinearAgent buyer: _buyers)
 		{
-			List<Double> consumptionBundle = buyer.solveConsumptionProblem(prices, allocation);
+			List<Double> consumptionBundle = buyer.solveConsumptionProblem(prices);
 			marketDemand.set(0, marketDemand.get(0) + consumptionBundle.get(0));
 			marketDemand.set(1, marketDemand.get(1) + consumptionBundle.get(1));
 			_logger.debug("Demand of i=" + buyer.getAgentId() + " given price p= "+ price +" x0: " + consumptionBundle.get(0) + "; x1: " + consumptionBundle.get(1) + 
@@ -226,12 +226,13 @@ public class MarketPlatform
 			}
 		
 		//Now integrate the maximal inverse demand
-		for(int i = 0 ; i < _buyers.size(); ++i)
+		/*for(int i = 0 ; i < _buyers.size(); ++i)
 		{
 			List<Double> optBundle = _buyers.get(i).solveConsumptionProblem(Arrays.asList(1., price), allocation);
 			value += _buyers.get(i).computeUtility(allocation, optBundle) - _buyers.get(i).getEndowment();
 		}
 		value += price * totalQuantityDemanded;
+		_logger.debug("Computed Aggregate value is  " + value);*/
 		
 		
 		
@@ -273,20 +274,19 @@ public class MarketPlatform
 		//		break;
 		//	}	
 		//}
-		_logger.debug("Computed Aggregate value is  " + value);
 		
 		
 		//-----------------------------------
 		//    TEST Multithreading
 		//-----------------------------------
-		/*_vals = new double[_numberOfThreads];
+		_vals = new double[_numberOfThreads];
 		
 		try
 		{
 			List<Thread> threads = new LinkedList<Thread>();
 			for(int i = 0; i < _numberOfThreads; ++i)
 			{
-				Thread thread = new Thread(new DemandWorker("Thread", i, marginalValues, allocation, totalQuantityDemanded) );
+				Thread thread = new Thread(new DemandWorker("Thread", i, price, allocation) );
 				threads.add(thread);
 			}
 			
@@ -303,8 +303,9 @@ public class MarketPlatform
 
 		for(int i = 0; i < _numberOfThreads; ++i)
 			value = value + _vals[i];
+		value += price * totalQuantityDemanded;
 		_logger.debug("Computed Aggregate tstValue is  " + value);
-		*/
+		
 		return value;
 	}
 	
@@ -399,54 +400,33 @@ public class MarketPlatform
 		private Thread _thread;										//A thread object
 		private String _threadName;									//The thread's name
 		private int _threadId;										//A thread id
-		private List<Double> _marginalValues;
 		private ProbabilisticAllocation _alloc;
-		private double _totalQuantityDemanded;
+		private double _price;
 		private int _idxLow;
 		private int _idxHigh;
 		
-		public DemandWorker(String name, int threadId, List<Double> marginalValues, ProbabilisticAllocation allocation, double totalQuantityDemanded)
+		public DemandWorker(String name, int threadId, double price, ProbabilisticAllocation allocation)
 		{
 			_threadName = name + threadId;
 			_threadId = threadId;
-			_marginalValues = marginalValues;
 			_alloc = allocation;
-			_totalQuantityDemanded = totalQuantityDemanded;
+			_price = price;
 			
-			_idxLow = _threadId * _marginalValues.size() / _numberOfThreads;
-			_idxHigh = (_threadId + 1) * _marginalValues.size() / _numberOfThreads - 1;
+			_idxLow = _threadId * _buyers.size() / _numberOfThreads;
+			_idxHigh = (_threadId + 1) * _buyers.size() / _numberOfThreads - 1;
 		}
 		
 		@Override
 		public void run() 
 		{				
 			double value = 0.;
-			double price = 0.;
-			double marketDemandLow = 0.;
-			double marketDemandHigh = 0.;
 						
-			marketDemandHigh = _idxLow == 0 ? 0. : computeMarketDemandLocal( _marginalValues.get(_idxLow - 1)).get(1);
 			for( int i = _idxLow; i <= _idxHigh; ++i )
 			{
-				price = _marginalValues.get(i);
-				marketDemandLow = marketDemandHigh;
-				marketDemandHigh = computeMarketDemandLocal(price).get(1);
-
-				if( marketDemandHigh < _totalQuantityDemanded )
-				{
-					value += price * (marketDemandHigh - marketDemandLow);
-					//_logger.debug("Given price p="+price+" the marketDemandLow="+marketDemandLow+", marketDemandHigh="+marketDemandHigh + 
-					//		      ", dV=" + price * (marketDemandHigh - marketDemandLow) + " value="+value + "(q= "+_totalQuantityDemanded+ ")" + " m*=");
-				}
-				else
-				{
-					value += price * (_totalQuantityDemanded - marketDemandLow);
-					//_logger.debug("Given price p="+price+" the marketDemandLow="+marketDemandLow+", marketDemandHigh="+marketDemandHigh + 
-					//	      ", dV=" + price * (marketDemandHigh - marketDemandLow) + " value="+value + "(q= "+_totalQuantityDemanded+ ")");
-					break;
-				}
+				List<Double> optBundle = _buyers.get(i).solveConsumptionProblem(Arrays.asList(1., _price));
+				value += _buyers.get(i).computeUtility(optBundle) - _buyers.get(i).getEndowment();
 			}
-			
+			_logger.debug("Thread id=" +_threadId + ". idx=["+_idxLow+", "+_idxHigh +"]. Val="+value);
 			_vals[_threadId] = value;
 		}
 		
@@ -458,25 +438,6 @@ public class MarketPlatform
 				_thread.start();
 			}
 		}
-		
-		/**
-		 * The method computes the market demand for both goods at the given price level and given allocation of DBs.
-		 * @param price the price of the good 1 (good 0 is money with p0 = 1 - normalized)
-		 * @return the market demand for all goods
-		 */
-		public List<Double> computeMarketDemandLocal(double price)
-		{
-			List<Double> marketDemand = Arrays.asList(0., 0.);
-			List<Double> prices = Arrays.asList(1., price);
-			
-			for(ParametrizedQuasiLinearAgent buyer: _buyers)
-			{
-				List<Double> consumptionBundle = buyer.solveConsumptionProblem(prices, _alloc);
-				marketDemand.set(0, marketDemand.get(0) + consumptionBundle.get(0));
-				marketDemand.set(1, marketDemand.get(1) + consumptionBundle.get(1));
-			}
-			return marketDemand;
-		}
 	}
 	
 	private List<ParametrizedQuasiLinearAgent> _buyers;				// Buyers
@@ -485,6 +446,6 @@ public class MarketPlatform
 	private int _MAX_ITER = 10000;									// Max number of gradient descent iterations
 	private double _STEP = 0.01;									// Step of the gradient descent
 	private double _TOL = 1e-7;										// Tolerance of the gradient descent
-	private int _numberOfThreads = 2;
+	private int _numberOfThreads = 8;
 	private double[] _vals;
 }
