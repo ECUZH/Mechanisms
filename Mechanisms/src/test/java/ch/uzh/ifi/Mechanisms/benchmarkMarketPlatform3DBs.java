@@ -176,7 +176,8 @@ public class benchmarkMarketPlatform3DBs {
 					
 			for(int i = 0; i < numberOfBuyers; ++i)
 			{
-				List<Double> consumptionBundle = buyers.get(i).solveConsumptionProblem(prices, allocationOfSellers);
+				buyers.get(i).updateAllocProbabilityDistribution(allocationOfSellers);
+				List<Double> consumptionBundle = buyers.get(i).solveConsumptionProblem(prices/*, allocationOfSellers*/);
 				totalUtility += buyers.get(i).computeUtility(allocationOfSellers, consumptionBundle) - buyers.get(i).getEndowment();
 				totalValue += buyers.get(i).computeUtility(allocationOfSellers, consumptionBundle) - consumptionBundle.get(0);
 			}
@@ -192,7 +193,8 @@ public class benchmarkMarketPlatform3DBs {
 									
 			for(int i = 0; i < numberOfBuyers; ++i)
 			{
-				List<Double> consumptionBundle = buyers.get(i).solveConsumptionProblem(prices, allocationOfSellers);
+				buyers.get(i).updateAllocProbabilityDistribution(allocationOfSellers);
+				List<Double> consumptionBundle = buyers.get(i).solveConsumptionProblem(prices/*, allocationOfSellers*/);
 				totalUtility += buyers.get(i).computeUtility(allocationOfSellers, consumptionBundle) - buyers.get(i).getEndowment();
 				totalValue += buyers.get(i).computeUtility(allocationOfSellers, consumptionBundle) - consumptionBundle.get(0);
 			}

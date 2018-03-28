@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -58,8 +59,8 @@ public class benchmarkMarketPlatform {
 			TOL = 6 * 1e-6;
 		else if (numberOfDBs == 4 || numberOfDBs == 5)
 		{
-			TOL = 5*1e-6;
-			step = 2*1e-2;
+			TOL = 1e-7;
+			step = 5*1e-3;
 		}
 		else if (numberOfDBs == 10)
 		{
@@ -122,7 +123,7 @@ public class benchmarkMarketPlatform {
 				
 			//3.2. Generate buyers
 			BuyersGenerator buyersGenerator = new BuyersGenerator(numberOfDBs, endowment, s);
-			List<ParametrizedQuasiLinearAgent> buyers = new LinkedList<ParametrizedQuasiLinearAgent>();
+			List<ParametrizedQuasiLinearAgent> buyers = new CopyOnWriteArrayList<ParametrizedQuasiLinearAgent>();
 			
 			for(int i = 0; i < numberOfBuyers; ++i)
 				buyers.add(buyersGenerator.generateBuyer(i+1));
