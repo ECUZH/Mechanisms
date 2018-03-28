@@ -187,8 +187,8 @@ public class MarketPlatform
 			List<Double> consumptionBundle = buyer.solveConsumptionProblem(prices);
 			marketDemand.set(0, marketDemand.get(0) + consumptionBundle.get(0));
 			marketDemand.set(1, marketDemand.get(1) + consumptionBundle.get(1));
-			_logger.debug("Demand of i=" + buyer.getAgentId() + " given price p= "+ price +" x0: " + consumptionBundle.get(0) + "; x1: " + consumptionBundle.get(1) + 
-					      " (his marginal value is "+ buyer.computeExpectedMarginalValue(allocation) +", threshold: "+ buyer.computeExpectedThreshold(allocation) +")");
+			//_logger.debug("Demand of i=" + buyer.getAgentId() + " given price p= "+ price +" x0: " + consumptionBundle.get(0) + "; x1: " + consumptionBundle.get(1) + 
+			//		      " (his marginal value is "+ buyer.computeExpectedMarginalValue(allocation) +", threshold: "+ buyer.computeExpectedThreshold(allocation) +")");
 		}
 		//_logger.debug("Market demand: " + marketDemand);
 		return marketDemand;
@@ -320,23 +320,24 @@ public class MarketPlatform
 	 */
 	public double computeValueOfDB(int dbId, double price, ProbabilisticAllocation allocation) throws Exception
 	{
-		//_logger.debug("computeValueOfDB("+dbId + ", "+price +", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
+		_logger.debug("computeValueOfDB("+dbId + ", "+price +", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
 		double marketDemandForRows = computeMarketDemand(price, allocation, true).get(1);
 		
 		double externality = computeExternalityOfDB(dbId, price, allocation);
-//		double valueOfDB = externality;
 		List<Double> externalitiesOfDBs = new LinkedList<Double>();
 		
 		int numberOfDBs = allocation.getNumberOfGoods();
 		for(int i = 0; i < numberOfDBs; ++i)
 			externalitiesOfDBs.add( computeExternalityOfDB(i, price, allocation));
 		
-		//_logger.debug("Externality = " + externality + ". Other externalities: " + valuesOfDBs.toString());
 		if( Math.abs(externality) < 1e-6 )
+		{
+			_logger.debug("Computed Value of dbID = " + dbId + " is 0.");
 			return 0.;
+		}
 		
 		double valueOfDB = externality / externalitiesOfDBs.stream().reduce(0., (i, j) -> i+j) * computeAggregateValue(price, marketDemandForRows, allocation);
-		//_logger.debug("Computed Value is " + valueOfDB + " = " + computeAggregateValue(marketDemand, allocation) + " - " + computeAggregateValue(marketDemand, allocationReduced));
+		_logger.debug("Computed Value of dbID = " + dbId + " is " + valueOfDB);
 		return valueOfDB;
 	}
 	
@@ -351,7 +352,7 @@ public class MarketPlatform
 	 */
 	public double computeExternalityOfDB(int dbId, double price, ProbabilisticAllocation allocation) throws Exception
 	{
-		_logger.debug("computeValueOfDB(dbId="+dbId + ", p="+price +", alloc=" + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
+		_logger.debug("computeExternalityOfDB(dbId="+dbId + ", p="+price +", alloc=" + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
 		double marketDemandForRows = computeMarketDemand(price, allocation, true).get(1);
 		
 		// An allocation in which DB with id=dbId is not allocated
@@ -369,7 +370,7 @@ public class MarketPlatform
 		double externality = aggregateValue - aggregateValueReduced;
 		
 		_logger.debug("Computed externality for dbID=" + dbId + " is " + externality + " = " + aggregateValue + " - " + aggregateValueReduced);
-		if( externality < 0 && Math.abs(externality/aggregateValue) > 0.02 ) throw new RuntimeException("DB has a neggative externality: " + externality + " aggregateValue="+aggregateValue);
+		if( externality < 0 && Math.abs(externality/aggregateValue) > 0.01 ) throw new RuntimeException("DB has a neggative externality: " + externality + " aggregateValue="+aggregateValue);
 		else if(externality < 0)
 			externality = 0;
 		
@@ -426,7 +427,7 @@ public class MarketPlatform
 				List<Double> optBundle = _buyers.get(i).solveConsumptionProblem(Arrays.asList(1., _price));
 				value += _buyers.get(i).computeUtility(optBundle) - _buyers.get(i).getEndowment();
 			}
-			_logger.debug("Thread id=" +_threadId + ". idx=["+_idxLow+", "+_idxHigh +"]. Val="+value);
+			//_logger.debug("Thread id=" +_threadId + ". idx=["+_idxLow+", "+_idxHigh +"]. Val="+value);
 			_vals[_threadId] = value;
 		}
 		
@@ -446,6 +447,6 @@ public class MarketPlatform
 	private int _MAX_ITER = 10000;									// Max number of gradient descent iterations
 	private double _STEP = 0.01;									// Step of the gradient descent
 	private double _TOL = 1e-7;										// Tolerance of the gradient descent
-	private int _numberOfThreads = 8;
+	private int _numberOfThreads = 4;
 	private double[] _vals;
 }
