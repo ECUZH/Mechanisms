@@ -4,7 +4,7 @@
     <Console name="Console" target="SYSTEM_OUT">
       <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
     </Console>
-    <File name="File" fileName="logfile">
+    <File name="File" fileName="logfile.txt">
       <PatternLayout>
         <pattern>%d %p %C{1.} [%t] %m%n</pattern>
       </PatternLayout>
@@ -63,6 +63,9 @@
       <AppenderRef ref="Console"/>
     </Logger>
     <Logger name="ch.uzh.ifi.Mechanisms.benchmarkDomainGeneratorCATSRegions" level="ERROR" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
+    <Logger name="ch.uzh.ifi.Mechanisms.benchmarkMarketPlatform" level="DEBUG" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
     <Logger name="ch.uzh.ifi.Mechanisms.SurplusOptimalReverseAuction" level="ERROR" additivity="false">
