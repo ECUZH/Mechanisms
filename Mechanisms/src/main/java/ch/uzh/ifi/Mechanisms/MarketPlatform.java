@@ -74,17 +74,6 @@ public class MarketPlatform
 			List<Allocation> allocations = new LinkedList<Allocation>();
 			List<Double> payments = new LinkedList<Double>();
 			
-			//-------
-			List<Double> externalitiesOfDBs = new LinkedList<Double>();			
-			for(int j = 0; j < _numberOfDBs; ++j)
-				externalitiesOfDBs.add( computeExternalityOfDB(j, price, probAllocation));
-			
-			
-			double marketDemandForRows = computeMarketDemand(price, probAllocation, true).get(1);
-			double aggregateValue = computeAggregateValue(price, marketDemandForRows, probAllocation);
-			double externalitiesTotal = externalitiesOfDBs.stream().reduce(0., (i1, i2) -> i1+i2);
-			//-------
-			
 			// For every DB solve the surplus optimal auction
 			for(int j = 0; j < _numberOfDBs; ++j)						// TODO: here I have an assumption that Ids of DBs are between 0 and 1
 			{
@@ -95,14 +84,7 @@ public class MarketPlatform
 						sellersInvolved.add(_sellers.get(k));
 				
 				// Second, compute the value of the market platform for the DB
-				double dbValue = 0;//computeValueOfDB(j, price, probAllocation);
-				//---------------
-				if( Math.abs(externalitiesOfDBs.get(j)) < 1e-6 )
-					dbValue =  0.;
-				else
-					dbValue = externalitiesOfDBs.get(j) / externalitiesTotal * aggregateValue;
-				//---------------
-				//_logger.debug("Value for DB_"+j+" is " + dbValue);
+				double dbValue = computeValueOfDB(j, price, probAllocation);
 				
 				// Third, instantiate a surplus optimal reverse auction for these sellers
 				SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(sellersInvolved, dbValue);
@@ -159,7 +141,7 @@ public class MarketPlatform
 			if(i == _MAX_ITER - 1) System.out.println("Reached MAX_ITER.");
 		}
 		
-		//_logger.debug("Found price: " + price + "; diff="+ diff);
+		_logger.debug("Found price: " + price + "; diff="+ diff);
 		return price;
 	}
 	
@@ -323,20 +305,20 @@ public class MarketPlatform
 		_logger.debug("computeValueOfDB("+dbId + ", "+price +", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
 		double marketDemandForRows = computeMarketDemand(price, allocation, true).get(1);
 		
-		double externality = computeExternalityOfDB(dbId, price, allocation);
 		List<Double> externalitiesOfDBs = new LinkedList<Double>();
 		
 		int numberOfDBs = allocation.getNumberOfGoods();
 		for(int i = 0; i < numberOfDBs; ++i)
-			externalitiesOfDBs.add( computeExternalityOfDB(i, price, allocation));
-		
-		if( Math.abs(externality) < 1e-6 )
 		{
-			_logger.debug("Computed Value of dbID = " + dbId + " is 0.");
-			return 0.;
+			externalitiesOfDBs.add( computeExternalityOfDB(i, price, allocation));
+			if( i == dbId && Math.abs(externalitiesOfDBs.get(dbId)) < 1e-6 )
+			{
+				_logger.debug("Computed Value of dbID = " + dbId + " is 0 (zero externality).");
+				return 0.;
+			}
 		}
 		
-		double valueOfDB = externality / externalitiesOfDBs.stream().reduce(0., (i, j) -> i+j) * computeAggregateValue(price, marketDemandForRows, allocation);
+		double valueOfDB = externalitiesOfDBs.get(dbId) / externalitiesOfDBs.stream().reduce(0., (i, j) -> i+j) * computeAggregateValue(price, marketDemandForRows, allocation);
 		_logger.debug("Computed Value of dbID = " + dbId + " is " + valueOfDB);
 		return valueOfDB;
 	}
@@ -441,12 +423,17 @@ public class MarketPlatform
 		}
 	}
 	
+	public void setNumberOfThreads(int nThreads)
+	{
+		_numberOfThreads = nThreads;
+	}
+	
 	private List<ParametrizedQuasiLinearAgent> _buyers;				// Buyers
 	private List<SellerType> _sellers;								// Sellers
 	private int _numberOfDBs;										// Number of databases
 	private int _MAX_ITER = 10000;									// Max number of gradient descent iterations
 	private double _STEP = 0.01;									// Step of the gradient descent
 	private double _TOL = 1e-7;										// Tolerance of the gradient descent
-	private int _numberOfThreads = 4;
+	private int _numberOfThreads = 8;
 	private double[] _vals;
 }
