@@ -57,7 +57,7 @@ public class MarketPlatform
 		{
 			bidders.add(_sellers.get(j).getAgentId());
 			bundles.add(_sellers.get(j).getAtom(0).getInterestingSet().get(0));
-			allocationProbabilities.add(1.0/* - 0.1*Math.random()*/);
+			allocationProbabilities.add(1.0);
 		}
 		probAllocation.addAllocatedAgent(0, bidders, bundles, allocationProbabilities);
 		probAllocation.normalize();
@@ -115,7 +115,7 @@ public class MarketPlatform
 				diff += Math.pow((allocProbNew - allocationProbabilities.get(j)) * _STEP, 2);
 				
 				allocationProbabilities.set(j, allocationProbabilities.get(j) + (allocProbNew - allocationProbabilities.get(j)) * _STEP);				
-				//_logger.debug("New allocation probability: " + allocationProbabilities.get(j));
+				_logger.debug("New allocation probability: " + allocationProbabilities.get(j));
 				//System.out.println("New allocation probability: " + allocationProbabilities.get(j));
 			}
 			
@@ -125,7 +125,7 @@ public class MarketPlatform
 				totalPayment += payments.get(j);
 
 			double totalPaid = computeMarketDemand(price, probAllocation, false).get(1)*price;
-			//_logger.debug("Total payment: " + totalPayment + "; Total received: " + totalPaid); 
+			_logger.debug("Total payment: " + totalPayment + "; Total received: " + totalPaid); 
 			price = price + (totalPayment - totalPaid)*_STEP;
 			//diff += Math.pow((totalPayment - totalPaid)*_STEP, 2);
 			
@@ -133,11 +133,14 @@ public class MarketPlatform
 			
 			//_logger.debug("New price" + price);
 			//System.out.println("New price: " + price + " z="+diff);
-			//BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
-			//String s = bufferRead.readLine();
+			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
+			String s = bufferRead.readLine();
 			
 			if ( diff < _TOL)
+			{
+				System.out.println("New allocation probability: " + Arrays.toString(allocationProbabilities.toArray()));
 				break;
+			}
 			if(i == _MAX_ITER - 1) System.out.println("Reached MAX_ITER.");
 		}
 		
@@ -188,12 +191,16 @@ public class MarketPlatform
 		double value = 0.;
 		
 		//To analyze the maximal inverse demand, first one need to compute the maximal prices
-		List<Double> marginalValues = new CopyOnWriteArrayList<Double>();
+		//List<Double> marginalValues = new CopyOnWriteArrayList<Double>();
 		
 		_buyers.get(0).updateAllocProbabilityDistribution(allocation);
+		
+		//TODO: parallelize
 		for(ParametrizedQuasiLinearAgent buyer: _buyers)
-		{
 			buyer.setAllocProbabilityDistribution( _buyers.get(0).getAllocProbabilityDistribution());
+		
+/*		for(ParametrizedQuasiLinearAgent buyer: _buyers)
+		{
 			marginalValues.add(buyer.computeExpectedMarginalValue(allocation));
 		}
 		
@@ -205,7 +212,7 @@ public class MarketPlatform
 			{
 				marginalValues.remove(i);
 				i -= 1;
-			}
+			}*/
 		
 		//Now integrate the maximal inverse demand
 		/*for(int i = 0 ; i < _buyers.size(); ++i)
@@ -257,10 +264,6 @@ public class MarketPlatform
 		//	}	
 		//}
 		
-		
-		//-----------------------------------
-		//    TEST Multithreading
-		//-----------------------------------
 		_vals = new double[_numberOfThreads];
 		
 		try
@@ -302,15 +305,16 @@ public class MarketPlatform
 	 */
 	public double computeValueOfDB(int dbId, double price, ProbabilisticAllocation allocation) throws Exception
 	{
-		_logger.debug("computeValueOfDB("+dbId + ", "+price +", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
+		_logger.debug("computeValueOfDB(" + dbId + ", " + price + ", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
 		double marketDemandForRows = computeMarketDemand(price, allocation, true).get(1);
 		
 		List<Double> externalitiesOfDBs = new LinkedList<Double>();
 		
 		int numberOfDBs = allocation.getNumberOfGoods();
+		
 		for(int i = 0; i < numberOfDBs; ++i)
 		{
-			externalitiesOfDBs.add( computeExternalityOfDB(i, price, allocation));
+			externalitiesOfDBs.add( computeExternalityOfDB(i, price, allocation, marketDemandForRows));
 			if( i == dbId && Math.abs(externalitiesOfDBs.get(dbId)) < 1e-6 )
 			{
 				_logger.debug("Computed Value of dbID = " + dbId + " is 0 (zero externality).");
@@ -329,13 +333,13 @@ public class MarketPlatform
 	 * @param dbId id of the database
 	 * @param price current market price per row of a query answer
 	 * @param allocation current probabilistic allocation of sellers
+	 * @param marketDemandForRows market demand for rows given current allocation
 	 * @return the positive externality of the specified DB.
 	 * @throws Exception 
 	 */
-	public double computeExternalityOfDB(int dbId, double price, ProbabilisticAllocation allocation) throws Exception
+	public double computeExternalityOfDB(int dbId, double price, ProbabilisticAllocation allocation, double marketDemandForRows) throws Exception
 	{
 		_logger.debug("computeExternalityOfDB(dbId="+dbId + ", p="+price +", alloc=" + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
-		double marketDemandForRows = computeMarketDemand(price, allocation, true).get(1);
 		
 		// An allocation in which DB with id=dbId is not allocated
 		ProbabilisticAllocation allocationReduced = new ProbabilisticAllocation();
@@ -345,10 +349,13 @@ public class MarketPlatform
 				                            allocation.getAllocationProbabilities());
 		allocationReduced.deallocateBundle(dbId);
 		
+		// Compute market demand for rows if dbId is not allocated
 		double marketDemandForRowsReduced = computeMarketDemand(price, allocationReduced, true).get(1);
 		
+		// Compute aggregate values in both cases
 		double aggregateValue = computeAggregateValue(price, marketDemandForRows, allocation);
 		double aggregateValueReduced = computeAggregateValue(price, marketDemandForRowsReduced, allocationReduced);
+		
 		double externality = aggregateValue - aggregateValueReduced;
 		
 		_logger.debug("Computed externality for dbID=" + dbId + " is " + externality + " = " + aggregateValue + " - " + aggregateValueReduced);
@@ -403,7 +410,7 @@ public class MarketPlatform
 		public void run() 
 		{				
 			double value = 0.;
-						
+			
 			for( int i = _idxLow; i <= _idxHigh; ++i )
 			{
 				List<Double> optBundle = _buyers.get(i).solveConsumptionProblem(Arrays.asList(1., _price));
@@ -422,7 +429,7 @@ public class MarketPlatform
 			}
 		}
 	}
-	
+		
 	public void setNumberOfThreads(int nThreads)
 	{
 		_numberOfThreads = nThreads;
@@ -434,6 +441,6 @@ public class MarketPlatform
 	private int _MAX_ITER = 10000;									// Max number of gradient descent iterations
 	private double _STEP = 0.01;									// Step of the gradient descent
 	private double _TOL = 1e-7;										// Tolerance of the gradient descent
-	private int _numberOfThreads = 8;
+	private int _numberOfThreads;
 	private double[] _vals;
 }
