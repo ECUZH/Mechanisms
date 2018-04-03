@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import ch.uzh.ifi.MechanismDesignPrimitives.IParametrizedValueFunction;
 import ch.uzh.ifi.MechanismDesignPrimitives.LinearThresholdValueFunction;
@@ -76,8 +77,13 @@ public class BuyersGenerator
 			valueFunctions.put(allocations[i], v);
 		}
 		
+		List<LinearThresholdValueFunction> valueFunctionsList = new CopyOnWriteArrayList<LinearThresholdValueFunction>();
+		for(int i = 0; i < nDeterministicAllocations; ++i)
+			valueFunctionsList.add(valueFunctions.get(i));
+		
 		// Parameterized value functions for the buyer
-		ParametrizedQuasiLinearAgent buyer = new ParametrizedQuasiLinearAgent(id, _endowment, valueFunctions);
+		ParametrizedQuasiLinearAgent buyer = new ParametrizedQuasiLinearAgent(id, _endowment, valueFunctionsList);
+		buyer.setNumberOfGoods(_numberOfDBs);
 		return buyer;
 	}
 	
