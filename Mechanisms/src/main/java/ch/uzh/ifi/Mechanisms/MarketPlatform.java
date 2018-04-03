@@ -112,7 +112,7 @@ public class MarketPlatform
 						break;
 					}
 				
-				diff += Math.pow((allocProbNew - allocationProbabilities.get(j)) * _STEP, 2);
+				diff += Math.pow(allocProbNew - allocationProbabilities.get(j), 2);
 				
 				allocationProbabilities.set(j, allocationProbabilities.get(j) + (allocProbNew - allocationProbabilities.get(j)) * _STEP);				
 				_logger.debug("New allocation probability: " + allocationProbabilities.get(j));
@@ -127,18 +127,18 @@ public class MarketPlatform
 			double totalPaid = computeMarketDemand(price, probAllocation, false).get(1)*price;
 			_logger.debug("Total payment: " + totalPayment + "; Total received: " + totalPaid); 
 			price = price + (totalPayment - totalPaid)*_STEP;
-			//diff += Math.pow((totalPayment - totalPaid)*_STEP, 2);
+			diff += Math.pow(totalPayment - totalPaid, 2);
 			
 			probAllocation.resetAllocationProbabilities(allocationProbabilities);
 			
 			//_logger.debug("New price" + price);
 			//System.out.println("New price: " + price + " z="+diff);
-			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
-			String s = bufferRead.readLine();
+			//BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
+			//String s = bufferRead.readLine();
 			
 			if ( diff < _TOL)
 			{
-				System.out.println("New allocation probability: " + Arrays.toString(allocationProbabilities.toArray()));
+				System.out.println("New allocation probabilities: " + Arrays.toString(allocationProbabilities.toArray()));
 				break;
 			}
 			if(i == _MAX_ITER - 1) System.out.println("Reached MAX_ITER.");
@@ -157,6 +157,8 @@ public class MarketPlatform
 	public List<Double> computeMarketDemand(double price, ProbabilisticAllocation allocation, boolean updateProbDistribution)
 	{
 		//_logger.debug("computeMarketDemand("+price + ", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) + ")");
+		double[] marketDemandMoney = new double[_buyers.size()];
+		double[] marketDemandRows  = new double[_buyers.size()];
 		List<Double> marketDemand = Arrays.asList(0., 0.);
 		List<Double> prices = Arrays.asList(1., price);
 		
@@ -167,14 +169,45 @@ public class MarketPlatform
 				buyer.setAllocProbabilityDistribution( _buyers.get(0).getAllocProbabilityDistribution());
 		}
 		
-		for(ParametrizedQuasiLinearAgent buyer: _buyers)
+		
+		try
+		{
+			List<Thread> threads = new LinkedList<Thread>();
+			for(int i = 0; i < _numberOfThreads; ++i)
+			{
+				Thread thread = new Thread(new DemandWorker("Thread", i, prices, marketDemandMoney, marketDemandRows) );
+				threads.add(thread);
+			}
+			
+			for(int i = 0; i < _numberOfThreads; ++i)
+				threads.get(i).start();
+			
+			for(int i = 0; i < _numberOfThreads; ++i)
+				threads.get(i).join(0);
+		}
+		catch(InterruptedException e)
+		{
+		    e.printStackTrace();
+		}
+		
+		double totalMarketDemandMoney = 0.;
+		double totalMarketDemandRows = 0.;
+		for(int i = 0; i < _buyers.size(); ++i)
+		{
+			totalMarketDemandMoney += marketDemandMoney[i];
+			totalMarketDemandRows += marketDemandRows[i];
+		}
+		marketDemand.set(0, totalMarketDemandMoney);
+		marketDemand.set(1, totalMarketDemandRows);
+		/*for(ParametrizedQuasiLinearAgent buyer: _buyers)
 		{
 			List<Double> consumptionBundle = buyer.solveConsumptionProblem(prices);
 			marketDemand.set(0, marketDemand.get(0) + consumptionBundle.get(0));
 			marketDemand.set(1, marketDemand.get(1) + consumptionBundle.get(1));
 			//_logger.debug("Demand of i=" + buyer.getAgentId() + " given price p= "+ price +" x0: " + consumptionBundle.get(0) + "; x1: " + consumptionBundle.get(1) + 
 			//		      " (his marginal value is "+ buyer.computeExpectedMarginalValue(allocation) +", threshold: "+ buyer.computeExpectedThreshold(allocation) +")");
-		}
+		}*/
+		
 		//_logger.debug("Market demand: " + marketDemand);
 		return marketDemand;
 	}
@@ -271,7 +304,7 @@ public class MarketPlatform
 			List<Thread> threads = new LinkedList<Thread>();
 			for(int i = 0; i < _numberOfThreads; ++i)
 			{
-				Thread thread = new Thread(new DemandWorker("Thread", i, price, allocation) );
+				Thread thread = new Thread(new ValueWorker("Thread", i, price, allocation) );
 				threads.add(thread);
 			}
 			
@@ -385,7 +418,7 @@ public class MarketPlatform
 	}
 	
 	
-	private class DemandWorker implements Runnable
+	private class ValueWorker implements Runnable
 	{
 		private Thread _thread;										//A thread object
 		private String _threadName;									//The thread's name
@@ -395,7 +428,7 @@ public class MarketPlatform
 		private int _idxLow;
 		private int _idxHigh;
 		
-		public DemandWorker(String name, int threadId, double price, ProbabilisticAllocation allocation)
+		public ValueWorker(String name, int threadId, double price, ProbabilisticAllocation allocation)
 		{
 			_threadName = name + threadId;
 			_threadId = threadId;
@@ -429,7 +462,51 @@ public class MarketPlatform
 			}
 		}
 	}
+	
+	private class DemandWorker implements Runnable
+	{
+		private Thread _thread;										//A thread object
+		private String _threadName;									//The thread's name
+		private int _threadId;										//A thread id
+		private List<Double> _prices;
+		private double[] _marketDemandMoney;
+		private double[] _marketDemandRows;
+		private int _idxLow;
+		private int _idxHigh;
 		
+		public DemandWorker(String name, int threadId, List<Double> prices, double[] marketDemandMoney, double[] marketDemandRows)
+		{
+			_threadName = name + threadId;
+			_threadId = threadId;
+			_marketDemandMoney = marketDemandMoney;
+			_marketDemandRows = marketDemandRows;
+			_prices = prices;
+			
+			_idxLow = _threadId * _buyers.size() / _numberOfThreads;
+			_idxHigh = (_threadId + 1) * _buyers.size() / _numberOfThreads - 1;
+		}
+		
+		@Override
+		public void run() 
+		{							
+			for( int i = _idxLow; i <= _idxHigh; ++i )
+			{
+				List<Double> optBundle = _buyers.get(i).solveConsumptionProblem(_prices);				
+				_marketDemandMoney[i] = optBundle.get(0);
+				_marketDemandRows[i] = optBundle.get(1);
+			}
+		}
+		
+		public void start()
+		{
+			if(_thread == null)
+			{
+				_thread = new Thread(this, _threadName);
+				_thread.start();
+			}
+		}
+	}
+	
 	public void setNumberOfThreads(int nThreads)
 	{
 		_numberOfThreads = nThreads;
