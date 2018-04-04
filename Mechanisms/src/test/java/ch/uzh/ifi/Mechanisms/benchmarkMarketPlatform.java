@@ -25,7 +25,7 @@ public class benchmarkMarketPlatform {
 	{
 		System.out.println("BENCHMARK START");
 		
-		int numberOfArguments = 9;
+		int numberOfArguments = 10;
 		int offset = 0;
 		if( args.length == numberOfArguments)
 			offset = 0;
@@ -44,6 +44,7 @@ public class benchmarkMarketPlatform {
 		int numberOfBuyers = Integer.parseInt( args[6 + offset] );		if( numberOfBuyers <= 0 )	throw new RuntimeException("The number of sellers should be positive.");
 		double endowment = Double.parseDouble( args[7 + offset] );		if( endowment < 0 )			throw new RuntimeException("Negative endowments.");
 		int nSamples = Integer.parseInt( args[8 + offset] );			if( nSamples <= 0 )			throw new RuntimeException("Negative number of samples.");		
+		int nThreads = Integer.parseInt( args[9 + offset] );  
 		
 		//0. Define DBs
 		int[] dbIDs = new int[numberOfDBs];
@@ -59,8 +60,8 @@ public class benchmarkMarketPlatform {
 			TOL = 6 * 1e-6;
 		else if (numberOfDBs == 4 || numberOfDBs == 5)
 		{
-			TOL = 1e-7;
-			step = 5*1e-3;
+			TOL = 0.01;
+			step = 1e-3;
 		}
 		else if (numberOfDBs == 10)
 		{
@@ -113,14 +114,14 @@ public class benchmarkMarketPlatform {
 						for(int j = 1; j <= numberOfDBs; ++j)
 							if( 1 + d*j*(j-1)/2 <= i+1 && i+1 < 1 + d*j*(j+1)/2)
 								producedDB = dbIDs[j-1];
-							
+					
 					AtomicBid sellerBid = new AtomicBid(i+1, Arrays.asList( producedDB ), costs[i]);
 					SellerType seller = new SellerType(sellerBid, Distribution.UNIFORM, costMean, costVar);
 					//_logger.debug("Create seller id=" + (i+1) + ". DB produced: " + producedDB);
 					sellers.add(seller);
 				}	
 			}
-				
+			
 			//3.2. Generate buyers
 			BuyersGenerator buyersGenerator = new BuyersGenerator(numberOfDBs, endowment, s);
 			List<ParametrizedQuasiLinearAgent> buyers = new CopyOnWriteArrayList<ParametrizedQuasiLinearAgent>();
@@ -132,6 +133,7 @@ public class benchmarkMarketPlatform {
 			MarketPlatform mp = new MarketPlatform(buyers, sellers);
 			mp.setToleranceLvl(TOL);
 			mp.setStep(step);
+			mp.setNumberOfThreads(nThreads);
 					
 			//3.3. Compute the equilibrium price
 			double price  = mp.tatonementPriceSearch();
