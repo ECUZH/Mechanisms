@@ -116,7 +116,7 @@ public class MarketPlatform
 				
 				allocationProbabilities.set(j, allocationProbabilities.get(j) + (allocProbNew - allocationProbabilities.get(j)) * _STEP);				
 				_logger.debug("New allocation probability: " + allocationProbabilities.get(j));
-				//System.out.println("New allocation probability: " + allocationProbabilities.get(j));
+				System.out.println("New allocation probability: " + allocationProbabilities.get(j));
 			}
 			
 			// Compute the gradient for the price
@@ -132,9 +132,9 @@ public class MarketPlatform
 			probAllocation.resetAllocationProbabilities(allocationProbabilities);
 			
 			//_logger.debug("New price" + price);
-			//System.out.println("New price: " + price + " z="+diff);
-			//BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
-			//String s = bufferRead.readLine();
+			System.out.println("New price: " + price + " z="+diff);
+			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
+			String s = bufferRead.readLine();
 			
 			if ( diff < _TOL)
 			{
@@ -156,11 +156,13 @@ public class MarketPlatform
 	 */
 	public List<Double> computeMarketDemand(double price, ProbabilisticAllocation allocation, boolean updateProbDistribution)
 	{
-		//_logger.debug("computeMarketDemand("+price + ", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) + ")");
-		double[] marketDemandMoney = new double[_buyers.size()];
-		double[] marketDemandRows  = new double[_buyers.size()];
+		_logger.debug("computeMarketDemand("+price + ", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) + ")");
+		double[] marketDemandMoney = new double[_numberOfThreads];
+		double[] marketDemandRows  = new double[_numberOfThreads];
 		List<Double> marketDemand = Arrays.asList(0., 0.);
-		List<Double> prices = Arrays.asList(1., price);
+		List<Double> prices = new CopyOnWriteArrayList<Double>();
+		prices.add(1.);
+		prices.add(price);
 		
 		if( updateProbDistribution )
 		{
@@ -169,13 +171,13 @@ public class MarketPlatform
 				buyer.setAllocProbabilityDistribution( _buyers.get(0).getAllocProbabilityDistribution());
 		}
 		
-		
+		double a = System.currentTimeMillis();
 		try
 		{
 			List<Thread> threads = new LinkedList<Thread>();
 			for(int i = 0; i < _numberOfThreads; ++i)
 			{
-				Thread thread = new Thread(new DemandWorker("Thread", i, prices, marketDemandMoney, marketDemandRows) );
+				Thread thread = new Thread(new DemandWorker("Thread", i, price, marketDemandMoney, marketDemandRows) );
 				threads.add(thread);
 			}
 			
@@ -192,13 +194,15 @@ public class MarketPlatform
 		
 		double totalMarketDemandMoney = 0.;
 		double totalMarketDemandRows = 0.;
-		for(int i = 0; i < _buyers.size(); ++i)
+		for(int i = 0; i < _numberOfThreads; ++i)
 		{
 			totalMarketDemandMoney += marketDemandMoney[i];
 			totalMarketDemandRows += marketDemandRows[i];
 		}
 		marketDemand.set(0, totalMarketDemandMoney);
 		marketDemand.set(1, totalMarketDemandRows);
+		a = System.currentTimeMillis() - a;
+		System.out.println( a);
 		/*for(ParametrizedQuasiLinearAgent buyer: _buyers)
 		{
 			List<Double> consumptionBundle = buyer.solveConsumptionProblem(prices);
@@ -208,7 +212,7 @@ public class MarketPlatform
 			//		      " (his marginal value is "+ buyer.computeExpectedMarginalValue(allocation) +", threshold: "+ buyer.computeExpectedThreshold(allocation) +")");
 		}*/
 		
-		//_logger.debug("Market demand: " + marketDemand);
+		_logger.debug("Market demand: " + marketDemand);
 		return marketDemand;
 	}
 	
@@ -339,6 +343,7 @@ public class MarketPlatform
 	public double computeValueOfDB(int dbId, double price, ProbabilisticAllocation allocation) throws Exception
 	{
 		_logger.debug("computeValueOfDB(" + dbId + ", " + price + ", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
+		
 		double marketDemandForRows = computeMarketDemand(price, allocation, true).get(1);
 		
 		List<Double> externalitiesOfDBs = new LinkedList<Double>();
@@ -446,7 +451,7 @@ public class MarketPlatform
 			
 			for( int i = _idxLow; i <= _idxHigh; ++i )
 			{
-				List<Double> optBundle = _buyers.get(i).solveConsumptionProblem(Arrays.asList(1., _price));
+				List<Double> optBundle = _buyers.get(i).solveConsumptionProblem(_price);
 				value += _buyers.get(i).computeUtility(optBundle) - _buyers.get(i).getEndowment();
 			}
 			//_logger.debug("Thread id=" +_threadId + ". idx=["+_idxLow+", "+_idxHigh +"]. Val="+value);
@@ -465,22 +470,22 @@ public class MarketPlatform
 	
 	private class DemandWorker implements Runnable
 	{
-		private Thread _thread;										//A thread object
-		private String _threadName;									//The thread's name
-		private int _threadId;										//A thread id
-		private List<Double> _prices;
-		private double[] _marketDemandMoney;
-		private double[] _marketDemandRows;
-		private int _idxLow;
-		private int _idxHigh;
+		private Thread _thread;										// A thread object
+		private String _threadName;									// The thread's name
+		private int _threadId;										// A thread id
+		private double _price;										// Price per row
+		private double[] _marketDemandMoney;						// Shared array
+		private double[] _marketDemandRows;							// Shared array
+		private int _idxLow;										// Lower index of the buyer for the thread
+		private int _idxHigh;										// Upper index of the buyer for the thread
 		
-		public DemandWorker(String name, int threadId, List<Double> prices, double[] marketDemandMoney, double[] marketDemandRows)
+		public DemandWorker(String name, int threadId, double price, double[] marketDemandMoney, double[] marketDemandRows)
 		{
 			_threadName = name + threadId;
 			_threadId = threadId;
 			_marketDemandMoney = marketDemandMoney;
 			_marketDemandRows = marketDemandRows;
-			_prices = prices;
+			_price = price;
 			
 			_idxLow = _threadId * _buyers.size() / _numberOfThreads;
 			_idxHigh = (_threadId + 1) * _buyers.size() / _numberOfThreads - 1;
@@ -488,13 +493,17 @@ public class MarketPlatform
 		
 		@Override
 		public void run() 
-		{							
+		{   
+			double moneyDemand = 0.;
+			double rowsDemand = 0.;
 			for( int i = _idxLow; i <= _idxHigh; ++i )
 			{
-				List<Double> optBundle = _buyers.get(i).solveConsumptionProblem(_prices);				
-				_marketDemandMoney[i] = optBundle.get(0);
-				_marketDemandRows[i] = optBundle.get(1);
+				List<Double> optBundle = _buyers.get(i).solveConsumptionProblem(_price);				
+				moneyDemand += optBundle.get(0);
+				rowsDemand += optBundle.get(1);
 			}
+			_marketDemandMoney[_threadId] = moneyDemand;
+			_marketDemandRows[_threadId] = rowsDemand;
 		}
 		
 		public void start()
