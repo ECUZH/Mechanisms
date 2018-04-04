@@ -160,9 +160,6 @@ public class MarketPlatform
 		double[] marketDemandMoney = new double[_numberOfThreads];
 		double[] marketDemandRows  = new double[_numberOfThreads];
 		List<Double> marketDemand = Arrays.asList(0., 0.);
-		List<Double> prices = new CopyOnWriteArrayList<Double>();
-		prices.add(1.);
-		prices.add(price);
 		
 		if( updateProbDistribution )
 		{
@@ -171,7 +168,6 @@ public class MarketPlatform
 				buyer.setAllocProbabilityDistribution( _buyers.get(0).getAllocProbabilityDistribution());
 		}
 		
-		double a = System.currentTimeMillis();
 		try
 		{
 			List<Thread> threads = new LinkedList<Thread>();
@@ -201,17 +197,7 @@ public class MarketPlatform
 		}
 		marketDemand.set(0, totalMarketDemandMoney);
 		marketDemand.set(1, totalMarketDemandRows);
-		a = System.currentTimeMillis() - a;
-		System.out.println( a);
-		/*for(ParametrizedQuasiLinearAgent buyer: _buyers)
-		{
-			List<Double> consumptionBundle = buyer.solveConsumptionProblem(prices);
-			marketDemand.set(0, marketDemand.get(0) + consumptionBundle.get(0));
-			marketDemand.set(1, marketDemand.get(1) + consumptionBundle.get(1));
-			//_logger.debug("Demand of i=" + buyer.getAgentId() + " given price p= "+ price +" x0: " + consumptionBundle.get(0) + "; x1: " + consumptionBundle.get(1) + 
-			//		      " (his marginal value is "+ buyer.computeExpectedMarginalValue(allocation) +", threshold: "+ buyer.computeExpectedThreshold(allocation) +")");
-		}*/
-		
+
 		_logger.debug("Market demand: " + marketDemand);
 		return marketDemand;
 	}
