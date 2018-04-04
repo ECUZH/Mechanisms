@@ -159,7 +159,6 @@ public class MarketPlatform
 		_logger.debug("computeMarketDemand("+price + ", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) + ")");
 		double[] marketDemandMoney = new double[_numberOfThreads];
 		double[] marketDemandRows  = new double[_numberOfThreads];
-		List<Double> marketDemand = Arrays.asList(0., 0.);
 		
 		if( updateProbDistribution )
 		{
@@ -195,11 +194,9 @@ public class MarketPlatform
 			totalMarketDemandMoney += marketDemandMoney[i];
 			totalMarketDemandRows += marketDemandRows[i];
 		}
-		marketDemand.set(0, totalMarketDemandMoney);
-		marketDemand.set(1, totalMarketDemandRows);
 
-		_logger.debug("Market demand: " + marketDemand);
-		return marketDemand;
+		_logger.debug("Market demand: " + totalMarketDemandMoney + " " + totalMarketDemandRows);
+		return Arrays.asList(totalMarketDemandMoney, totalMarketDemandRows);
 	}
 	
 	/**
