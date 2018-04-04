@@ -116,7 +116,7 @@ public class MarketPlatform
 				
 				allocationProbabilities.set(j, allocationProbabilities.get(j) + (allocProbNew - allocationProbabilities.get(j)) * _STEP);				
 				_logger.debug("New allocation probability: " + allocationProbabilities.get(j));
-				System.out.println("New allocation probability: " + allocationProbabilities.get(j));
+				//System.out.println("New allocation probability: " + allocationProbabilities.get(j));
 			}
 			
 			// Compute the gradient for the price
@@ -125,16 +125,16 @@ public class MarketPlatform
 				totalPayment += payments.get(j);
 
 			double totalPaid = computeMarketDemand(price, probAllocation, false).get(1)*price;
-			_logger.debug("Total payment: " + totalPayment + "; Total received: " + totalPaid); 
-			price = price + (totalPayment - totalPaid)*_STEP;
+			_logger.debug("Total payment: " + totalPayment + "; Total received: " + totalPaid);
+			price = price + (totalPayment - totalPaid)* (_STEP / (_buyers.size()/10));
 			diff += Math.pow(totalPayment - totalPaid, 2);
 			
 			probAllocation.resetAllocationProbabilities(allocationProbabilities);
 			
 			//_logger.debug("New price" + price);
 			System.out.println("New price: " + price + " z="+diff);
-			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
-			String s = bufferRead.readLine();
+			//BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
+			//String s = bufferRead.readLine();
 			
 			if ( diff < _TOL)
 			{
@@ -152,6 +152,8 @@ public class MarketPlatform
 	 * The method computes the market demand for both goods at the given price level and given allocation of DBs.
 	 * @param price the price of the good 1 (good 0 is money with p0 = 1 - normalized)
 	 * @param allocation probabilistic allocation of sellers (DBs)
+	 * @param updateProbDistribution true of the probability distribution over deterministic allocations needs to be recomputed according to the new 
+	 * probabilistic allocation of sellers
 	 * @return the market demand for all goods
 	 */
 	public List<Double> computeMarketDemand(double price, ProbabilisticAllocation allocation, boolean updateProbDistribution)
@@ -234,11 +236,25 @@ public class MarketPlatform
 		//List<Double> marginalValues = new CopyOnWriteArrayList<Double>();
 		
 		_buyers.get(0).updateAllocProbabilityDistribution(allocation);
-		
-		//TODO: parallelize
-		for(ParametrizedQuasiLinearAgent buyer: _buyers)
-			buyer.setAllocProbabilityDistribution( _buyers.get(0).getAllocProbabilityDistribution());
-		
+		try
+		{
+			List<Thread> threads = new LinkedList<Thread>();
+			for(int i = 0; i < _numberOfThreads; ++i)
+			{
+				Thread thread = new Thread(new ExpectationsUpdateWorker("Thread", i) );
+				threads.add(thread);
+			}
+			
+			for(int i = 0; i < _numberOfThreads; ++i)
+				threads.get(i).start();
+			
+			for(int i = 0; i < _numberOfThreads; ++i)
+				threads.get(i).join(0);
+		}
+		catch(InterruptedException e)
+		{
+		    e.printStackTrace();
+		}		
 /*		for(ParametrizedQuasiLinearAgent buyer: _buyers)
 		{
 			marginalValues.add(buyer.computeExpectedMarginalValue(allocation));
@@ -311,7 +327,7 @@ public class MarketPlatform
 			List<Thread> threads = new LinkedList<Thread>();
 			for(int i = 0; i < _numberOfThreads; ++i)
 			{
-				Thread thread = new Thread(new ValueWorker("Thread", i, price, allocation) );
+				Thread thread = new Thread(new ValueWorker("Thread", i, price) );
 				threads.add(thread);
 			}
 			
@@ -425,22 +441,23 @@ public class MarketPlatform
 		_STEP = step;
 	}
 	
-	
+	/**
+	 * 
+	 * @author Dmitry Moor
+	 */
 	private class ValueWorker implements Runnable
 	{
-		private Thread _thread;										//A thread object
-		private String _threadName;									//The thread's name
-		private int _threadId;										//A thread id
-		private ProbabilisticAllocation _alloc;
+		private Thread _thread;										// A thread object
+		private String _threadName;									// The thread's name
+		private int _threadId;										// A thread id
 		private double _price;
 		private int _idxLow;
 		private int _idxHigh;
 		
-		public ValueWorker(String name, int threadId, double price, ProbabilisticAllocation allocation)
+		public ValueWorker(String name, int threadId, double price)
 		{
 			_threadName = name + threadId;
 			_threadId = threadId;
-			_alloc = allocation;
 			_price = price;
 			
 			_idxLow = _threadId * _buyers.size() / _numberOfThreads;
@@ -471,6 +488,10 @@ public class MarketPlatform
 		}
 	}
 	
+	/**
+	 * 
+	 * @author Dmitry Moor
+	 */
 	private class ExpectationsUpdateWorker implements Runnable
 	{
 		private Thread _thread;										// A thread object
@@ -504,6 +525,10 @@ public class MarketPlatform
 		}
 	}
 	
+	/**
+	 * 
+	 * @author Dmitry Moor
+	 */
 	private class DemandWorker implements Runnable
 	{
 		private Thread _thread;										// A thread object
