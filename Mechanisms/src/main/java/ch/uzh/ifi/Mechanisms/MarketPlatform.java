@@ -160,13 +160,33 @@ public class MarketPlatform
 		double[] marketDemandMoney = new double[_numberOfThreads];
 		double[] marketDemandRows  = new double[_numberOfThreads];
 		
+		// First, update the probability distribution and expected values/thresholds according to the new probabilistic allocation
 		if( updateProbDistribution )
 		{
 			_buyers.get(0).updateAllocProbabilityDistribution(allocation);
-			for(ParametrizedQuasiLinearAgent buyer: _buyers)
-				buyer.setAllocProbabilityDistribution( _buyers.get(0).getAllocProbabilityDistribution());
+			
+			try
+			{
+				List<Thread> threads = new LinkedList<Thread>();
+				for(int i = 0; i < _numberOfThreads; ++i)
+				{
+					Thread thread = new Thread(new ExpectationsUpdateWorker("Thread", i) );
+					threads.add(thread);
+				}
+				
+				for(int i = 0; i < _numberOfThreads; ++i)
+					threads.get(i).start();
+				
+				for(int i = 0; i < _numberOfThreads; ++i)
+					threads.get(i).join(0);
+			}
+			catch(InterruptedException e)
+			{
+			    e.printStackTrace();
+			}
 		}
 		
+		// Compute the total market demand
 		try
 		{
 			List<Thread> threads = new LinkedList<Thread>();
@@ -439,6 +459,39 @@ public class MarketPlatform
 			}
 			//_logger.debug("Thread id=" +_threadId + ". idx=["+_idxLow+", "+_idxHigh +"]. Val="+value);
 			_vals[_threadId] = value;
+		}
+		
+		public void start()
+		{
+			if(_thread == null)
+			{
+				_thread = new Thread(this, _threadName);
+				_thread.start();
+			}
+		}
+	}
+	
+	private class ExpectationsUpdateWorker implements Runnable
+	{
+		private Thread _thread;										// A thread object
+		private String _threadName;									// The thread's name
+		private int _threadId;										// A thread id
+		private int _idxLow;										// Lower index of the buyer for the thread
+		private int _idxHigh;										// Upper index of the buyer for the thread
+		
+		public ExpectationsUpdateWorker(String name, int threadId)
+		{
+			_threadName = name + threadId;
+			_threadId = threadId;			
+			_idxLow = _threadId * _buyers.size() / _numberOfThreads;
+			_idxHigh = (_threadId + 1) * _buyers.size() / _numberOfThreads - 1;
+		}
+		
+		@Override
+		public void run() 
+		{
+			for( int i = _idxLow; i <= _idxHigh; ++i )
+				_buyers.get(i).setAllocProbabilityDistribution( _buyers.get(0).getAllocProbabilityDistribution());				
 		}
 		
 		public void start()
