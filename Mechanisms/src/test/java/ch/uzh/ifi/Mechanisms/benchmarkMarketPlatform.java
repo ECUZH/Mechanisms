@@ -235,7 +235,7 @@ public class benchmarkMarketPlatform {
 			double profit = 0.;
 			for(int j = 0; j < nSamples; ++j)
 				profit += profits[j][i];
-			System.out.println("Av. profit of seller i="+i+ " is " + profit);
+			System.out.println("Av. profit of seller i="+i+ " is " + profit/nSamples);
 		}
 		System.out.println("Allocations: ");
 		for(List<Double> allocation : allocations)
