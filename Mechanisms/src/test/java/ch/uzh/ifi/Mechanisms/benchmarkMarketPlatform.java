@@ -65,8 +65,8 @@ public class benchmarkMarketPlatform {
 		}
 		else if (numberOfDBs == 10)
 		{
-			TOL = 1e-4;
-			step = 5*1e-2;
+			TOL = 0.01;
+			step = 1e-3;
 		}
 		else throw new RuntimeException("Unspecified TOL.");
 
@@ -119,7 +119,7 @@ public class benchmarkMarketPlatform {
 					SellerType seller = new SellerType(sellerBid, Distribution.UNIFORM, costMean, costVar);
 					//_logger.debug("Create seller id=" + (i+1) + ". DB produced: " + producedDB);
 					sellers.add(seller);
-				}	
+				}
 			}
 			
 			//3.2. Generate buyers
