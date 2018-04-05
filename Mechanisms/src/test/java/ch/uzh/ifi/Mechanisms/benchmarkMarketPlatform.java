@@ -78,6 +78,7 @@ public class benchmarkMarketPlatform {
 		else throw new RuntimeException("Not implemented");
 				
 		List<Double> p = new LinkedList<Double>();
+		List<Double> welfare = new ArrayList<Double>();
 				
 		//3. Compute equilibrium prices and allocation for the sample				
 		for(int s = 0; s < nSamples; ++s)
