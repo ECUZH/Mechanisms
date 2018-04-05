@@ -79,6 +79,9 @@ public class benchmarkMarketPlatform {
 				
 		List<Double> p = new LinkedList<Double>();
 		List<Double> welfare = new ArrayList<Double>();
+		List<Double> surplus = new ArrayList<Double>();
+		double[][] profits = new double[nSamples][numberOfSellers];
+		List<List<Double> > allocations = new ArrayList< List<Double> >();
 				
 		//3. Compute equilibrium prices and allocation for the sample				
 		for(int s = 0; s < nSamples; ++s)
@@ -151,6 +154,7 @@ public class benchmarkMarketPlatform {
 					allocationProbabilities.set(i, 0.);
 				else
 					allocationProbabilities.set(i, 1.);
+			allocations.add(allocationProbabilities);
 			System.out.println("Allocation probabilities: " + Arrays.toString( allocationProbabilities.toArray() ));
 			
 			List<Integer> bidders = new LinkedList<Integer>();
@@ -196,6 +200,7 @@ public class benchmarkMarketPlatform {
 						if( auction.getAllocation().isAllocated(seller.getAgentId()) )
 						{
 							totalCost += seller.getAtom(0).getValue();
+							profits[s][seller.getAgentId()-1] = payment-seller.getAtom(0).getValue();
 							System.out.println("Profit of the winner ("+seller.getAgentId()+") is " + (payment-seller.getAtom(0).getValue()) );
 						}
 				}
@@ -218,26 +223,27 @@ public class benchmarkMarketPlatform {
 			}
 			System.out.println("Total surplus of buyers: " + totalUtility );
 			System.out.println("Total welfare: " + (totalValue - totalCost) );
+			surplus.add( totalUtility );
+			welfare.add( totalValue - totalCost );
 		}
 		
 		System.out.println("Equilibrium Prices: " + p.toString());
+		System.out.println("Welfare: " + surplus.toString());
+		System.out.println("Welfare: " + welfare.toString());
+		for(int i = 0; i < numberOfSellers; ++i)
+		{
+			double profit = 0.;
+			for(int j = 0; j < nSamples; ++j)
+				profit += profits[j][i];
+			System.out.println("Av. profit of seller i="+i+ " is " + profit);
+		}
+		System.out.println("Allocations: ");
+		for(List<Double> allocation : allocations)
+			System.out.println(allocation.toString());
 		
-		
-		/*
-		System.out.println("pi(s1): " + profitsS1.toString());
-		System.out.println("pi(s3): " + profitsS3.toString());
-		System.out.println("surp(p): " + surplusP.toString());
-		System.out.println("surp(0): " + surplus0.toString());
-		System.out.println("sw(p): " + welfareP.toString());
-		System.out.println("sw(0): " + welfare0.toString());
 		System.out.println("mean(price) = " + p.stream().reduce(0., (i, j) -> i+j) / nSamples );
-		System.out.println("mean((profitsS1) ) = " + profitsS1.stream().reduce(0., (i, j) -> i+j) / nSamples );
-		System.out.println("mean((profitsS3) ) = " + profitsS3.stream().reduce(0., (i, j) -> i+j) / nSamples );
-		System.out.println("mean((surp(p)) ) = " + surplusP.stream().reduce(0., (i, j) -> i+j) / nSamples );
-		System.out.println("mean((surp(0)) ) = " + surplus0.stream().reduce(0., (i, j) -> i+j) / nSamples );
-		System.out.println("mean((sw(p)) ) = " + welfareP.stream().reduce(0., (i, j) -> i+j) / nSamples );
-		System.out.println("mean((sw(0)) ) = " + welfare0.stream().reduce(0., (i, j) -> i+j) / nSamples );
-		*/
+		System.out.println("mean(Surplus) = " + surplus.stream().reduce(0., (i, j) -> i+j) / nSamples);
+		System.out.println("mean(SW) = " + welfare.stream().reduce(0., (i, j) -> i+j) / nSamples);
 	}
 
 }
