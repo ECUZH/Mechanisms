@@ -22,9 +22,7 @@ public class benchmarkMarketPlatform {
 	private static final Logger _logger = LogManager.getLogger(benchmarkMarketPlatform.class);
 	
 	public static void main(String[] args) throws Exception 
-	{
-		System.out.println("BENCHMARK START");
-		
+	{	
 		int numberOfArguments = 10;
 		int offset = 0;
 		if( args.length == numberOfArguments)
@@ -46,6 +44,9 @@ public class benchmarkMarketPlatform {
 		int nSamples = Integer.parseInt( args[8 + offset] );			if( nSamples <= 0 )			throw new RuntimeException("Negative number of samples.");		
 		int nThreads = Integer.parseInt( args[9 + offset] );  
 		
+		System.out.println("BENCHMARK START: " + numberOfDBs + ", " + numberOfSellers + ", " + competition + ", [" + costMin + ", " +
+							costMax + "], " + costDistribution + ", " + numberOfBuyers + ", " + endowment + ", " + nSamples + ", " + nThreads);
+		
 		//0. Define DBs
 		int[] dbIDs = new int[numberOfDBs];
 		for(int i = 0; i < numberOfDBs; ++i)
@@ -64,7 +65,7 @@ public class benchmarkMarketPlatform {
 		else if (numberOfDBs == 10)
 		{
 			TOL = 0.01;
-			step = 1e-3;
+			step = 5*1e-3;
 		}
 		else throw new RuntimeException("Unspecified TOL.");
 
