@@ -51,15 +51,16 @@ public class MarketPlatform
 		// Initial probabilistic allocation of sellers: everyone is allocated with equal probability
 		ProbabilisticAllocation probAllocation = new ProbabilisticAllocation();
 		List<Integer> bidders = new LinkedList<Integer>();
-		List<Double> allocationProbabilities = new LinkedList<Double>();
 		List<Integer> bundles = new LinkedList<Integer>();
+		_allocationProbabilities = new LinkedList<Double>();
+		
 		for(int j = 0; j < _sellers.size(); ++j)
 		{
 			bidders.add(_sellers.get(j).getAgentId());
 			bundles.add(_sellers.get(j).getAtom(0).getInterestingSet().get(0));
-			allocationProbabilities.add(1.0);
+			_allocationProbabilities.add(1.0);
 		}
-		probAllocation.addAllocatedAgent(0, bidders, bundles, allocationProbabilities);
+		probAllocation.addAllocatedAgent(0, bidders, bundles, _allocationProbabilities);
 		probAllocation.normalize();
 
 		// Initialization
@@ -70,6 +71,7 @@ public class MarketPlatform
 		double diff = 0.;
 		for(int i = 0; i < _MAX_ITER; ++i)
 		{
+			double time = System.currentTimeMillis();
 			// List of outcomes in surplus optimal reverse auctions for different DBs
 			List<Allocation> allocations = new LinkedList<Allocation>();
 			List<Double> payments = new LinkedList<Double>();
@@ -112,11 +114,11 @@ public class MarketPlatform
 						break;
 					}
 				
-				diff += Math.pow(allocProbNew - allocationProbabilities.get(j), 2);
+				diff += Math.pow(allocProbNew - _allocationProbabilities.get(j), 2);
 				
-				allocationProbabilities.set(j, allocationProbabilities.get(j) + (allocProbNew - allocationProbabilities.get(j)) * _STEP);				
-				_logger.debug("New allocation probability: " + allocationProbabilities.get(j));
-				//System.out.println("New allocation probability: " + allocationProbabilities.get(j));
+				_allocationProbabilities.set(j, _allocationProbabilities.get(j) + (allocProbNew - _allocationProbabilities.get(j)) * _STEP);				
+				_logger.debug("New allocation probability: " + _allocationProbabilities.get(j));
+				//System.out.println("New allocation probability: " + _allocationProbabilities.get(j));
 			}
 			
 			// Compute the gradient for the price
@@ -129,16 +131,18 @@ public class MarketPlatform
 			price = price + (totalPayment - totalPaid)* (_STEP / (_buyers.size()/10));
 			diff += Math.pow(totalPayment - totalPaid, 2);
 			
-			probAllocation.resetAllocationProbabilities(allocationProbabilities);
+			probAllocation.resetAllocationProbabilities(_allocationProbabilities);
 			
 			//_logger.debug("New price" + price);
-			System.out.println("New price: " + price + " z="+diff);
+			time = System.currentTimeMillis() - time;
+			//System.out.println("New price: " + price + " z="+ Math.sqrt(diff / (_sellers.size() + 1)));
+			//System.out.println("Time = " + time);
 			//BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
 			//String s = bufferRead.readLine();
 			
-			if ( diff < _TOL)
+			if ( Math.sqrt(diff / (_sellers.size() + 1)) < _TOL)
 			{
-				System.out.println("New allocation probabilities: " + Arrays.toString(allocationProbabilities.toArray()));
+				//System.out.println("New allocation probabilities: " + Arrays.toString(_allocationProbabilities.toArray()));
 				break;
 			}
 			if(i == _MAX_ITER - 1) System.out.println("Reached MAX_ITER.");
@@ -235,7 +239,9 @@ public class MarketPlatform
 		//To analyze the maximal inverse demand, first one need to compute the maximal prices
 		//List<Double> marginalValues = new CopyOnWriteArrayList<Double>();
 		
+		_buyers.get(0).setNumberOfThreads(_numberOfThreads);
 		_buyers.get(0).updateAllocProbabilityDistribution(allocation);
+		
 		try
 		{
 			List<Thread> threads = new LinkedList<Thread>();
@@ -582,6 +588,11 @@ public class MarketPlatform
 		_numberOfThreads = nThreads;
 	}
 	
+	public List<Double> getAllocationProbabilities()
+	{
+		return _allocationProbabilities;
+	}
+	
 	private List<ParametrizedQuasiLinearAgent> _buyers;				// Buyers
 	private List<SellerType> _sellers;								// Sellers
 	private int _numberOfDBs;										// Number of databases
@@ -590,4 +601,5 @@ public class MarketPlatform
 	private double _TOL = 1e-7;										// Tolerance of the gradient descent
 	private int _numberOfThreads;
 	private double[] _vals;
+	private List<Double> _allocationProbabilities;
 }
