@@ -195,7 +195,7 @@ public class benchmarkMarketPlatform {
 				//
 				int isAllocated = auction.getAllocation().getNumberOfAllocatedAuctioneers();
 				
-				if( isAllocated > 0 && price > 0.01 )
+				if( isAllocated > 0 && price > 1e-3 )
 				{
 					double payment = auction.getPayments()[0];
 					System.out.println("Payment = " + payment);
