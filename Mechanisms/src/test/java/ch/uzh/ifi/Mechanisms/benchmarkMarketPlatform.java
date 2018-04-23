@@ -101,8 +101,10 @@ public class benchmarkMarketPlatform {
 				// 3.1.2. Choose the bundle (DB produced by the seller)
 				if( competition.toUpperCase().equals("UNIFORM"))
 				{
-					AtomicBid sellerBid = new AtomicBid(i+1, Arrays.asList( dbIDs[ i % numberOfDBs ] ), costs[i]);
+					int producedDB = dbIDs[ i % numberOfDBs ];
+					AtomicBid sellerBid = new AtomicBid(i+1, Arrays.asList( producedDB ), costs[i]);
 					SellerType seller = new SellerType(sellerBid, Distribution.UNIFORM, costMean, costVar);
+					_logger.debug("Create seller id=" + (i+1) + ". DB produced: " + producedDB);
 					sellers.add(seller);
 				}
 				else if( competition.toUpperCase().equals("LINEAR"))						// 1 + d + 2d + ... + (#DBs-1)*d = #sellers     (arithmetic progression)
