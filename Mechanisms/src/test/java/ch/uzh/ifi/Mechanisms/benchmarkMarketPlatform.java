@@ -35,7 +35,7 @@ public class benchmarkMarketPlatform {
 		//1. Parse command line arguments
 		int numberOfDBs = Integer.parseInt(args[0 + offset]);			if( numberOfDBs <= 0)		throw new RuntimeException("The number of DBs should be posititve.");
 		int numberOfSellers = Integer.parseInt( args[1 + offset]);		if( numberOfSellers <= 0 )	throw new RuntimeException("The number of sellers should be positive.");
-		String competition = args[2 + offset];							if( !(competition.toUpperCase().equals("UNIFORM") || competition.toUpperCase().equals("LINEAR")) ) throw new RuntimeException("Wrong competition structure: " + competition.toUpperCase());
+		String competition = args[2 + offset];							if( !(competition.toUpperCase().equals("UNIFORM") || competition.toUpperCase().equals("LINEAR") || competition.toUpperCase().equals("MONOPOLISTS")) ) throw new RuntimeException("Wrong competition structure: " + competition.toUpperCase());
 		double costMin = Double.parseDouble( args[3 + offset] );		if( costMin < 0) 			throw new RuntimeException("Negative min cost.");				// Min of the costs distribution support
 		double costMax = Double.parseDouble( args[4 + offset] );		if( costMax <= costMin ) 	throw new RuntimeException("Max cost smaller than min cost.");	// Max of the costs distribution support
 		String costDistribution = args[5 + offset];						if( !(costDistribution.toUpperCase().equals("UNIFORM") || costDistribution.toUpperCase().equals("NORMAL"))) throw new RuntimeException("Wrong costs distribution specified.");
@@ -118,6 +118,21 @@ public class benchmarkMarketPlatform {
 						for(int j = 1; j <= numberOfDBs; ++j)
 							if( 1 + d*j*(j-1)/2 <= i+1 && i+1 < 1 + d*j*(j+1)/2)
 								producedDB = dbIDs[j-1];
+					
+					AtomicBid sellerBid = new AtomicBid(i+1, Arrays.asList( producedDB ), costs[i]);
+					SellerType seller = new SellerType(sellerBid, Distribution.UNIFORM, costMean, costVar);
+					_logger.debug("Create seller id=" + (i+1) + ". DB produced: " + producedDB);
+					sellers.add(seller);
+				}
+				else if( competition.toUpperCase().equals("MONOPOLISTS"))
+				{
+					// Number of sellers equals to the number of monopolists. For other DBs competition is equal to 2.
+					int numberOfMonopolists = 2 * numberOfDBs - numberOfSellers;
+					int producedDB = 0;
+					if( i < numberOfMonopolists )
+						producedDB = dbIDs[i];
+					else
+						producedDB = dbIDs[numberOfMonopolists + (i - numberOfMonopolists)%(numberOfDBs-numberOfMonopolists) ];
 					
 					AtomicBid sellerBid = new AtomicBid(i+1, Arrays.asList( producedDB ), costs[i]);
 					SellerType seller = new SellerType(sellerBid, Distribution.UNIFORM, costMean, costVar);
