@@ -118,7 +118,7 @@ public class MarketPlatform
 				
 				_allocationProbabilities.set(j, _allocationProbabilities.get(j) + (allocProbNew - _allocationProbabilities.get(j)) * _STEP);				
 				_logger.debug("New allocation probability: " + _allocationProbabilities.get(j));
-				//System.out.println("New allocation probability: " + _allocationProbabilities.get(j));
+				System.out.println("New allocation probability: " + _allocationProbabilities.get(j));
 			}
 			
 			// Compute the gradient for the price
@@ -127,15 +127,15 @@ public class MarketPlatform
 				totalPayment += payments.get(j);
 
 			double totalPaid = computeMarketDemand(price, probAllocation, false).get(1)*price;
-			_logger.debug("Total payment: " + totalPayment + "; Total received: " + totalPaid);
-			price = price + (totalPayment - totalPaid)* (_STEP / (_buyers.size()/10));
+			_logger.debug("Total payment to sellers: " + totalPayment + "; Total received from buyers: " + totalPaid);
+			price = price + (totalPayment - totalPaid)* (_STEP / ((double)_buyers.size()/10.));
 			diff += Math.pow(totalPayment - totalPaid, 2);
 			
 			probAllocation.resetAllocationProbabilities(_allocationProbabilities);
 			
 			//_logger.debug("New price" + price);
 			time = System.currentTimeMillis() - time;
-			//System.out.println("New price: " + price + " z="+ Math.sqrt(diff / (_sellers.size() + 1)));
+			System.out.println("New price: " + price + " z="+ Math.sqrt(diff / (_sellers.size() + 1)));
 			//System.out.println("Time = " + time);
 			//BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
 			//String s = bufferRead.readLine();
