@@ -74,39 +74,32 @@ public class MarketPlatform
 			double time = System.currentTimeMillis();
 			// List of outcomes in surplus optimal reverse auctions for different DBs
 			List<Allocation> allocations = new LinkedList<Allocation>();
-			List<Double> payments = new LinkedList<Double>();
 			
-			// For every DB solve the surplus optimal auction
-			for(int j = 0; j < _numberOfDBs; ++j)						// TODO: here I have an assumption that Ids of DBs are between 0 and 1
-			{
-				// First, find all sellers producing the DB
-				List<Type> sellersInvolved = new LinkedList<Type>();
-				for(int k = 0; k < _sellers.size(); ++k)
-					if( _sellers.get(k).getInterestingSet(0).get(0) == j )
-						sellersInvolved.add(_sellers.get(k));
-				
-				// Second, compute the value of the market platform for the DB
-				double dbValue = computeValueOfDB(j, price, probAllocation);
-				
-				// Third, instantiate a surplus optimal reverse auction for these sellers
-				SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(sellersInvolved, dbValue);
-
-				// Finally, solve the auction
-				auction.solveIt();
-				if( auction.getAllocation().getNumberOfAllocatedAuctioneers() > 0 )
-				{
-					allocations.add(auction.getAllocation());
-					payments.add(auction.getPayments()[0]);
-				}
-			}
+			double excessDemand = computeExcessDemand(allocations, price, probAllocation); 
 			
 			// Compute the gradient for allocation probabilities
 			diff = 0.;
+			double[] excessDemandGradients = new double[_sellers.size()];
 			for(int j = 0; j < _sellers.size(); ++j)
 			{
-				double allocProbNew = 0.;
+				double delta = 1e-2;
+				_allocationProbabilities.set(j, _allocationProbabilities.get(j) - delta);       // Increase allocation probability of seller j
+				probAllocation.resetAllocationProbabilities(_allocationProbabilities);
+				List<Allocation> allocations1 = new LinkedList<Allocation>();
+				double excessDemandNew = computeExcessDemand(allocations1, price, probAllocation);
+				double gradientExcessDemand = (excessDemandNew - excessDemand) / delta;
+				_allocationProbabilities.set(j, _allocationProbabilities.get(j) + delta);		// Decrease allocation probability of seller j back to its original level
+				probAllocation.resetAllocationProbabilities(_allocationProbabilities);
+				System.out.println(">>>>> j="+j+": " + gradientExcessDemand);
 				
-				// Check if the seller is still allocated
+				excessDemandGradients[j] = gradientExcessDemand;
+			}
+			
+			for(int j = 0; j < _sellers.size(); ++j)
+			{		
+				double allocProbNew = -1.;//0.;
+				
+				// Check if the seller is still allocated under probAlocation
 				for(int k = 0; k < allocations.size(); ++k)
 					if(allocations.get(k).getBiddersInvolved(0).contains( _sellers.get(j).getAgentId() ))
 					{
@@ -116,20 +109,16 @@ public class MarketPlatform
 				
 				diff += Math.pow(allocProbNew - _allocationProbabilities.get(j), 2);
 				
-				_allocationProbabilities.set(j, _allocationProbabilities.get(j) + (allocProbNew - _allocationProbabilities.get(j)) * _STEP);				
+				//Reduce/Increase the allocation probability proportionally to the excess demand caused by it
+				_allocationProbabilities.set(j, Math.max(0., Math.min(1., _allocationProbabilities.get(j) +  allocProbNew*/*(allocProbNew - _allocationProbabilities.get(j)) * */ _STEP * (Math.abs(excessDemandGradients[j])/10))) );	
+				
 				_logger.debug("New allocation probability: " + _allocationProbabilities.get(j));
 				System.out.println("New allocation probability: " + _allocationProbabilities.get(j));
 			}
 			
 			// Compute the gradient for the price
-			double totalPayment = 0.;
-			for(int j = 0; j < payments.size(); ++j)
-				totalPayment += payments.get(j);
-
-			double totalPaid = computeMarketDemand(price, probAllocation, false).get(1)*price;
-			_logger.debug("Total payment to sellers: " + totalPayment + "; Total received from buyers: " + totalPaid);
-			price = price + (totalPayment - totalPaid)* (_STEP / ((double)_buyers.size()/10.));
-			diff += Math.pow(totalPayment - totalPaid, 2);
+			price = price + excessDemand * (_STEP / ((double)_buyers.size()/5.));
+			diff += Math.pow(excessDemand, 2);
 			
 			probAllocation.resetAllocationProbabilities(_allocationProbabilities);
 			
@@ -137,8 +126,8 @@ public class MarketPlatform
 			time = System.currentTimeMillis() - time;
 			System.out.println("New price: " + price + " z="+ Math.sqrt(diff / (_sellers.size() + 1)));
 			//System.out.println("Time = " + time);
-			//BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
-			//String s = bufferRead.readLine();
+			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
+			String s = bufferRead.readLine();
 			
 			if ( Math.sqrt(diff / (_sellers.size() + 1)) < _TOL)
 			{
@@ -150,6 +139,45 @@ public class MarketPlatform
 		
 		_logger.debug("Found price: " + price + "; diff="+ diff);
 		return price;
+	}
+	
+	private double computeExcessDemand(List<Allocation> allocations, double price, ProbabilisticAllocation probAllocation) throws Exception
+	{
+		double excessDemand = 0.;
+		List<Double> payments = new LinkedList<Double>();
+		
+		// For every DB solve the surplus optimal auction
+		for(int j = 0; j < _numberOfDBs; ++j)						// TODO: here I have an assumption that Ids of DBs are between 0 and 1
+		{
+			// First, find all sellers producing the DB
+			List<Type> sellersInvolved = new LinkedList<Type>();
+			for(int k = 0; k < _sellers.size(); ++k)
+				if( _sellers.get(k).getInterestingSet(0).get(0) == j )
+					sellersInvolved.add(_sellers.get(k));
+			
+			// Second, compute the value of the market platform for the DB
+			double dbValue = computeValueOfDB(j, price, probAllocation);
+			
+			// Third, instantiate a surplus optimal reverse auction for these sellers
+			SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(sellersInvolved, dbValue);
+
+			// Finally, solve the auction
+			auction.solveIt();
+			if( auction.getAllocation().getNumberOfAllocatedAuctioneers() > 0 )
+			{
+				allocations.add(auction.getAllocation());
+				payments.add(auction.getPayments()[0]);
+			}
+		}
+		double totalPaid = computeMarketDemand(price, probAllocation, false).get(1)*price;
+		double totalPayment = 0.;
+		for(int j = 0; j < payments.size(); ++j)
+			totalPayment += payments.get(j);
+		
+		excessDemand = totalPayment - totalPaid; 
+		_logger.debug("Total payment to sellers: " + totalPayment + "; Total received from buyers: " + totalPaid + ". Excess Demand: " + excessDemand);
+		
+		return excessDemand;
 	}
 	
 	/**
