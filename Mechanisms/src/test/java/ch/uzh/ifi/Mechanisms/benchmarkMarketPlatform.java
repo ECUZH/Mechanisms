@@ -56,7 +56,10 @@ public class benchmarkMarketPlatform {
 		double TOL = 1e-6;
 		double step = 1e-2;
 		if( numberOfDBs == 2 )
-			TOL = 1e-7;
+		{
+			TOL = 1e-6;
+			step = 1e-2;
+		}
 		else if ( numberOfDBs == 3 || numberOfDBs == 4 || numberOfDBs == 5  || numberOfDBs == 6  || numberOfDBs == 7)
 		{
 			TOL = 0.01;
