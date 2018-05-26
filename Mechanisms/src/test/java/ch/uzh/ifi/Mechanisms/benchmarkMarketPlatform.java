@@ -63,12 +63,12 @@ public class benchmarkMarketPlatform {
 		else if ( numberOfDBs == 3 || numberOfDBs == 4 || numberOfDBs == 5  || numberOfDBs == 6  || numberOfDBs == 7)
 		{
 			TOL = 0.01;
-			step = 1e-3;
+			step = numberOfBuyers >= 512 ? 1e-4 : 1e-3;
 		}
 		else if (numberOfDBs == 8 || numberOfDBs == 9 || numberOfDBs == 10)
 		{
 			TOL = 0.01;
-			step = 10*1e-3;
+			step = numberOfBuyers >= 512 ? 1e-3 : 10*1e-3;
 		}
 		else throw new RuntimeException("Unspecified TOL.");
 
