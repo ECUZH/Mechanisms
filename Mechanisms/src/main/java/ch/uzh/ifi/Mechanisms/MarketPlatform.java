@@ -153,7 +153,7 @@ public class MarketPlatform
 					_allocationProbabilities.set(j, 0.);
 				
 				//_logger.debug("New allocation probability: " + _allocationProbabilities.get(j) + " " + (allocProbNew>0?"Increased":"Decreased"));
-				//System.out.println("New allocation probability: " + _allocationProbabilities.get(j) + " " + (allocProbNew>0?"Increased":"Decreased") + " by " + (Math.pow(-1, 1+allocProbNew) * excessDemandGradients[j] *_STEP) );
+//				System.out.println("New allocation probability: " + _allocationProbabilities.get(j) + " " + (allocProbNew>0?"Increased":"Decreased") + " by " + (Math.pow(-1, -1+3*allocProbNew) * _STEP) );
 			}
 			
 			// Compute the gradient for the price
