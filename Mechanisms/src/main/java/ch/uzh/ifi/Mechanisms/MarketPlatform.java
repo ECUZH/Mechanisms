@@ -153,14 +153,14 @@ public class MarketPlatform
 					_allocationProbabilities.set(j, 0.);
 				
 				//_logger.debug("New allocation probability: " + _allocationProbabilities.get(j) + " " + (allocProbNew>0?"Increased":"Decreased"));
-				System.out.println("New allocation probability: " + _allocationProbabilities.get(j) + " " + (allocProbNew>0?"Increased":"Decreased") + " by " + (Math.pow(-1, -1+3*allocProbNew) * _STEP) );
+//				System.out.println("New allocation probability: " + _allocationProbabilities.get(j) + " " + (allocProbNew>0?"Increased":"Decreased") + " by " + (Math.pow(-1, -1+3*allocProbNew) * _STEP) );
 			}
 			
 			// Compute the gradient for the price
 			//price = price + excessDemand * (_STEP / ((double)_buyers.size()/5.));
 			//price = Math.max(0., price -  Math.signum(excessDemand) *  _STEP * gradientExcessDemandP / 10. );
 			//price = Math.max(0., price + excessDemand * _STEP /*Math.abs(excessDemandGradients[excessDemandGradients.length-1])*/  );
-			System.out.println(">>>>>>>>>>>>>>>>>>>>>> " + excessDemand);
+//			System.out.println(">>>>>>>>>>>>>>>>>>>>>> " + excessDemand);
 			price = Math.max(0., price + excessDemand * _STEP/10.  );
 			diff += Math.pow(excessDemand, 2);
 			
@@ -168,7 +168,7 @@ public class MarketPlatform
 			
 			//_logger.debug("New price" + price);
 			time = System.currentTimeMillis() - time;
-			System.out.println("New price: " + price + " z="+ Math.sqrt(diff / (_sellers.size() + 1)) + " " + (Math.signum(excessDemand)>0?"Increased":"Decreased"));
+//			System.out.println("New price: " + price + " z="+ Math.sqrt(diff / (_sellers.size() + 1)) + " " + (Math.signum(excessDemand)>0?"Increased":"Decreased"));
 			//System.out.println("Time = " + time);
 //			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
 //			String s = bufferRead.readLine();
