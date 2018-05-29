@@ -46,7 +46,7 @@ public class MarketPlatform
 	 * @return the posted price
 	 * @throws Exception 
 	 */
-	public double tatonementPriceSearch() throws Exception
+	public double tatonementPriceSearch(double startPrice) throws Exception
 	{	
 		// Initial probabilistic allocation of sellers: everyone is allocated with equal probability
 		ProbabilisticAllocation probAllocation = new ProbabilisticAllocation();
@@ -59,13 +59,21 @@ public class MarketPlatform
 			bidders.add(_sellers.get(j).getAgentId());
 			bundles.add(_sellers.get(j).getAtom(0).getInterestingSet().get(0));
 			_allocationProbabilities.add(1.0);
-		}
+		}		
+			
 		probAllocation.addAllocatedAgent(0, bidders, bundles, _allocationProbabilities);
 		probAllocation.normalize();
+		
+		////////////
+		///////!!!!!!!!!!!!!!!!!
+//		for(int j =0; j < _sellers.size(); ++j)
+//			if( _sellers.get(j).getAtom(0).getInterestingSet().get(0) >= 0 && _sellers.get(j).getAtom(0).getInterestingSet().get(0) <= 1)
+//				_allocationProbabilities.set(j, 0.);
+//		probAllocation.resetAllocationProbabilities(_allocationProbabilities);
 
 		// Initialization
 		_numberOfDBs = probAllocation.getNumberOfGoods();
-		double price = 0.;
+		double price = startPrice;
 		
 		// Iterative price/allocation update procedure
 		double diff = 0.;
@@ -153,22 +161,22 @@ public class MarketPlatform
 					_allocationProbabilities.set(j, 0.);
 				
 				//_logger.debug("New allocation probability: " + _allocationProbabilities.get(j) + " " + (allocProbNew>0?"Increased":"Decreased"));
-//				System.out.println("New allocation probability: " + _allocationProbabilities.get(j) + " " + (allocProbNew>0?"Increased":"Decreased") + " by " + (Math.pow(-1, -1+3*allocProbNew) * _STEP) );
+				System.out.println("New allocation probability: " + _allocationProbabilities.get(j) + " " + (allocProbNew>0?"Increased":"Decreased") + " by " + (Math.pow(-1, -1+3*allocProbNew) * _STEP) );
 			}
 			
 			// Compute the gradient for the price
 			//price = price + excessDemand * (_STEP / ((double)_buyers.size()/5.));
 			//price = Math.max(0., price -  Math.signum(excessDemand) *  _STEP * gradientExcessDemandP / 10. );
 			//price = Math.max(0., price + excessDemand * _STEP /*Math.abs(excessDemandGradients[excessDemandGradients.length-1])*/  );
-//			System.out.println(">>>>>>>>>>>>>>>>>>>>>> " + excessDemand);
-			price = Math.max(0., price + excessDemand * _STEP/10.  );
+			System.out.println(">>>>>>>>>>>>>>>>>>>>>> " + excessDemand);
+			price = Math.max(0., price + excessDemand * _STEP /*/ 50.*/  );
 			diff += Math.pow(excessDemand, 2);
 			
 			probAllocation.resetAllocationProbabilities(_allocationProbabilities);
 			
 			//_logger.debug("New price" + price);
 			time = System.currentTimeMillis() - time;
-//			System.out.println("New price: " + price + " z="+ Math.sqrt(diff / (_sellers.size() + 1)) + " " + (Math.signum(excessDemand)>0?"Increased":"Decreased"));
+			System.out.println("New price: " + price + " z="+ Math.sqrt(diff / (_sellers.size() + 1)) + " " + (Math.signum(excessDemand)>0?"Increased":"Decreased"));
 			//System.out.println("Time = " + time);
 //			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
 //			String s = bufferRead.readLine();
@@ -451,7 +459,18 @@ public class MarketPlatform
 		_logger.debug("computeValueOfDB(" + dbId + ", " + price + ", " + Arrays.toString(allocation.getAllocationProbabilities().toArray()) +")");
 		
 		double marketDemandForRows = computeMarketDemand(price, allocation, true).get(1);
-		
+
+// For plotting the demand curve		
+//		List<Double> quantity = new ArrayList<Double>();
+//		for(int p = 0; p < 100; p++)
+//		{
+//			System.out.println("p="+p);
+//			quantity.add( computeMarketDemand(p*0.1, allocation, true).get(1) );
+//		}
+//		System.out.println(quantity.toString());
+//		BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
+//		String s = bufferRead.readLine();
+
 		List<Double> externalitiesOfDBs = new LinkedList<Double>();
 		
 		int numberOfDBs = allocation.getNumberOfGoods();

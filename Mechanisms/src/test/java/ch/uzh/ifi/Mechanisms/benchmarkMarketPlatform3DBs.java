@@ -75,7 +75,7 @@ public class benchmarkMarketPlatform3DBs {
 			mp.setToleranceLvl(1e-7);
 					
 			//3.3. Compute the equilibrium price
-			double price  = mp.tatonementPriceSearch();
+			double price  = mp.tatonementPriceSearch(0.);
 			p.add(price);
 			System.out.println("Price = " + price);
 		}
@@ -177,7 +177,7 @@ public class benchmarkMarketPlatform3DBs {
 			for(int i = 0; i < numberOfBuyers; ++i)
 			{
 				buyers.get(i).updateAllocProbabilityDistribution(allocationOfSellers);
-				List<Double> consumptionBundle = buyers.get(i).solveConsumptionProblem(prices/*, allocationOfSellers*/);
+				List<Double> consumptionBundle = buyers.get(i).solveConsumptionProblem(prices.get(1)/*, allocationOfSellers*/);
 				totalUtility += buyers.get(i).computeUtility(allocationOfSellers, consumptionBundle) - buyers.get(i).getEndowment();
 				totalValue += buyers.get(i).computeUtility(allocationOfSellers, consumptionBundle) - consumptionBundle.get(0);
 			}
@@ -194,7 +194,7 @@ public class benchmarkMarketPlatform3DBs {
 			for(int i = 0; i < numberOfBuyers; ++i)
 			{
 				buyers.get(i).updateAllocProbabilityDistribution(allocationOfSellers);
-				List<Double> consumptionBundle = buyers.get(i).solveConsumptionProblem(prices/*, allocationOfSellers*/);
+				List<Double> consumptionBundle = buyers.get(i).solveConsumptionProblem(prices.get(1)/*, allocationOfSellers*/);
 				totalUtility += buyers.get(i).computeUtility(allocationOfSellers, consumptionBundle) - buyers.get(i).getEndowment();
 				totalValue += buyers.get(i).computeUtility(allocationOfSellers, consumptionBundle) - consumptionBundle.get(0);
 			}

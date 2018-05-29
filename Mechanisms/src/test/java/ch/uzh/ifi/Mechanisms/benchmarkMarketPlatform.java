@@ -52,6 +52,8 @@ public class benchmarkMarketPlatform {
 		for(int i = 0; i < numberOfDBs; ++i)
 			dbIDs[i] = i;
 		
+		double startPrice = 0.;
+		
 		//0.1. Define gradient descent parameters
 		double TOL = 1e-6;
 		double step = 1e-2;
@@ -71,6 +73,11 @@ public class benchmarkMarketPlatform {
 			step = numberOfBuyers >= 512 ? 1e-3 : 10*1e-3;
 		}
 		else throw new RuntimeException("Unspecified TOL.");
+		
+		if(numberOfDBs == 10 && numberOfSellers == 10)
+			startPrice = 5.;
+		else if(numberOfDBs == 10 && numberOfSellers == 14)
+			startPrice = 3.;
 		System.out.println("step="+step);
 
 		//1. Create sellers
@@ -159,7 +166,7 @@ public class benchmarkMarketPlatform {
 			mp.setNumberOfThreads(nThreads);
 					
 			//3.3. Compute the equilibrium price
-			double price  = mp.tatonementPriceSearch();
+			double price  = mp.tatonementPriceSearch(startPrice);
 			p.add(price);
 			_logger.debug("Price = " + price);
 			
