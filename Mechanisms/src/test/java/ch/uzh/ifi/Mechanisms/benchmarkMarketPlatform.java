@@ -67,8 +67,8 @@ public class benchmarkMarketPlatform {
 		}
 		else if (numberOfDBs == 8 || numberOfDBs == 9 || numberOfDBs == 10)
 		{
-			TOL = 0.01;
-			step = numberOfBuyers >= 512 ? 1e-4 : 10*1e-3;
+			TOL = 0.1;
+			step = numberOfBuyers >= 512 ? 1e-3 : 10*1e-3;
 		}
 		else throw new RuntimeException("Unspecified TOL.");
 		System.out.println("step="+step);
