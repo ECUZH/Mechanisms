@@ -76,8 +76,14 @@ public class benchmarkMarketPlatform {
 		
 		if(numberOfDBs == 10 && numberOfSellers == 10)
 			startPrice = 5.;
-		else if(numberOfDBs == 10 && numberOfSellers == 14)
+		else if(numberOfDBs == 10 && numberOfSellers <= 14)
 			startPrice = 3.;
+		else if(numberOfDBs == 10 && numberOfSellers <= 18)
+			startPrice = 1.;
+		else if(numberOfDBs == 10 && numberOfSellers <= 19)
+			startPrice = 0.5;
+		else if(numberOfDBs == 10 && numberOfSellers <= 20)
+			startPrice = 0.;
 		System.out.println("step="+step);
 
 		//1. Create sellers
