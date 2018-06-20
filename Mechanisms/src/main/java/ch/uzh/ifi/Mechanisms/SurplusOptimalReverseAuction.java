@@ -10,9 +10,15 @@ import org.apache.logging.log4j.Logger;
 import ch.uzh.ifi.MechanismDesignPrimitives.Allocation;
 import ch.uzh.ifi.MechanismDesignPrimitives.SellerType;
 import ch.uzh.ifi.MechanismDesignPrimitives.Type;
+import ilog.concert.IloException;
+import ilog.concert.IloLPMatrix;
+import ilog.concert.IloNumExpr;
+import ilog.concert.IloNumVar;
+import ilog.concert.IloNumVarType;
+import ilog.cplex.IloCplex;
 
 /**
- * The class implements a surplus optimal reverse auction with a single item.
+ * The class implements a surplus optimal reverse auction (BORA).
  * @author Dmitry Moor
  *
  */
@@ -24,58 +30,99 @@ public class SurplusOptimalReverseAuction implements Auction
 	/**
 	 * Constructor
 	 * @param bids bids of sellers
-	 * @param value value of the auctioneer for the item
+	 * @param inducedValues induced values of DBs for different deterministic allocations
 	 */
-	public SurplusOptimalReverseAuction(List<Type> bids, double value)
+	public SurplusOptimalReverseAuction(List<Type> bids, List< List<Double> > inducedValues)
 	{
 		_numberOfBidders = bids.size();
 		_bids = bids;
-		_value = value;
+		_inducedValues = inducedValues;
 		_allocation = new Allocation();
 	}
 	
 	/**
 	 * The method solves the winner determination problem.
+	 * @throws Exception 
 	 */
-	public void computeWinnerDetermination()
+	public void computeWinnerDetermination() throws Exception
 	{
-		double maxVirtualSurplus = 0.;
-		int maxIdx = -1;
-		
-		// Find the agent that delivers the highest virtual surplus
-		for(int i = 0; i < _bids.size(); ++i)
-		{
-			SellerType t = (SellerType)_bids.get(i);
-			_logger.debug("Consider seller " + t.getAgentId() + " w. cost " + t.getAtom(0).getValue() + " and virtual cost " + t.getItsVirtualCost());
-			
-			if( (_value >= t.getItsVirtualCost()) && (_value - t.getItsVirtualCost() > maxVirtualSurplus) )
-			{
-				maxVirtualSurplus = _value - t.getItsVirtualCost();
-				maxIdx = i;
-			}
-		}
-		
-		if( maxIdx >= 0 )
-		{
-			_logger.debug("The best seller is Id=" + _bids.get(maxIdx).getAgentId());
-		
-			// Allocate
-			List<Integer> allocatedBidders = Arrays.asList( _bids.get(maxIdx).getAgentId() );
-			List<Integer> allocatedBundles = _bids.get(maxIdx).getInterestingSet(0);
-			List<Double> biddersValues = Arrays.asList( _bids.get(maxIdx).getAtom(0).getValue() );
-			try 
-			{
-				_allocation.addAllocatedAgent(0, allocatedBidders, allocatedBundles, _value, biddersValues);
-			} 
-			catch (Exception e)
-			{
-				e.printStackTrace();
-			}
-		}
+		if( _cplexSolver == null)
+			_cplexSolver = new IloCplex();
 		else
+			_cplexSolver.clearModel();
+		_cplexSolver.setOut(null);
+		
+		List<IloNumVar> variables = new ArrayList<IloNumVar>(); // i-th element of the list contains the list of variables 
+																// corresponding to the i-th agent
+		
+		//Create the optimization variables and formulate the objective function:
+		IloNumExpr objective = _cplexSolver.constant(0.);
+		IloLPMatrix lp = _cplexSolver.addLPMatrix();
+		
+		for(int i = 0; i < _numberOfBidders; ++i)
 		{
-			_logger.debug("Nobody is allocated.");
+			IloNumVar a = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "a" + _bids.get(i).getAgentId() );
+			variables.add(a);
+			
+			double virtualCost = 2 * _bids.get(i).getAtom(0).getValue();
+			IloNumExpr term = _cplexSolver.prod( -1 * virtualCost, a);
+			objective = _cplexSolver.sum(objective, term);
 		}
+		
+		int numberOfDeterministicAllocations = (int)Math.pow(2, _numberOfBidders);
+		for(int i = 0; i < numberOfDeterministicAllocations; ++i)
+		{
+			IloNumExpr term = _cplexSolver.constant(0.);
+			for(int j = 0; j < _inducedValues.size(); ++j)
+			{
+				term = _cplexSolver.sum( _inducedValues.get(j).get(i), term);
+			}
+			
+			
+			int bit = 1;
+			for(int j = 0; j < _numberOfBidders; ++j)
+			{
+				if( (i & bit) > 0 )  
+				{
+					//Seller j is allocated in a binary representation of the deterministic allocation, i
+					term = _cplexSolver.prod(variables.get(j), term);
+				}
+				else
+				{
+					//Seller j is not allocated in a binary representation of the deterministic allocation, i
+					IloNumExpr t = _cplexSolver.sum(-1, variables.get(j));
+					term = _cplexSolver.prod(t, term);
+				}
+			}
+			objective = _cplexSolver.sum(objective, term);
+		}
+		
+		_cplexSolver.add(_cplexSolver.maximize(objective));
+		
+		_cplexSolver.solve();
+		
+		_allocation = new Allocation();
+		List<Integer> allocatedBiddersIds = new ArrayList<Integer>();
+		List<Integer> allocatedBundles = new ArrayList<Integer>();
+		List<Double> biddersValues = new ArrayList<Double>();
+		int deterministicAllocation = 0;
+		double autioneerValue = 0.;
+		
+		for(int i = 0; i < _numberOfBidders; ++i)
+		{
+			if( Math.abs( _cplexSolver.getValue(variables.get(i)) - 1.0 ) < 1e-6 )
+			{
+				allocatedBiddersIds.add( _bids.get(i).getAgentId());
+				allocatedBundles.add( _bids.get(i).getAtom(0).getInterestingSet().get(0));
+				biddersValues.add( _bids.get(i).getAtom(0).getValue() );
+				deterministicAllocation += (int)Math.pow(2, i);
+			}
+		}
+		
+		for(int i = 0; i < _inducedValues.size(); ++i)
+			autioneerValue += _inducedValues.get(i).get(deterministicAllocation);
+		
+		_allocation.addAllocatedAgent(0, allocatedBiddersIds, allocatedBundles, autioneerValue, biddersValues);
 	}
 	
 	/**
@@ -114,12 +161,12 @@ public class SurplusOptimalReverseAuction implements Auction
 		//			secondMinCost = _bids.get(i).getAtom(0).getValue();
 		
 		// Compute the reserve price
-		double secondPrice = winner.computeInverseVirtualCost( secondMinVirtualCost );
-		double reservePrice = ((SellerType)_bids.get(winnerIdx)).computeInverseVirtualCost(_value);
+		/*double secondPrice = winner.computeInverseVirtualCost( secondMinVirtualCost );
+		double reservePrice = ((SellerType)_bids.get(winnerIdx)).computeInverseVirtualCost(_inducedValues);
 		
 		// Set the payment
 		payment = Arrays.asList(Math.min(reservePrice, secondPrice));
-		
+		*/
 		return payment;
 	}
 	
@@ -192,7 +239,9 @@ public class SurplusOptimalReverseAuction implements Auction
 
 	private int _numberOfBidders;								// Number of bidders (sellers) in the auction
 	private List<Type> _bids;									// Bids of the sellers
-	private double _value;										// Value of the auctioneer for the good
+	private List< List<Double> > _inducedValues;						// Values of the auctioneer per DB with different deterministic allocations of other DBs
 	private Allocation _allocation;
 	private List<Double> _payments;
+	
+	private IloCplex _cplexSolver;
 }
