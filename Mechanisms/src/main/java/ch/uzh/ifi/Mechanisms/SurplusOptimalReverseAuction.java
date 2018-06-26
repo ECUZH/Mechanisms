@@ -52,8 +52,11 @@ public class SurplusOptimalReverseAuction implements Auction
 			_cplexSolver.clearModel();
 		_cplexSolver.setOut(null);
 		
-		List<IloNumVar> variables = new ArrayList<IloNumVar>(); // i-th element of the list contains the list of variables 
-																// corresponding to the i-th agent
+		List<IloNumVar> sellerAllocationVars = new ArrayList<IloNumVar>();  // i-th element of the list contains a binary variable 
+																			// indicating whether s_i is allocated
+		List<IloNumVar> bundleAllocationVars = new ArrayList<IloNumVar>();  // i-th element of this list contains a binary variable
+																			// indicating whether the i-th group of sellers is allocated.
+																			// Here, i is a binary representation of the allocation of sellers within the group
 		
 		//Create the optimization variables and formulate the objective function:
 		IloNumExpr objective = _cplexSolver.constant(0.);
@@ -62,7 +65,7 @@ public class SurplusOptimalReverseAuction implements Auction
 		for(int i = 0; i < _numberOfBidders; ++i)
 		{
 			IloNumVar a = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "a" + _bids.get(i).getAgentId() );
-			variables.add(a);
+			sellerAllocationVars.add(a);
 			
 			double virtualCost = 2 * _bids.get(i).getAtom(0).getValue();
 			IloNumExpr term = _cplexSolver.prod( -1 * virtualCost, a);
@@ -72,33 +75,34 @@ public class SurplusOptimalReverseAuction implements Auction
 		int numberOfDeterministicAllocations = (int)Math.pow(2, _numberOfBidders);
 		for(int i = 0; i < numberOfDeterministicAllocations; ++i)
 		{
-			IloNumExpr term = _cplexSolver.constant(0.);
+			IloNumExpr totalInducedValueI = _cplexSolver.constant(0.);
 			for(int j = 0; j < _inducedValues.size(); ++j)
-			{
-				term = _cplexSolver.sum( _inducedValues.get(j).get(i), term);
-			}
+				totalInducedValueI = _cplexSolver.sum( _inducedValues.get(j).get(i), totalInducedValueI);
 			
+			
+			IloNumVar z = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "z" + i );
+			objective = _cplexSolver.sum(objective, _cplexSolver.prod(z, totalInducedValueI));
 			
 			int bit = 1;
 			for(int j = 0; j < _numberOfBidders; ++j)
 			{
+				IloNumExpr constraintJ = _cplexSolver.prod(1., z);
 				if( (i & bit) > 0 )  
 				{
-					//Seller j is allocated in a binary representation of the deterministic allocation, i
-					term = _cplexSolver.prod(variables.get(j), term);
+					//Seller j is allocated in a binary representation of the deterministic allocation i
+					constraintJ = _cplexSolver.sum(constraintJ, _cplexSolver.prod(-1, sellerAllocationVars.get(j)));
 				}
 				else
 				{
-					//Seller j is not allocated in a binary representation of the deterministic allocation, i
-					IloNumExpr t = _cplexSolver.prod(-1, variables.get(j));
-					t = _cplexSolver.sum(1, t);
-					term = _cplexSolver.prod(t, term);
+					//Seller j is not allocated in a binary representation of the deterministic allocation i
+					constraintJ = _cplexSolver.sum(constraintJ, _cplexSolver.sum(-1, sellerAllocationVars.get(j)));
 				}
+				lp.addRow( _cplexSolver.ge(0., constraintJ, "Bundle_"+i + "," + j) );
 				bit = bit << 1;
 			}
-			objective = _cplexSolver.sum(objective, term);
 		}
-		System.out.println("Obj: " + objective.toString());
+		_logger.debug("Obj: " + objective.toString());
+		_logger.debug("Constr: " + lp.toString());
 		_cplexSolver.add(_cplexSolver.maximize(objective));
 		
 		_cplexSolver.solve();
@@ -112,7 +116,7 @@ public class SurplusOptimalReverseAuction implements Auction
 		
 		for(int i = 0; i < _numberOfBidders; ++i)
 		{
-			if( Math.abs( _cplexSolver.getValue(variables.get(i)) - 1.0 ) < 1e-6 )
+			if( Math.abs( _cplexSolver.getValue(sellerAllocationVars.get(i)) - 1.0 ) < 1e-6 )
 			{
 				allocatedBiddersIds.add( _bids.get(i).getAgentId());
 				allocatedBundles.add( _bids.get(i).getAtom(0).getInterestingSet().get(0));
