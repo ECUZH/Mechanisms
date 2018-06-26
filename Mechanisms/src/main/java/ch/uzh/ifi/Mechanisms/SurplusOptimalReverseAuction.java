@@ -57,7 +57,7 @@ public class SurplusOptimalReverseAuction implements Auction
 		
 		List<IloNumVar> sellerAllocationVars = new ArrayList<IloNumVar>();  // i-th element of the list contains a binary variable 
 																			// indicating whether s_i is allocated
-		//List<IloNumVar> bundleAllocationVars = new ArrayList<IloNumVar>();  // i-th element of this list contains a binary variable
+		List<IloNumVar> bundleAllocationVars = new ArrayList<IloNumVar>();  // i-th element of this list contains a binary variable
 																			// indicating whether the i-th group of sellers is allocated.
 																			// Here, i is a binary representation of the allocation of sellers within the group
 		
@@ -85,6 +85,7 @@ public class SurplusOptimalReverseAuction implements Auction
 			
 			IloNumVar z = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "z" + i );
 			objective = _cplexSolver.sum(objective, _cplexSolver.prod(z, totalInducedValueI));
+			bundleAllocationVars.add(z);
 			
 			int bit = 1;
 			for(int j = 0; j < _numberOfBidders; ++j)
@@ -119,6 +120,7 @@ public class SurplusOptimalReverseAuction implements Auction
 		
 		for(int i = 0; i < _numberOfBidders; ++i)
 		{
+			_logger.debug("SOL: " + sellerAllocationVars.get(i).getName() + "="+_cplexSolver.getValue(sellerAllocationVars.get(i)));
 			if( Math.abs( _cplexSolver.getValue(sellerAllocationVars.get(i)) - 1.0 ) < 1e-6 )
 			{
 				allocatedBiddersIds.add( _bids.get(i).getAgentId());
@@ -127,6 +129,8 @@ public class SurplusOptimalReverseAuction implements Auction
 				deterministicAllocation += (int)Math.pow(2, i);
 			}
 		}
+		for(int i = 0; i < bundleAllocationVars.size(); ++i)
+			_logger.debug("SOL: " + bundleAllocationVars.get(i).getName() + "="+_cplexSolver.getValue(bundleAllocationVars.get(i)));
 		
 		for(int i = 0; i < _inducedValues.size(); ++i)
 			autioneerValue += _inducedValues.get(i).get(deterministicAllocation);
@@ -157,6 +161,7 @@ public class SurplusOptimalReverseAuction implements Auction
 		{
 			// 1. Remove bidder i
 			List<Type> reducedBids = new ArrayList<Type>();
+			_logger.debug("Remove bidder id = " + _allocation.getBiddersInvolved(0).get(i));
 			for(int j = 0; j < _bids.size(); ++j)
 				if( _bids.get(j).getAgentId() != _allocation.getBiddersInvolved(0).get(i) )
 					reducedBids.add(_bids.get(j));
@@ -168,9 +173,10 @@ public class SurplusOptimalReverseAuction implements Auction
 				int numberOfDeterministicAllocations = (int)Math.pow(2, _bids.size());
 				List<Double> inducedValuesK = new ArrayList<Double>();
 				for(int j = 0; j < numberOfDeterministicAllocations; ++j)
-					if( Math.floor( j/Math.pow(2, i) ) % 2 == 0 )
+					if( Math.floor( j/Math.pow(2, _allocation.getBiddersInvolved(0).get(i)-1) ) % 2 == 0 )
 						inducedValuesK.add(_inducedValues.get(k).get(j));
-
+				
+				_logger.debug("Induced values ofr DB_"+k+": " + inducedValuesK.toString());
 				inducedValues.add(inducedValuesK);
 			}
 			
