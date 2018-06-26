@@ -90,13 +90,15 @@ public class SurplusOptimalReverseAuction implements Auction
 				else
 				{
 					//Seller j is not allocated in a binary representation of the deterministic allocation, i
-					IloNumExpr t = _cplexSolver.sum(-1, variables.get(j));
+					IloNumExpr t = _cplexSolver.prod(-1, variables.get(j));
+					t = _cplexSolver.sum(1, t);
 					term = _cplexSolver.prod(t, term);
 				}
+				bit = bit << 1;
 			}
 			objective = _cplexSolver.sum(objective, term);
 		}
-		
+		System.out.println("Obj: " + objective.toString());
 		_cplexSolver.add(_cplexSolver.maximize(objective));
 		
 		_cplexSolver.solve();
