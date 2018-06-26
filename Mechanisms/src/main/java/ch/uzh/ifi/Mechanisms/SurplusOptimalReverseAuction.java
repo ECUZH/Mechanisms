@@ -70,7 +70,7 @@ public class SurplusOptimalReverseAuction implements Auction
 			IloNumVar a = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "a" + _bids.get(i).getAgentId() );
 			sellerAllocationVars.add(a);
 			
-			double virtualCost = 2 * _bids.get(i).getAtom(0).getValue();
+			double virtualCost = ((SellerType)_bids.get(i)).getItsVirtualCost();
 			IloNumExpr term = _cplexSolver.prod( -1 * virtualCost, a);
 			objective = _cplexSolver.sum(objective, term);
 		}
@@ -81,7 +81,6 @@ public class SurplusOptimalReverseAuction implements Auction
 			IloNumExpr totalInducedValueI = _cplexSolver.constant(0.);
 			for(int j = 0; j < _inducedValues.size(); ++j)
 				totalInducedValueI = _cplexSolver.sum( _inducedValues.get(j).get(i), totalInducedValueI);
-			
 			
 			IloNumVar z = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "z" + i );
 			objective = _cplexSolver.sum(objective, _cplexSolver.prod(z, totalInducedValueI));
@@ -145,28 +144,27 @@ public class SurplusOptimalReverseAuction implements Auction
 	 */
 	public List<Double> computePayments() throws Exception
 	{
-		/////!!!!!!!!!!!!!!!!!!!!!!! TODO: implement generic virtual cost
 		List<Double> payment = new ArrayList<Double>();
 
+		// 0. Compute the virtual surplus of the optimal allocation
 		double totalInducedValue = _allocation.getAuctioneersAllocatedValue(0);
 		double totalVirtualCost = 0.;
 		for( int i = 0; i < _allocation.getBiddersInvolved(0).size(); ++i )
-			totalVirtualCost += 2 * _bids.get( _allocation.getBiddersInvolved(0).get(i) - 1).getAtom(0).getValue();
+			totalVirtualCost += ((SellerType)_bids.get( _allocation.getBiddersInvolved(0).get(i) - 1)).getItsVirtualCost();
 		
 		double virtualSurplus = totalInducedValue - totalVirtualCost;
 		
-		//if(_allocation.getNumberOfAllocatedAuctioneers() < 1) throw new RuntimeException("No seller was allocated. Can't compute payments.");
-	
+		// 1. Compute payments for every allocated biudders
 		for(int i = 0; i < _allocation.getBiddersInvolved(0).size(); ++i)
 		{
-			// 1. Remove bidder i
+			// 1.1 Remove bidder i
 			List<Type> reducedBids = new ArrayList<Type>();
 			_logger.debug("Remove bidder id = " + _allocation.getBiddersInvolved(0).get(i));
 			for(int j = 0; j < _bids.size(); ++j)
 				if( _bids.get(j).getAgentId() != _allocation.getBiddersInvolved(0).get(i) )
 					reducedBids.add(_bids.get(j));
 	
-			// 2. Collect induced values of all DBs 
+			// 1.2 Collect induced values of all DBs 
 			List< List<Double> > inducedValues = new ArrayList<List<Double> >();
 			for(int k = 0; k < _inducedValues.size(); ++k) 						// (For all DBs)
 			{
@@ -176,26 +174,27 @@ public class SurplusOptimalReverseAuction implements Auction
 					if( Math.floor( j/Math.pow(2, _allocation.getBiddersInvolved(0).get(i)-1) ) % 2 == 0 )
 						inducedValuesK.add(_inducedValues.get(k).get(j));
 				
-				_logger.debug("Induced values ofr DB_"+k+": " + inducedValuesK.toString());
+				_logger.debug("Induced values of DB_"+k+" for different det. allocations: " + inducedValuesK.toString());
 				inducedValues.add(inducedValuesK);
 			}
 			
-			// 3. Solve the reduced auction
+			// 1.3 Solve the reduced auction
 			SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(reducedBids, inducedValues);
 			auction.computeWinnerDetermination();
 			
 			double reducedTotalInducedValue = auction.getAllocation().getAuctioneersAllocatedValue(0);
 			double reducedTotalVirtualCost = 0.;
 			for( int j = 0; j < auction.getAllocation().getBiddersInvolved(0).size(); ++j )
-				reducedTotalVirtualCost += 2 * _bids.get( auction.getAllocation().getBiddersInvolved(0).get(j) - 1).getAtom(0).getValue();
+				reducedTotalVirtualCost += ((SellerType)_bids.get( auction.getAllocation().getBiddersInvolved(0).get(j) - 1)).getItsVirtualCost();
 			
 			double reducedVirtualSurplus = reducedTotalInducedValue - reducedTotalVirtualCost;
 			_logger.debug("reducedVirtualSurplus = " + reducedTotalInducedValue + " - " + reducedTotalVirtualCost + " = " + reducedVirtualSurplus);
 			
-			// 4. Compute the payment
-			double p = 0.5 * ( 2*_bids.get(_allocation.getBiddersInvolved(0).get(i)-1).getAtom(0).getValue() + virtualSurplus - reducedVirtualSurplus );
-			_logger.debug("p=phi^{-1} (" + 2*_bids.get(_allocation.getBiddersInvolved(0).get(i)-1).getAtom(0).getValue() + " + " +
-			              virtualSurplus + " - " + reducedVirtualSurplus + ")=" + p);
+			// 2. Compute the payment
+			SellerType allocatedBidder = (SellerType)_bids.get(_allocation.getBiddersInvolved(0).get(i)-1); 
+			double p = allocatedBidder.computeInverseVirtualCost( allocatedBidder.getItsVirtualCost() + virtualSurplus - reducedVirtualSurplus );
+			_logger.debug("p=phi^{-1} (" + allocatedBidder.getItsVirtualCost() + " + " + virtualSurplus + " - " + reducedVirtualSurplus + ")=" + p);
+			
 			payment.add(p);
 		}
 		
