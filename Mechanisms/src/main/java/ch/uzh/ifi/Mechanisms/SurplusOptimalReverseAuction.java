@@ -34,6 +34,9 @@ public class SurplusOptimalReverseAuction implements Auction
 	 */
 	public SurplusOptimalReverseAuction(List<Type> bids, List< List<Double> > inducedValues)
 	{
+		if( inducedValues.get(0).size() < Math.pow(2, bids.size()) ) throw new RuntimeException("Not all induced values available: " + inducedValues.get(0).size() + "/"+bids.size());
+		if( inducedValues.get(0).size() > Math.pow(2, bids.size()) ) throw new RuntimeException("Too many induced values specified.");
+		
 		_numberOfBidders = bids.size();
 		_bids = bids;
 		_inducedValues = inducedValues;
@@ -54,7 +57,7 @@ public class SurplusOptimalReverseAuction implements Auction
 		
 		List<IloNumVar> sellerAllocationVars = new ArrayList<IloNumVar>();  // i-th element of the list contains a binary variable 
 																			// indicating whether s_i is allocated
-		List<IloNumVar> bundleAllocationVars = new ArrayList<IloNumVar>();  // i-th element of this list contains a binary variable
+		//List<IloNumVar> bundleAllocationVars = new ArrayList<IloNumVar>();  // i-th element of this list contains a binary variable
 																			// indicating whether the i-th group of sellers is allocated.
 																			// Here, i is a binary representation of the allocation of sellers within the group
 		
@@ -120,7 +123,7 @@ public class SurplusOptimalReverseAuction implements Auction
 			{
 				allocatedBiddersIds.add( _bids.get(i).getAgentId());
 				allocatedBundles.add( _bids.get(i).getAtom(0).getInterestingSet().get(0));
-				biddersValues.add( _bids.get(i).getAtom(0).getValue() );
+				biddersValues.add( _bids.get(i).getAtom(0).getValue() );					// Costs of sellers
 				deterministicAllocation += (int)Math.pow(2, i);
 			}
 		}
@@ -134,45 +137,59 @@ public class SurplusOptimalReverseAuction implements Auction
 	/**
 	 * The method computes payments as VCG over virtual costs + reserve prices.
 	 * @return payment of the winner
+	 * @throws Exception 
 	 */
-	public List<Double> computePayments()
+	public List<Double> computePayments() throws Exception
 	{
+		/////!!!!!!!!!!!!!!!!!!!!!!! TODO: implement generic virtual cost
 		List<Double> payment = new ArrayList<Double>();
+
+		double totalInducedValue = _allocation.getAuctioneersAllocatedValue(0);
+		double totalVirtualCost = 0.;
+		for( int i = 0; i < _allocation.getBiddersInvolved(0).size(); ++i )
+			totalVirtualCost += 2 * _bids.get( _allocation.getBiddersInvolved(0).get(i) - 1).getAtom(0).getValue();
 		
-		if(_allocation.getNumberOfAllocatedAuctioneers() < 1) throw new RuntimeException("No seller was allocated. Can't compute payments.");
+		double virtualSurplus = totalInducedValue - totalVirtualCost;
 		
-		// Identify the index of the winner
-		int winnerIdx = 0;
-		for(int i = 0; i < _bids.size(); ++i)
-			if( _bids.get(i).getAgentId() == _allocation.getBiddersInvolved(0).get(0) )
-			{
-				winnerIdx = i;
-				break;
-			}
-		
-		// Find the second smallest virtual cost
-		double secondMinVirtualCost = 1e+9;
-		SellerType winner = (SellerType)_bids.get(winnerIdx);
-		for(int i = 0; i < _bids.size(); ++i)
+		//if(_allocation.getNumberOfAllocatedAuctioneers() < 1) throw new RuntimeException("No seller was allocated. Can't compute payments.");
+	
+		for(int i = 0; i < _allocation.getBiddersInvolved(0).size(); ++i)
 		{
-			SellerType bidderI = (SellerType)_bids.get(i);
-			if( bidderI.getAgentId() != winner.getAgentId() )
-				if( bidderI.getItsVirtualCost() < secondMinVirtualCost )
-					secondMinVirtualCost = bidderI.getItsVirtualCost();
+			// 1. Remove bidder i
+			List<Type> reducedBids = new ArrayList<Type>();
+			for(int j = 0; j < _bids.size(); ++j)
+				if( j != i )
+					reducedBids.add(_bids.get(j));
+	
+			// 2. Collect induced values of all DBs 
+			List< List<Double> > inducedValues = new ArrayList<List<Double> >();
+			for(int k = 0; k < _inducedValues.size(); ++k) 						// (For all DBs)
+			{
+				int numberOfDeterministicAllocations = (int)Math.pow(2, _bids.size());
+				List<Double> inducedValuesK = new ArrayList<Double>();
+				for(int j = 0; j < numberOfDeterministicAllocations; ++j)
+					if( Math.floor( j/Math.pow(2, i) ) % 2 == 0 )
+						inducedValuesK.add(_inducedValues.get(k).get(j));
+
+				inducedValues.add(inducedValuesK);
+			}
+			
+			// 3. Solve the reduced auction
+			SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(reducedBids, inducedValues);
+			auction.computeWinnerDetermination();
+			
+			double reducedTotalInducedValue = auction.getAllocation().getAuctioneersAllocatedValue(0);
+			double reducedTotalVirtualCost = 0.;
+			for( int j = 0; j < auction.getAllocation().getBiddersInvolved(0).size(); ++j )
+				reducedTotalVirtualCost += 2 * reducedBids.get( auction.getAllocation().getBiddersInvolved(0).get(j) - 1).getAtom(0).getValue();
+			
+			double reducedVirtualSurplus = reducedTotalInducedValue - reducedTotalVirtualCost;
+			
+			// 4. Compute the payment
+			double p = 0.5 * ( 2*_bids.get(_allocation.getBiddersInvolved(0).get(i)-1).getAtom(0).getValue() + virtualSurplus - reducedVirtualSurplus );
+			payment.add(p);
 		}
-		//double secondMinCost = _bids.get(winnerIdx).getAtom(0).getValue();
-		//for(int i = 0; i < _bids.size(); ++i)
-		//	if( _bids.get(i).getAgentId() != _allocation.getBiddersInvolved(0).get(0) )
-		//		if( _bids.get(i).getAtom(0).getValue() < secondMinCost )
-		//			secondMinCost = _bids.get(i).getAtom(0).getValue();
 		
-		// Compute the reserve price
-		/*double secondPrice = winner.computeInverseVirtualCost( secondMinVirtualCost );
-		double reservePrice = ((SellerType)_bids.get(winnerIdx)).computeInverseVirtualCost(_inducedValues);
-		
-		// Set the payment
-		payment = Arrays.asList(Math.min(reservePrice, secondPrice));
-		*/
 		return payment;
 	}
 	
@@ -245,7 +262,7 @@ public class SurplusOptimalReverseAuction implements Auction
 
 	private int _numberOfBidders;								// Number of bidders (sellers) in the auction
 	private List<Type> _bids;									// Bids of the sellers
-	private List< List<Double> > _inducedValues;						// Values of the auctioneer per DB with different deterministic allocations of other DBs
+	private List< List<Double> > _inducedValues;				// Values of the auctioneer per DB with different deterministic allocations of other DBs
 	private Allocation _allocation;
 	private List<Double> _payments;
 	
