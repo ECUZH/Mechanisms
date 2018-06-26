@@ -158,7 +158,7 @@ public class SurplusOptimalReverseAuction implements Auction
 			// 1. Remove bidder i
 			List<Type> reducedBids = new ArrayList<Type>();
 			for(int j = 0; j < _bids.size(); ++j)
-				if( j != i )
+				if( _bids.get(j).getAgentId() != _allocation.getBiddersInvolved(0).get(i) )
 					reducedBids.add(_bids.get(j));
 	
 			// 2. Collect induced values of all DBs 
@@ -181,12 +181,15 @@ public class SurplusOptimalReverseAuction implements Auction
 			double reducedTotalInducedValue = auction.getAllocation().getAuctioneersAllocatedValue(0);
 			double reducedTotalVirtualCost = 0.;
 			for( int j = 0; j < auction.getAllocation().getBiddersInvolved(0).size(); ++j )
-				reducedTotalVirtualCost += 2 * reducedBids.get( auction.getAllocation().getBiddersInvolved(0).get(j) - 1).getAtom(0).getValue();
+				reducedTotalVirtualCost += 2 * _bids.get( auction.getAllocation().getBiddersInvolved(0).get(j) - 1).getAtom(0).getValue();
 			
 			double reducedVirtualSurplus = reducedTotalInducedValue - reducedTotalVirtualCost;
+			_logger.debug("reducedVirtualSurplus = " + reducedTotalInducedValue + " - " + reducedTotalVirtualCost + " = " + reducedVirtualSurplus);
 			
 			// 4. Compute the payment
 			double p = 0.5 * ( 2*_bids.get(_allocation.getBiddersInvolved(0).get(i)-1).getAtom(0).getValue() + virtualSurplus - reducedVirtualSurplus );
+			_logger.debug("p=phi^{-1} (" + 2*_bids.get(_allocation.getBiddersInvolved(0).get(i)-1).getAtom(0).getValue() + " + " +
+			              virtualSurplus + " - " + reducedVirtualSurplus + ")=" + p);
 			payment.add(p);
 		}
 		
