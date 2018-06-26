@@ -154,7 +154,7 @@ public class SurplusOptimalReverseAuction implements Auction
 		
 		double virtualSurplus = totalInducedValue - totalVirtualCost;
 		
-		// 1. Compute payments for every allocated biudders
+		// 1. Compute payments for every allocated bidders
 		for(int i = 0; i < _allocation.getBiddersInvolved(0).size(); ++i)
 		{
 			// 1.1 Remove bidder i
@@ -265,14 +265,14 @@ public class SurplusOptimalReverseAuction implements Auction
 	@Override
 	public String getPaymentRule() 
 	{
-		return "VCG+Reserve";
+		return "BORA";
 	}
 
 	private int _numberOfBidders;								// Number of bidders (sellers) in the auction
 	private List<Type> _bids;									// Bids of the sellers
 	private List< List<Double> > _inducedValues;				// Values of the auctioneer per DB with different deterministic allocations of other DBs
-	private Allocation _allocation;
-	private List<Double> _payments;
+	private Allocation _allocation;								// Optimal allocation of bidders
+	private List<Double> _payments;								// Payments of the winners
 	
 	private IloCplex _cplexSolver;
 }
