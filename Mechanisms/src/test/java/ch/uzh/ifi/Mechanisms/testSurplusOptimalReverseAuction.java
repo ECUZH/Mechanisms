@@ -135,6 +135,13 @@ public class testSurplusOptimalReverseAuction
 		assertTrue(auction.getAllocation().getBiddersInvolved(0).get(0) == 1);
 		assertTrue(auction.getAllocation().getBiddersInvolved(0).get(1) == 3);
 		assertTrue(auction.getAllocation().getAuctioneersAllocatedValue(0) == 5);
+		
+		List<Double> payments = auction.computePayments();
+		assertTrue( payments.size() == 2);
+		System.out.println(payments.get(0));
+		System.out.println(payments.get(1));
+		assertTrue( payments.get(0) == 2.1);
+		assertTrue( payments.get(1) == 0.5);
 	}
 
 	/**
