@@ -21,7 +21,7 @@ public class testSurplusOptimalReverseAuction
 	 * @throws Exception
 	 */
 	@Test
-	public void testConstructor() throws Exception
+	public void testBORA1() throws Exception
 	{
 		int[] dbIDs = {1, 2};
 		
@@ -293,8 +293,6 @@ public class testSurplusOptimalReverseAuction
 		
 		List<Double> payments = auction.computePayments();
 		assertTrue( payments.size() == 2);
-		System.out.println(payments.get(0));
-		System.out.println(payments.get(1));
 		assertTrue( payments.get(0) == 2.125);
 		assertTrue( Math.abs(payments.get(1) - 0.525) < 1e-6);
 	}
