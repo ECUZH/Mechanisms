@@ -8,6 +8,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ch.uzh.ifi.MechanismDesignPrimitives.Allocation;
+import ch.uzh.ifi.MechanismDesignPrimitives.AtomicBid;
+import ch.uzh.ifi.MechanismDesignPrimitives.Distribution;
 import ch.uzh.ifi.MechanismDesignPrimitives.SellerType;
 import ch.uzh.ifi.MechanismDesignPrimitives.Type;
 import ilog.concert.IloException;
@@ -32,10 +34,11 @@ public class SurplusOptimalReverseAuction implements Auction
 	 * @param bids bids of sellers
 	 * @param inducedValues induced values of DBs for different deterministic allocations
 	 */
-	public SurplusOptimalReverseAuction(List<Type> bids, List< List<Double> > inducedValues)
+	public SurplusOptimalReverseAuction(List<SellerType> bids, List< List<Double> > inducedValues)
 	{
-		if( inducedValues.get(0).size() < Math.pow(2, bids.size()) ) throw new RuntimeException("Not all induced values available: " + inducedValues.get(0).size() + "/"+bids.size());
-		if( inducedValues.get(0).size() > Math.pow(2, bids.size()) ) throw new RuntimeException("Too many induced values specified.");
+		_numberOfDBs = inducedValues.size();
+		if( inducedValues.get(0).size() < Math.pow(2, _numberOfDBs) ) throw new RuntimeException("Not all induced values available: " + inducedValues.get(0).size() + "/"+_numberOfDBs);
+		if( inducedValues.get(0).size() > Math.pow(2, _numberOfDBs) ) throw new RuntimeException("Too many induced values specified.");
 		
 		_numberOfBidders = bids.size();
 		_bids = bids;
@@ -65,6 +68,7 @@ public class SurplusOptimalReverseAuction implements Auction
 		IloNumExpr objective = _cplexSolver.constant(0.);
 		IloLPMatrix lp = _cplexSolver.addLPMatrix();
 		
+		// Allocation variables per seller; Allocated negative virtual cost in the objective f-n
 		for(int i = 0; i < _numberOfBidders; ++i)
 		{
 			IloNumVar a = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "a" + _bids.get(i).getAgentId() );
@@ -75,35 +79,49 @@ public class SurplusOptimalReverseAuction implements Auction
 			objective = _cplexSolver.sum(objective, term);
 		}
 		
-		int numberOfDeterministicAllocations = (int)Math.pow(2, _numberOfBidders);
-		for(int i = 0; i < numberOfDeterministicAllocations; ++i)
+		int numberOfDeterministicAllocationsDBs = (int)Math.pow(2, _numberOfDBs);
+		for(int i = 0; i < numberOfDeterministicAllocationsDBs; ++i)
 		{
+			// Total induced value of all DBs when the det. allocation of DBs is i
 			IloNumExpr totalInducedValueI = _cplexSolver.constant(0.);
 			for(int j = 0; j < _inducedValues.size(); ++j)
 				totalInducedValueI = _cplexSolver.sum( _inducedValues.get(j).get(i), totalInducedValueI);
 			
+			// z indicates whether a particular set of DBs is allocated; Add the allocated value to the objective f-n
 			IloNumVar z = _cplexSolver.numVar(0, 1, IloNumVarType.Int, "z" + i );
 			objective = _cplexSolver.sum(objective, _cplexSolver.prod(z, totalInducedValueI));
 			bundleAllocationVars.add(z);
 			
 			int bit = 1;
-			for(int j = 0; j < _numberOfBidders; ++j)
+			for(int k = 0; k < _numberOfDBs; ++k)
 			{
-				IloNumExpr constraintJ = _cplexSolver.prod(1., z);
-				if( (i & bit) > 0 )  
+				IloNumExpr constraintK = _cplexSolver.prod(1., z);
+				for(int j = 0; j < _numberOfBidders; ++j)
 				{
-					//Seller j is allocated in a binary representation of the deterministic allocation i
-					constraintJ = _cplexSolver.sum(constraintJ, _cplexSolver.prod(-1, sellerAllocationVars.get(j)));
+					int dbId = _bids.get(j).getAtom(0).getInterestingSet().get(0);
+					
+					if( dbId - 1 == k)
+					{
+						if( (i & bit) > 0 )  									// If DB_k is allocated in det. allocation i
+						{
+							// DB_k is allocated in a binary representation of the deterministic allocation i,
+							//... then 0 >= (z - ... -a_j)
+							constraintK = _cplexSolver.sum(constraintK, _cplexSolver.prod(-1, sellerAllocationVars.get(j)));
+						}
+						else
+						{
+							//Seller j is not allocated in a binary representation of the deterministic allocation i, 
+							//... then (a_j - 1)
+							constraintK = _cplexSolver.sum(constraintK, _cplexSolver.sum(-1, sellerAllocationVars.get(j)));
+						}
+					}
 				}
-				else
-				{
-					//Seller j is not allocated in a binary representation of the deterministic allocation i
-					constraintJ = _cplexSolver.sum(constraintJ, _cplexSolver.sum(-1, sellerAllocationVars.get(j)));
-				}
-				lp.addRow( _cplexSolver.ge(0., constraintJ, "Bundle_"+i + "," + j) );
+				lp.addRow( _cplexSolver.ge(0., constraintK, "Bundle_"+i + "," + k) );
 				bit = bit << 1;
 			}
 		}
+		
+		// Allocation variables per bundle; Allocation constraints connecting bundles and sellers 
 		_logger.debug("Obj: " + objective.toString());
 		_logger.debug("Constr: " + lp.toString());
 		_cplexSolver.add(_cplexSolver.maximize(objective));
@@ -125,7 +143,7 @@ public class SurplusOptimalReverseAuction implements Auction
 				allocatedBiddersIds.add( _bids.get(i).getAgentId());
 				allocatedBundles.add( _bids.get(i).getAtom(0).getInterestingSet().get(0));
 				biddersValues.add( _bids.get(i).getAtom(0).getValue() );					// Costs of sellers
-				deterministicAllocation += (int)Math.pow(2, i);
+				deterministicAllocation += (int)Math.pow(2, _bids.get(i).getInterestingSet(0).get(0) - 1);
 			}
 		}
 		for(int i = 0; i < bundleAllocationVars.size(); ++i)
@@ -158,28 +176,33 @@ public class SurplusOptimalReverseAuction implements Auction
 		for(int i = 0; i < _allocation.getBiddersInvolved(0).size(); ++i)
 		{
 			// 1.1 Remove bidder i
-			List<Type> reducedBids = new ArrayList<Type>();
+			List<SellerType> reducedBids = new ArrayList<SellerType>();
 			_logger.debug("Remove bidder id = " + _allocation.getBiddersInvolved(0).get(i));
 			for(int j = 0; j < _bids.size(); ++j)
 				if( _bids.get(j).getAgentId() != _allocation.getBiddersInvolved(0).get(i) )
 					reducedBids.add(_bids.get(j));
-	
-			// 1.2 Collect induced values of all DBs 
+					
+			// 1.2 Collect induced values of all DBs
 			List< List<Double> > inducedValues = new ArrayList<List<Double> >();
+			int dbIdToRemove = _bids.get( _allocation.getBiddersInvolved(0).get(i) - 1 ).getInterestingSet(0).get(0);
+
 			for(int k = 0; k < _inducedValues.size(); ++k) 						// (For all DBs)
-			{
-				int numberOfDeterministicAllocations = (int)Math.pow(2, _bids.size());
+			{	
+				if( dbIdToRemove - 1 == k )
+					continue;
+				int numberOfDeterministicAllocationsDBs = (int)Math.pow(2, _numberOfDBs);
 				List<Double> inducedValuesK = new ArrayList<Double>();
-				for(int j = 0; j < numberOfDeterministicAllocations; ++j)
-					if( Math.floor( j/Math.pow(2, _allocation.getBiddersInvolved(0).get(i)-1) ) % 2 == 0 )
+				for(int j = 0; j < numberOfDeterministicAllocationsDBs; ++j)
+				{
+					if( Math.floor( j/Math.pow(2, dbIdToRemove-1) ) % 2 == 0 )
 						inducedValuesK.add(_inducedValues.get(k).get(j));
-				
+				}
 				_logger.debug("Induced values of DB_"+k+" for different det. allocations: " + inducedValuesK.toString());
 				inducedValues.add(inducedValuesK);
 			}
 			
 			// 1.3 Solve the reduced auction
-			SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(reducedBids, inducedValues);
+			SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(reducedBids, _inducedValues);
 			auction.computeWinnerDetermination();
 			
 			double reducedTotalInducedValue = auction.getAllocation().getAuctioneersAllocatedValue(0);
@@ -269,7 +292,8 @@ public class SurplusOptimalReverseAuction implements Auction
 	}
 
 	private int _numberOfBidders;								// Number of bidders (sellers) in the auction
-	private List<Type> _bids;									// Bids of the sellers
+	private int _numberOfDBs;
+	private List<SellerType> _bids;								// Bids of the sellers
 	private List< List<Double> > _inducedValues;				// Values of the auctioneer per DB with different deterministic allocations of other DBs
 	private Allocation _allocation;								// Optimal allocation of bidders
 	private List<Double> _payments;								// Payments of the winners

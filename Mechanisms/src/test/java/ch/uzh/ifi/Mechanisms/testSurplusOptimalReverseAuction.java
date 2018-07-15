@@ -36,7 +36,7 @@ public class testSurplusOptimalReverseAuction
 		AtomicBid atom2 = new AtomicBid(sellerIds[1], bundle2, sellerCosts[1]);
 		SellerType seller2 = new SellerType(atom2, Distribution.UNIFORM, 1., 1./3.);
 
-		List<Type> bids = Arrays.asList(seller1, seller2);
+		List<SellerType> bids = Arrays.asList(seller1, seller2);
 		
 		List<List<Double> > inducedValues = new ArrayList<List<Double> >();
 		
@@ -94,32 +94,24 @@ public class testSurplusOptimalReverseAuction
 		AtomicBid atom3 = new AtomicBid(sellerIds[2], bundle2, sellerCosts[2]);
 		SellerType seller3 = new SellerType(atom3, Distribution.UNIFORM, 1., 1./3.);
 
-		List<Type> bids = Arrays.asList(seller1, seller2, seller3);
+		List<SellerType> bids = Arrays.asList(seller1, seller2, seller3);
 		
 		List<List<Double> > inducedValues = new ArrayList<List<Double> >();
 		
 		List<Double> inducedValuesDB1 = new ArrayList<Double>();
-																// Sellers    321
-		inducedValuesDB1.add(0.);								// Allocation 000
-		inducedValuesDB1.add(0.);								// Allocation 001
-		inducedValuesDB1.add(0.);								// Allocation 010
-		inducedValuesDB1.add(2.5);								// Allocation 011
-		inducedValuesDB1.add(0.);								// Allocation 100
-		inducedValuesDB1.add(2.5);								// Allocation 101
-		inducedValuesDB1.add(0.);								// Allocation 110
-		inducedValuesDB1.add(2.5);								// Allocation 111
+																//    DBs     21
+		inducedValuesDB1.add(0.);								// Allocation 00
+		inducedValuesDB1.add(0.);								// Allocation 01
+		inducedValuesDB1.add(0.);								// Allocation 10
+		inducedValuesDB1.add(2.5);								// Allocation 11
 		
 		List<Double> inducedValuesDB2 = new ArrayList<Double>();
-																// Sellers    321
-		inducedValuesDB2.add(0.);								// Allocation 000
-		inducedValuesDB2.add(0.);								// Allocation 001
-		inducedValuesDB2.add(0.);								// Allocation 010
-		inducedValuesDB2.add(2.5);								// Allocation 011
-		inducedValuesDB2.add(0.);								// Allocation 100
-		inducedValuesDB2.add(2.5);								// Allocation 101
-		inducedValuesDB2.add(0.);								// Allocation 110
-		inducedValuesDB2.add(2.5);								// Allocation 111	
-		
+																//    DBs     21
+		inducedValuesDB2.add(0.);								// Allocation 00
+		inducedValuesDB2.add(0.);								// Allocation 01
+		inducedValuesDB2.add(0.);								// Allocation 10
+		inducedValuesDB2.add(2.5);								// Allocation 11
+
 		inducedValues.add(inducedValuesDB1);
 		inducedValues.add(inducedValuesDB2);
 		
@@ -165,49 +157,26 @@ public class testSurplusOptimalReverseAuction
 		AtomicBid atom4 = new AtomicBid(sellerIds[3], bundle2, sellerCosts[3]);
 		SellerType seller4 = new SellerType(atom4, Distribution.UNIFORM, 1., 1./3.);
 
-		List<Type> bids = Arrays.asList(seller1, seller2, seller3, seller4);
+		List<SellerType> bids = Arrays.asList(seller1, seller2, seller3, seller4);
 		
 		List<List<Double> > inducedValues = new ArrayList<List<Double> >();
 		
 		List<Double> inducedValuesDB1 = new ArrayList<Double>();
 		double dbValue = 2.5;
-																// Sellers    4321
-		inducedValuesDB1.add(0.);								// Allocation 0000
-		inducedValuesDB1.add(0.);								// Allocation 0001
-		inducedValuesDB1.add(0.);								// Allocation 0010
-		inducedValuesDB1.add(0.);								// Allocation 0011
-		inducedValuesDB1.add(0.);								// Allocation 0100
-		inducedValuesDB1.add(dbValue);							// Allocation 0101
-		inducedValuesDB1.add(dbValue);							// Allocation 0110
-		inducedValuesDB1.add(dbValue);							// Allocation 0111
-		inducedValuesDB1.add(0.);								// Allocation 1000
-		inducedValuesDB1.add(dbValue);							// Allocation 1001
-		inducedValuesDB1.add(dbValue);							// Allocation 1010
-		inducedValuesDB1.add(dbValue);							// Allocation 1011
-		inducedValuesDB1.add(0.);								// Allocation 1100
-		inducedValuesDB1.add(dbValue);							// Allocation 1101
-		inducedValuesDB1.add(dbValue);							// Allocation 1110
-		inducedValuesDB1.add(dbValue);							// Allocation 1111
-		
+																//    DBs     21
+		inducedValuesDB1.add(0.);								// Allocation 00
+		inducedValuesDB1.add(0.);								// Allocation 01
+		inducedValuesDB1.add(0.);								// Allocation 10
+		inducedValuesDB1.add(dbValue);							// Allocation 11
+
 		List<Double> inducedValuesDB2 = new ArrayList<Double>();
-																// Sellers    4321
-		inducedValuesDB2.add(0.);								// Allocation 0000
-		inducedValuesDB2.add(0.);								// Allocation 0001
-		inducedValuesDB2.add(0.);								// Allocation 0010
-		inducedValuesDB2.add(0.);								// Allocation 0011
-		inducedValuesDB2.add(0.);								// Allocation 0100
-		inducedValuesDB2.add(dbValue);							// Allocation 0101
-		inducedValuesDB2.add(dbValue);							// Allocation 0110
-		inducedValuesDB2.add(dbValue);							// Allocation 0111
-		inducedValuesDB2.add(0.);								// Allocation 1000
-		inducedValuesDB2.add(dbValue);							// Allocation 1001
-		inducedValuesDB2.add(dbValue);							// Allocation 1010
-		inducedValuesDB2.add(dbValue);							// Allocation 1011
-		inducedValuesDB2.add(0.);								// Allocation 1100
-		inducedValuesDB2.add(dbValue);							// Allocation 1101
-		inducedValuesDB2.add(dbValue);							// Allocation 1110
-		inducedValuesDB2.add(dbValue);							// Allocation 1111
 		
+		//    DBs     21
+		inducedValuesDB2.add(0.);								// Allocation 00
+		inducedValuesDB2.add(0.);								// Allocation 01
+		inducedValuesDB2.add(0.);								// Allocation 10
+		inducedValuesDB2.add(dbValue);							// Allocation 11
+
 		inducedValues.add(inducedValuesDB1);
 		inducedValues.add(inducedValuesDB2);
 		
@@ -252,32 +221,26 @@ public class testSurplusOptimalReverseAuction
 		AtomicBid atom3 = new AtomicBid(sellerIds[2], bundle2, sellerCosts[2]);
 		SellerType seller3 = new SellerType(atom3, Distribution.UNIFORM, 1., 1./3.);
 
-		List<Type> bids = Arrays.asList(seller1, seller2, seller3);
+		List<SellerType> bids = Arrays.asList(seller1, seller2, seller3);
 		
 		List<List<Double> > inducedValues = new ArrayList<List<Double> >();
 		
 		List<Double> inducedValuesDB1 = new ArrayList<Double>();
-																// Sellers    321
-		inducedValuesDB1.add(0.);								// Allocation 000
-		inducedValuesDB1.add(0.);								// Allocation 001
-		inducedValuesDB1.add(0.);								// Allocation 010
-		inducedValuesDB1.add(2.5);								// Allocation 011
-		inducedValuesDB1.add(0.);								// Allocation 100
-		inducedValuesDB1.add(2.5);								// Allocation 101
-		inducedValuesDB1.add(0.);								// Allocation 110
-		inducedValuesDB1.add(2.5);								// Allocation 111
 		
+																//    DBs     21
+		inducedValuesDB1.add(0.);								// Allocation 00
+		inducedValuesDB1.add(0.);								// Allocation 01
+		inducedValuesDB1.add(0.);								// Allocation 10
+		inducedValuesDB1.add(2.5);								// Allocation 11
+
 		List<Double> inducedValuesDB2 = new ArrayList<Double>();
-																// Sellers    321
-		inducedValuesDB2.add(0.);								// Allocation 000
-		inducedValuesDB2.add(0.);								// Allocation 001
-		inducedValuesDB2.add(0.);								// Allocation 010
-		inducedValuesDB2.add(2.5);								// Allocation 011
-		inducedValuesDB2.add(0.);								// Allocation 100
-		inducedValuesDB2.add(2.5);								// Allocation 101
-		inducedValuesDB2.add(0.);								// Allocation 110
-		inducedValuesDB2.add(2.5);								// Allocation 111	
 		
+																//    DBs     21
+		inducedValuesDB2.add(0.);								// Allocation 00
+		inducedValuesDB2.add(0.);								// Allocation 01
+		inducedValuesDB2.add(0.);								// Allocation 10
+		inducedValuesDB2.add(2.5);								// Allocation 11
+
 		inducedValues.add(inducedValuesDB1);
 		inducedValues.add(inducedValuesDB2);
 		
