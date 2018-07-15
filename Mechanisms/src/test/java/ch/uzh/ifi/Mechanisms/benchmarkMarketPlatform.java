@@ -50,7 +50,7 @@ public class benchmarkMarketPlatform {
 		//0. Define DBs
 		int[] dbIDs = new int[numberOfDBs];
 		for(int i = 0; i < numberOfDBs; ++i)
-			dbIDs[i] = i;
+			dbIDs[i] = i + 1;
 		
 		double startPrice = 0.;
 		
@@ -83,7 +83,10 @@ public class benchmarkMarketPlatform {
 		else if(numberOfDBs == 10 && numberOfSellers <= 19)
 			startPrice = 0.5;
 		else if(numberOfDBs == 10 && numberOfSellers <= 20)
-			startPrice = 0.;
+		{
+			step = 1e-4;
+			startPrice = 0.004;
+		}
 		System.out.println("step="+step);
 
 		//1. Create sellers
@@ -201,11 +204,11 @@ public class benchmarkMarketPlatform {
 				bundles.add(sellers.get(j).getAtom(0).getInterestingSet().get(0));
 			}
 			ProbabilisticAllocation allocationOfSellers = new ProbabilisticAllocation();
-			allocationOfSellers.addAllocatedAgent(0, bidders, bundles, allocationProbabilities);
+			allocationOfSellers.addAllocatedAuctioneer(0, bidders, bundles, allocationProbabilities);
 			
 			//3.4.2.
 			double totalCost = 0.;
-			for(int k = 0; k < numberOfDBs; ++k)
+/*			for(int k = 0; k < numberOfDBs; ++k)
 			{
 				System.out.println("Consider DB " + dbIDs[k] + ". Sellers involved: ");
 				
@@ -242,9 +245,9 @@ public class benchmarkMarketPlatform {
 				else
 					System.out.println("Nobody allocated: zero profits!");
 				
-			}
+			}*/
 			
-			buyers.get(0).updateAllocProbabilityDistribution(allocationOfSellers);
+/*			buyers.get(0).updateAllocProbabilityDistribution(allocationOfSellers);
 			for(int i = 1; i < numberOfBuyers; ++i)
 				buyers.get(i).setAllocProbabilityDistribution( buyers.get(0).getAllocProbabilityDistribution());
 			
@@ -259,7 +262,7 @@ public class benchmarkMarketPlatform {
 			System.out.println("Total surplus of buyers: " + totalUtility );
 			System.out.println("Total welfare: " + (totalValue - totalCost) );
 			surplus.add( totalUtility );
-			welfare.add( totalValue - totalCost );
+			welfare.add( totalValue - totalCost );*/
 		}
 		
 		System.out.println("Equilibrium Prices: " + p.toString());
