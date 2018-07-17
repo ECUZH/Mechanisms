@@ -30,29 +30,29 @@ public class testMarketPlatform {
 	public void testMarketDemandWithLargeEndowments() throws Exception 
 	{
 		//0. Define DBs
-		int dbID1 = 0;
-		int dbID2 = 1;
+		int dbID1 = 1;
+		int dbID2 = 2;
 		
 		//1. Create 2 sellers
 		List<Integer> bundle1 = Arrays.asList(dbID1);
 		List<Integer> bundle2 = Arrays.asList(dbID2);
 		
-		double cost1 = 10;
-		double cost2 = 20;
+		double cost1 = 1.5;
+		double cost2 = 0.5;
 		
 		AtomicBid sellerBid1 = new AtomicBid(1, bundle1, cost1);
 		AtomicBid sellerBid2 = new AtomicBid(2, bundle2, cost2);
 		
-		SellerType seller1 = new SellerType(sellerBid1, Distribution.UNIFORM, 1., 1./3.);
-		SellerType seller2 = new SellerType(sellerBid2, Distribution.UNIFORM, 1., 1./3.);
-		
+		double mean = 2.;
+		double var  = (4-0) * (4-0) / 12;
+		SellerType seller1 = new SellerType(sellerBid1, Distribution.UNIFORM, mean, var);
+		SellerType seller2 = new SellerType(sellerBid2, Distribution.UNIFORM, mean, var);
 		List<SellerType> sellers = Arrays.asList(seller1, seller2);
-		
 		
 		//2. Create 2 buyers
 		double endowment = 10;
-		int allocations[] = {0b00, 0b01, 0b10, 0b11};									// 4 possible deterministic allocations
 		
+		// 4 possible deterministic allocations, {0b00, 0b01, 0b10, 0b11}
 		List<Double> alloc1 = Arrays.asList(0., 0.);
 		LinearThresholdValueFunction v11 = new LinearThresholdValueFunction(0, 0, alloc1);
 		LinearThresholdValueFunction v21 = new LinearThresholdValueFunction(0, 0, alloc1);
@@ -80,8 +80,7 @@ public class testMarketPlatform {
 		valueFunctions2.put(1, v22);
 		valueFunctions2.put(2, v23);
 		valueFunctions2.put(3, v24);
-		//IParametrizedValueFunction[] valueFunctions1 = {v11, v12, v13, v14};			//Parameterized value functions for both buyers 
-		//IParametrizedValueFunction[] valueFunctions2 = {v21, v22, v23, v24};
+
 		ParametrizedQuasiLinearAgent buyer1 = new ParametrizedQuasiLinearAgent(1, endowment, valueFunctions1);
 		ParametrizedQuasiLinearAgent buyer2 = new ParametrizedQuasiLinearAgent(2, endowment, valueFunctions2);
 		
@@ -91,9 +90,7 @@ public class testMarketPlatform {
 		
 		//3. Create market platform and evaluate the market demand
 		MarketPlatform mp = new MarketPlatform(buyers, sellers);
-		
-		int auctioneerId = 0; 															//The market platform, M
-		
+				
 		List<Integer> bidders = new LinkedList<Integer>();
 		bidders.add(seller1.getAgentId());
 		bidders.add(seller2.getAgentId());
@@ -102,36 +99,29 @@ public class testMarketPlatform {
 		bundles.add(dbID1);																//Id of the bundle allocated to the 1st bidder
 		bundles.add(dbID2);																//Id of the bundle allocated to the 2nd bidder
 		
-		double auctioneerValue = 0;
 		List<Double> biddersValues = new LinkedList<Double>();
 		biddersValues.add(seller1.getAtom(0).getValue());
 		biddersValues.add(seller2.getAtom(0).getValue());
 		
-		ProbabilisticAllocation allocation = new ProbabilisticAllocation();				// Probabilistic allocation of sellers
-		List<Double> allocationProbabilities = new LinkedList<Double>();
-		allocationProbabilities.add(0.);												// Allocate only the 2nd DB with p=1
-		allocationProbabilities.add(1.0);
-		
-		allocation.addAllocatedAgent(auctioneerId, bidders, bundles, allocationProbabilities);
-		
-		List<Double> marketDemand = mp.computeMarketDemand(0., allocation, true);
+		int detAlloc = 2;																// Allocate only the 2nd DB with p=1
+		List<Double> marketDemand = mp.computeMarketDemand(0., detAlloc);
 		
 		assertTrue(Math.abs( marketDemand.get(1) - 3. ) < 1e-6);
 		assertTrue(Math.abs( marketDemand.get(0) - 20. ) < 1e-6);
 		
-		marketDemand = mp.computeMarketDemand(1. - 1e-8, allocation, true);
+		marketDemand = mp.computeMarketDemand(1. - 1e-8, detAlloc);
 		assertTrue(Math.abs( marketDemand.get(1) - 3. ) < 1e-6);
 		assertTrue(Math.abs( marketDemand.get(0) - 17. ) < 1e-6);
 		
-		marketDemand = mp.computeMarketDemand(1. + 1e-8, allocation, true);
+		marketDemand = mp.computeMarketDemand(1. + 1e-8, detAlloc);
 		assertTrue(Math.abs( marketDemand.get(1) - 1. ) < 1e-6);
 		assertTrue(Math.abs( marketDemand.get(0) - 19. ) < 1e-6);
 		
-		marketDemand = mp.computeMarketDemand(4. - 1e-8, allocation, true);
+		marketDemand = mp.computeMarketDemand(4. - 1e-8, detAlloc);
 		assertTrue(Math.abs( marketDemand.get(1) - 1. ) < 1e-6);
 		assertTrue(Math.abs( marketDemand.get(0) - 16. ) < 1e-6);
 		
-		marketDemand = mp.computeMarketDemand(4. + 1e-8, allocation, true);
+		marketDemand = mp.computeMarketDemand(4. + 1e-8, detAlloc);
 		assertTrue(Math.abs( marketDemand.get(1) - 0. ) < 1e-6);
 		assertTrue(Math.abs( marketDemand.get(0) - 20. ) < 1e-6);
 		
@@ -146,21 +136,58 @@ public class testMarketPlatform {
 		assertTrue(Math.abs( mp.computeAggregateValue(0, allocation)-0 ) < 1e-6);
 		*/
 		//5. Test values of DBs
-		assertTrue(Math.abs( mp.computeValueOfDB(dbID1, 1 - 1e-8, allocation)  - 0) < 1e-6);
-		assertTrue(Math.abs( mp.computeValueOfDB(dbID2, 1 - 1e-8, allocation)  - 6) < 1e-6);
+		double W1_01 = mp.computeValueOfDB(dbID1, 1 - 1e-8, detAlloc);
+		double W2_01 = mp.computeValueOfDB(dbID2, 1 - 1e-8, detAlloc);
+		assertTrue(Math.abs( W1_01 - 0) < 1e-6);
+		assertTrue(Math.abs( W2_01 - 6) < 1e-6);
 		
-		allocation.deallocateBundle(dbID1);
-		allocation.deallocateBundle(dbID2);
-
-		assertTrue(Math.abs( mp.computeValueOfDB(dbID1, 1 - 1e-8, allocation)  - 0) < 1e-6);
-		assertTrue(Math.abs( mp.computeValueOfDB(dbID2, 1 - 1e-8, allocation)  - 0) < 1e-6);
+		System.out.println("Given allocation " + detAlloc + ":");
+		System.out.println("The value of "+dbID1+" is " + W1_01);
+		System.out.println("The value of "+dbID2+" is " + W2_01);
 		
-		allocationProbabilities = Arrays.asList(1., 1.);
-		allocation.resetAllocationProbabilities(allocationProbabilities);
-
-		//System.out.println(">>> " + mp.computeValueOfDB(dbID1, 1 - 1e-8, allocation));
-		assertTrue(Math.abs( mp.computeValueOfDB(dbID1, 1 - 1e-8, allocation)  - 5) < 1e-6);
-		assertTrue(Math.abs( mp.computeValueOfDB(dbID2, 1 - 1e-8, allocation)  - 5) < 1e-6);
+		detAlloc = 0;
+		double W1_00 = mp.computeValueOfDB(dbID1, 1 - 1e-8, detAlloc);
+		double W2_00 = mp.computeValueOfDB(dbID2, 1 - 1e-8, detAlloc);
+		assertTrue(Math.abs( W1_00 - 0) < 1e-6);
+		assertTrue(Math.abs( W2_00 - 0) < 1e-6);
+		
+		System.out.println("Given allocation " + detAlloc + ":");
+		System.out.println("The value of "+dbID1+" is " + W1_00);
+		System.out.println("The value of "+dbID2+" is " + W2_00);
+		
+		detAlloc = 3;
+		double W1_11 = mp.computeValueOfDB(dbID1, 1 - 1e-8, detAlloc);
+		double W2_11 = mp.computeValueOfDB(dbID2, 1 - 1e-8, detAlloc);
+		
+		assertTrue(Math.abs( W1_11 - 5) < 1e-6);
+		assertTrue(Math.abs( W2_11 - 5) < 1e-6);
+		
+		System.out.println("Given allocation " + detAlloc+":");
+		System.out.println("The value of "+dbID1+" is " + W1_11);
+		System.out.println("The value of "+dbID2+" is " + W2_11);
+		
+		detAlloc = 1;
+		double W1_10 = mp.computeValueOfDB(dbID1, 1 - 1e-8, detAlloc);
+		double W2_10 = mp.computeValueOfDB(dbID2, 1 - 1e-8, detAlloc);
+		assertTrue(Math.abs( W1_10 - 6) < 1e-6);
+		assertTrue(Math.abs( W2_10 - 0) < 1e-6);
+		
+		System.out.println("Given allocation " + detAlloc+":");
+		System.out.println("The value of "+dbID1+" is " + mp.computeValueOfDB(dbID1, 1 - 1e-8, detAlloc));
+		System.out.println("The value of "+dbID2+" is " + mp.computeValueOfDB(dbID2, 1 - 1e-8, detAlloc));
+		
+		//allocationProbabilities = Arrays.asList(1., 0.5);
+		//allocation.resetAllocationProbabilities(allocationProbabilities);
+		//double val1 = 1. * 0.5 * W1_11 + 1. * (1-0.5) * W1_10;
+		//double val2 = 1. * 0.5 * W2_11 + 1. * (1-0.5) * W2_10;
+		//System.out.println(">>> " + val1);
+		//System.out.println(">>> " + val2);
+		//double W1 = mp.computeValueOfDB(dbID1, 1 - 1e-8, allocation);
+		//double W2 = mp.computeValueOfDB(dbID2, 1 - 1e-8, allocation);
+		//System.out.println("Given allocation " + allocation.getAllocationProbabilityOfBidderById(1) +", "+ allocation.getAllocationProbabilityOfBidderById(2)+":");
+		//System.out.println("The value of "+dbID1+" is " + W1);
+		//System.out.println("The value of "+dbID2+" is " + W2);
+		
 	}
 
 	
