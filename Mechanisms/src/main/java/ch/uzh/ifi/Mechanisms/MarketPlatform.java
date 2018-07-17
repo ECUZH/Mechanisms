@@ -36,12 +36,33 @@ public class MarketPlatform
 	 * Constructor.
 	 * @param buyers list of buyers
 	 * @param sellers list of sellers
+	 * @throws Exception 
 	 */
-	public MarketPlatform(List<ParametrizedQuasiLinearAgent> buyers, List<SellerType> sellers)
+	public MarketPlatform(List<ParametrizedQuasiLinearAgent> buyers, List<SellerType> sellers) throws Exception
 	{
 		_buyers  = buyers;
 		_sellers = sellers;
 		_numberOfThreads = 1;
+		
+		
+		ProbabilisticAllocation probAllocation = new ProbabilisticAllocation();		//Allocation of DBs
+		List<Integer> bidders = new LinkedList<Integer>();
+		List<Integer> bundles = new LinkedList<Integer>();
+		_allocationProbabilities = new LinkedList<Double>();						//Allocation probabilities of sellers
+		
+		//Initial conditions: every seller produces her database with Prob = 1.
+		for(int j = 0; j < _sellers.size(); ++j)
+		{
+			bidders.add(_sellers.get(j).getAgentId());
+			bundles.add(_sellers.get(j).getAtom(0).getInterestingSet().get(0));
+			_allocationProbabilities.add(1.0);
+		}		
+			
+		probAllocation.addAllocatedAuctioneer(0, bidders, bundles, _allocationProbabilities);
+		probAllocation.normalize();													// ????????????????????????
+	
+		// Initialization
+		_numberOfDBs = probAllocation.getNumberOfGoods();
 	}
 	
 	/**
@@ -82,22 +103,17 @@ public class MarketPlatform
 			// Compute the excess demand for money
 			double excessDemandMoney = computeExcessDemand(allocation, price); 
 			
-			// Compute the gradient for allocation probabilities
 			diff = 0.;
-
 			System.out.println(">>>>>>>>>>>>>>>>>>>>>> " + excessDemandMoney);
-			price = Math.max(0., price + excessDemandMoney * _STEP / 10. /*/ 50.*/  );
+			price = Math.max(0., price + excessDemandMoney * _STEP  );
 			diff += Math.pow(excessDemandMoney, 2);
-			
-			probAllocation.resetAllocationProbabilities(_allocationProbabilities);
-			
-			//_logger.debug("New price" + price);
-			System.out.println("New price: " + price + " z="+ Math.sqrt(diff / (_sellers.size() + 1)) + " " + (Math.signum(excessDemandMoney)>0?"Increased":"Decreased"));
+						
+			System.out.println("New price: " + price + " z="+ Math.sqrt(diff /*/ (_sellers.size() + 1)*/) + " " + (Math.signum(excessDemandMoney)>0?"Increased":"Decreased"));
 			//System.out.println("Time = " + time);
-			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
-			String s = bufferRead.readLine();
+//			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
+//			String s = bufferRead.readLine();
 			
-			if ( Math.sqrt(diff / (_sellers.size() + 1)) < _TOL)
+			if ( Math.sqrt(diff /*/ (_sellers.size() + 1)*/) < _TOL)
 			{
 				//System.out.println("New allocation probabilities: " + Arrays.toString(_allocationProbabilities.toArray()));
 				break;
@@ -120,70 +136,47 @@ public class MarketPlatform
 	{
 		_logger.debug("computeExcessDemand(allocation, " + " price=" + price + ")");
 		double excessDemand = 0.;
-		List<Double> payments = new LinkedList<Double>();
 		
-		// First, compute the induced values DBs for different deterministic allocations of sellers given the current posted price
+		// First, compute the induced values DBs for different deterministic allocations of DBs given the current posted price
 		List< List<Double> > inducedValues = new ArrayList<List<Double> >();
 		for(int k = 0; k < _numberOfDBs; ++k)
 		{
-			//System.out.println("Compute induced values for DB_" + k + " for different det. allocations...");
-			_logger.debug("Compute induced values for DB_" + (k+1) + " for different det. allocations...");
+			int dbId = k + 1;
+			
+			_logger.debug("Compute induced values for DB_" + dbId + " for different det. allocations...");
 			List<Double> inducedValuesK = new ArrayList<Double>();
 			
 			int numberOfDeterministicAllocations = (int)Math.pow(2, _numberOfDBs);
 			for( int j = 0; j < numberOfDeterministicAllocations; ++j )
 			{
 				// Here, j represent the binary encoding of a deterministic allocation of DBs
-				double dbValue = computeValueOfDB(k+1, price, j);
-				_logger.debug("V_" + (k+1) + " for det. allocation " + j + " is " + dbValue);
+				double dbValue = computeValueOfDB(dbId, price, j);
 				inducedValuesK.add(dbValue);
+				_logger.debug("V_" + dbId + " for det. allocation " + j + " is " + dbValue);
 			}
 			
 			inducedValues.add(inducedValuesK);
 		}
 		
-		//Now, solve the BORA auction with the induced values of DBs
+		//Now, solve the BORA auction with the induced values of DBs and compute the total payment to be accrued to sellers
 		_logger.debug("Instantiate BORA...");
 		SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(_sellers, inducedValues);
 		auction.solveIt();
 		allocation = auction.getAllocation();
+		double totalPayment = 0.;
 		for(int i = 0; i < auction.getPayments().length; ++i)
-			payments.add(auction.getPayments()[i]);
+			totalPayment += auction.getPayments()[i];
 		
+		//Compute the binary representation of the optimal det. allocation of DBs of the BORA auction
 		int detAllocDBs = 0;
 		for(int i = 0; i < allocation.getBiddersInvolved(0).size(); ++i)
 		{
-			int dbBit = 1 << allocation.getAllocatedBundlesOfTrade(0).get(i) - 1;
+			int dbBit = 1 << (allocation.getAllocatedBundlesOfTrade(0).get(i) - 1);
 			detAllocDBs = detAllocDBs | dbBit;
 		}
 		System.out.println("Solution to BORA: " + allocation.getNumberOfAllocatedAuctioneers() + ", " + allocation.getBiddersInvolved(0).size() + "; detAlloc=" + detAllocDBs);
-		ProbabilisticAllocation probAllocation = new ProbabilisticAllocation();
-		List<Integer> bidders = new LinkedList<Integer>();
-		List<Integer> bundles = new LinkedList<Integer>();
-		_allocationProbabilities = new LinkedList<Double>();						//Allocation probabilities of sellers
 		
-		for(int i = 0; i < _sellers.size(); ++i)
-		{
-			bidders.add(_sellers.get(i).getAgentId());
-			bundles.add(_sellers.get(i).getAtom(0).getInterestingSet().get(0));
-			
-			if( allocation.getBiddersInvolved(0).contains( _sellers.get(i).getAgentId() )  )
-			{
-				_allocationProbabilities.add(1.0);
-			}
-			else 
-			{
-				_allocationProbabilities.add(0.);
-			}
-		}		
-			
-		probAllocation.addAllocatedAuctioneer(0, bidders, bundles, _allocationProbabilities);
-		
-		
-		double totalPaid = computeMarketDemand(price, detAllocDBs).get(1)*price;
-		double totalPayment = 0.;
-		for(int j = 0; j < payments.size(); ++j)
-			totalPayment += payments.get(j);
+		double totalPaid = computeMarketDemand(price, detAllocDBs).get(1) * price;
 		
 		excessDemand = totalPayment - totalPaid; 
 		_logger.debug("Total payment to sellers: " + totalPayment + "; Total received from buyers: " + totalPaid + ". Excess Demand: " + excessDemand);
@@ -405,9 +398,7 @@ public class MarketPlatform
 //		String s = bufferRead.readLine();
 
 		List<Double> externalitiesOfDBs = new LinkedList<Double>();
-		
-		//int numberOfDBs = allocation.getNumberOfGoods();
-		
+				
 		for(int i = 0; i < _numberOfDBs; ++i)
 		{
 			double probAllocation = 0.;
@@ -415,8 +406,10 @@ public class MarketPlatform
 			if( (alloc & bit) > 0)
 				probAllocation = 1;
 			
-			externalitiesOfDBs.add( computeExternalityOfDB(i+1, price, marketDemandForRows, alloc) * probAllocation );
-			if( i == dbId-1 && Math.abs(externalitiesOfDBs.get(dbId-1)) < 1e-6 )
+			int dbIdI = i + 1;
+			
+			externalitiesOfDBs.add( computeExternalityOfDB(dbIdI, price, marketDemandForRows, alloc) * probAllocation );
+			if( dbIdI == dbId && Math.abs(externalitiesOfDBs.get(dbId-1)) < 1e-6 )
 			{
 				_logger.debug("Computed Value of dbID = " + dbId + " is 0 (zero externality).");
 				return 0.;
@@ -441,14 +434,6 @@ public class MarketPlatform
 	public double computeExternalityOfDB(int dbId, double price, double marketDemandForRows, int alloc) throws Exception
 	{
 		_logger.debug("computeExternalityOfDB(dbId="+dbId + ", p="+price + ", marketDemandForRows=" + marketDemandForRows +", alloc="+alloc+")");
-		
-		// An allocation in which DB with id=dbId is not allocated
-		//ProbabilisticAllocation allocationReduced = new ProbabilisticAllocation();
-		//allocationReduced.addAllocatedAuctioneer(allocation.getAuctioneerId(0), 
-		//									allocation.getBiddersInvolved(0),
-		//		                            allocation.getAllocatedBundlesOfTrade(0), 
-		//		                            allocation.getAllocationProbabilities());
-		//allocationReduced.deallocateBundle(dbId);
 		
 		int detAllocDBs = alloc;
 		int detAllocReducedDBs = detAllocDBs;
