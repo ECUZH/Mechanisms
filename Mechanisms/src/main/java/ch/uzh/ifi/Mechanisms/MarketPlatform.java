@@ -72,29 +72,11 @@ public class MarketPlatform
 	 */
 	public double tatonementPriceSearch(double startPrice) throws Exception
 	{	
-		// Initial probabilistic allocation of sellers: everyone is allocated with equal probability
-		ProbabilisticAllocation probAllocation = new ProbabilisticAllocation();		//Allocation of DBs
-		List<Integer> bidders = new LinkedList<Integer>();
-		List<Integer> bundles = new LinkedList<Integer>();
-		_allocationProbabilities = new LinkedList<Double>();						//Allocation probabilities of sellers
-		
-		//Initial conditions: every seller produces her database with Prob = 1.
-		for(int j = 0; j < _sellers.size(); ++j)
-		{
-			bidders.add(_sellers.get(j).getAgentId());
-			bundles.add(_sellers.get(j).getAtom(0).getInterestingSet().get(0));
-			_allocationProbabilities.add(1.0);
-		}		
-			
-		probAllocation.addAllocatedAuctioneer(0, bidders, bundles, _allocationProbabilities);
-		probAllocation.normalize();													// ????????????????????????
-	
 		// Initialization
-		_numberOfDBs = probAllocation.getNumberOfGoods();
 		double price = startPrice;
+		double diff = 0.;
 		
 		// Iterative price/allocation update procedure
-		double diff = 0.;
 		for(int i = 0; i < _MAX_ITER; ++i)
 		{			
 			// List of outcomes in surplus optimal reverse auctions for different DBs
@@ -102,14 +84,11 @@ public class MarketPlatform
 			
 			// Compute the excess demand for money
 			double excessDemandMoney = computeExcessDemand(allocation, price); 
-			
-			diff = 0.;
-			System.out.println(">>>>>>>>>>>>>>>>>>>>>> " + excessDemandMoney);
 			price = Math.max(0., price + excessDemandMoney * _STEP  );
-			diff += Math.pow(excessDemandMoney, 2);
+			
+			diff = Math.pow(excessDemandMoney, 2);
 						
 			System.out.println("New price: " + price + " z="+ Math.sqrt(diff /*/ (_sellers.size() + 1)*/) + " " + (Math.signum(excessDemandMoney)>0?"Increased":"Decreased"));
-			//System.out.println("Time = " + time);
 //			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
 //			String s = bufferRead.readLine();
 			
