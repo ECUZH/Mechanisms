@@ -10,6 +10,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ch.uzh.ifi.MechanismDesignPrimitives.Allocation;
 import ch.uzh.ifi.MechanismDesignPrimitives.AtomicBid;
 import ch.uzh.ifi.MechanismDesignPrimitives.Distribution;
 import ch.uzh.ifi.MechanismDesignPrimitives.ParametrizedQuasiLinearAgent;
@@ -65,12 +66,12 @@ public class benchmarkMarketPlatform {
 		else if ( numberOfDBs == 3 || numberOfDBs == 4 || numberOfDBs == 5  || numberOfDBs == 6  || numberOfDBs == 7)
 		{
 			TOL = 0.1;
-			step = numberOfBuyers >= 512 ? 1e-4 : 1e-3;
+			step = numberOfBuyers >= 512 ? 1e-4 : 1e-4;
 		}
 		else if (numberOfDBs == 8 || numberOfDBs == 9 || numberOfDBs == 10)
 		{
 			TOL = 0.1;
-			step = numberOfBuyers >= 512 ? 1e-3 : 10*1e-3;
+			step = numberOfBuyers >= 512 ? 1e-3 : 1e-3;
 		}
 		else throw new RuntimeException("Unspecified TOL.");
 		
@@ -95,16 +96,16 @@ public class benchmarkMarketPlatform {
 		double[] costs = new double[numberOfSellers];
 		
 		if( costDistribution.toUpperCase().equals("UNIFORM") )  
-			costVar = Math.pow(costMax-costMin, 2) / 12. ;
+			costVar = Math.pow(costMax-costMin, 2) / 12.;
 		else throw new RuntimeException("Not implemented");
 				
 		List<Double> p = new LinkedList<Double>();
 		List<Double> welfare = new ArrayList<Double>();
 		List<Double> surplus = new ArrayList<Double>();
 		double[][] profits = new double[nSamples][numberOfSellers];
-		List<List<Double> > allocations = new ArrayList< List<Double> >();
+		List<Allocation> allocations = new ArrayList<Allocation>();
 				
-		//3. Compute equilibrium prices and allocation for the sample				
+		//3. Compute equilibrium prices and allocation for the sample. Do the measurements in equilibrium for each sample.				
 		for(int s = 0; s < nSamples; ++s)
 		{
 			Random gen = new Random( s * 1000 );
@@ -186,87 +187,66 @@ public class benchmarkMarketPlatform {
 			//---------------------------------------------------
 			
 			//3.4.1.
-			List<Double> allocationProbabilities = mp.getAllocationProbabilities();
-			for(int i = 0; i < allocationProbabilities.size(); ++i)
-				if( allocationProbabilities.get(i) < 0.5 )
-					allocationProbabilities.set(i, 0.);
-				else
-					allocationProbabilities.set(i, 1.);
-			allocations.add(allocationProbabilities);
-			System.out.println("Allocation probabilities: " + Arrays.toString( allocationProbabilities.toArray() ));
+			List< List<Double> > inducedValues = mp.computeValuesOfDBs(price);
 			
-			List<Integer> bidders = new LinkedList<Integer>();
-			List<Integer> bundles = new LinkedList<Integer>();
+			//Now, solve the BORA auction with the induced values of DBs and compute the total payment to be accrued to sellers
+			_logger.debug("Instantiate BORA...");
+			SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(sellers, inducedValues);
+			auction.setSolver(mp.getSolver());
+			auction.solveIt();
 			
-			for(int j = 0; j < sellers.size(); ++j)
-			{
-				bidders.add(sellers.get(j).getAgentId());
-				bundles.add(sellers.get(j).getAtom(0).getInterestingSet().get(0));
-			}
-			ProbabilisticAllocation allocationOfSellers = new ProbabilisticAllocation();
-			allocationOfSellers.addAllocatedAuctioneer(0, bidders, bundles, allocationProbabilities);
+			Allocation allocation = auction.getAllocation();
+			double[] payments = auction.getPayments();
+			allocations.add(allocation);
 			
-			//3.4.2.
+			int alloc = 0;									// Binary representation of the deterministic allocation of DBs
 			double totalCost = 0.;
-/*			for(int k = 0; k < numberOfDBs; ++k)
+			for(int i = 0; i < allocation.getBiddersInvolved(0).size(); ++i )
 			{
-				System.out.println("Consider DB " + dbIDs[k] + ". Sellers involved: ");
-				
-				List<Type> sellersInvolved = new ArrayList<Type>();
-				for( SellerType seller : sellers )
-					if( seller.getInterestingSet(0).get(0) == k )
-					{
-						sellersInvolved.add(seller);
-						System.out.println( seller.getAgentId() + " cost: " + seller.getAtom(0).getValue());
-					}
-				
-				double dbValue = mp.computeValueOfDB(dbIDs[k], price, allocationOfSellers);
+				int sellerId = allocation.getBiddersInvolved(0).get(i);
+				totalCost += sellers.get(sellerId-1).getAtom(0).getValue();
+				profits[s][sellerId - 1] = payments[i] - sellers.get(sellerId-1).getAtom(0).getValue();
+				int bit = 1 << (sellers.get(sellerId-1).getInterestingSet(0).get(0) - 1);
+				alloc = alloc | bit;
+				System.out.println("Seller with id="+ sellerId + " is allocated. Payment="+payments[i]);
+				System.out.println("Profit of this seller ("+sellers.get(sellerId-1).getAgentId()+") is " + payments[i] + "-" + sellers.get(sellerId-1).getAtom(0).getValue() + " = " + profits[s][sellerId - 1] );
+			}
+			System.out.println("Allocation of BORA: " + allocation.getBiddersInvolved(0).toString() + "(" + alloc + ")");
+			
+			if(alloc == 0) 					//trivial equilibrium
+				p.remove(p.size()-1);		//remove the last element
+			
+			//3.4.2.			
+			for(int k = 0; k < numberOfDBs; ++k)
+			{
+				int dbId = dbIDs[k];
+				double dbValue = inducedValues.get(dbId-1).get(alloc);
 				System.out.println( "DB's value " + dbValue );
-				
-				// Run BORA for the DB
-				SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(sellersInvolved, dbValue);
-				auction.solveIt();
-				
-				//
-				int isAllocated = auction.getAllocation().getNumberOfAllocatedAuctioneers();
-				
-				if( isAllocated > 0 && price > 1e-3 )
-				{
-					double payment = auction.getPayments()[0];
-					System.out.println("Payment = " + payment);
-					for( SellerType seller : sellers)
-						if( auction.getAllocation().isAllocated(seller.getAgentId()) )
-						{
-							totalCost += seller.getAtom(0).getValue();
-							profits[s][seller.getAgentId()-1] = payment-seller.getAtom(0).getValue();
-							System.out.println("Profit of the winner ("+seller.getAgentId()+") is " + (payment-seller.getAtom(0).getValue()) );
-						}
-				}
-				else
-					System.out.println("Nobody allocated: zero profits!");
-				
-			}*/
+			}
 			
-/*			buyers.get(0).updateAllocProbabilityDistribution(allocationOfSellers);
-			for(int i = 1; i < numberOfBuyers; ++i)
-				buyers.get(i).setAllocProbabilityDistribution( buyers.get(0).getAllocProbabilityDistribution());
-			
+			// Compute buyers' utility
 			double totalUtility = 0.;
 			double totalValue = 0.;
 			for(int i = 0; i < numberOfBuyers; ++i)
 			{
 				List<Double> consumptionBundle = buyers.get(i).solveConsumptionProblem(price);
-				totalUtility += buyers.get(i).computeUtility(allocationOfSellers, consumptionBundle) - buyers.get(i).getEndowment();
-				totalValue += buyers.get(i).computeUtility(allocationOfSellers, consumptionBundle) - consumptionBundle.get(0);
+				totalUtility += buyers.get(i).computeUtility(alloc, numberOfDBs, consumptionBundle) - buyers.get(i).getEndowment();
+				totalValue += buyers.get(i).computeUtility(alloc, numberOfDBs, consumptionBundle) - consumptionBundle.get(0);
 			}
 			System.out.println("Total surplus of buyers: " + totalUtility );
 			System.out.println("Total welfare: " + (totalValue - totalCost) );
 			surplus.add( totalUtility );
-			welfare.add( totalValue - totalCost );*/
+			welfare.add( totalValue - totalCost );
+			
+			if(alloc == 0) 								//trivial equilibrium
+			{
+				surplus.remove(surplus.size()-1);		//remove the last element
+				welfare.remove(welfare.size()-1);
+			}
 		}
 		
-		System.out.println("Equilibrium Prices: " + p.toString());
-		System.out.println("Welfare: " + surplus.toString());
+		System.out.println("(Non-trivial) Equilibrium Prices: " + p.toString());
+		System.out.println("Surplus: " + surplus.toString());
 		System.out.println("Welfare: " + welfare.toString());
 		for(int i = 0; i < numberOfSellers; ++i)
 		{
@@ -276,12 +256,19 @@ public class benchmarkMarketPlatform {
 			System.out.println("Av. profit of seller i="+i+ " is " + profit/nSamples);
 		}
 		System.out.println("Allocations: ");
-		for(List<Double> allocation : allocations)
-			System.out.println(allocation.toString());
+		for(Allocation allocation : allocations)
+			System.out.println(allocation.getBiddersInvolved(0).toString());
 		
-		System.out.println("mean(price) = " + p.stream().reduce(0., (i, j) -> i+j) / nSamples );
-		System.out.println("mean(Surplus) = " + surplus.stream().reduce(0., (i, j) -> i+j) / nSamples);
-		System.out.println("mean(SW) = " + welfare.stream().reduce(0., (i, j) -> i+j) / nSamples);
+		double pMean = p.stream().reduce(0., (i, j) -> i+j) / p.size();
+		double pStd = Math.sqrt( p.stream().map(x -> (x - pMean)*(x - pMean)).reduce(0., (i, j) -> i+j) / (p.size() - 1) );
+		double surplusMean = surplus.stream().reduce(0., (i, j) -> i+j) / surplus.size();
+		double surplusStd = Math.sqrt( surplus.stream().map(x -> (x - surplusMean)*(x - surplusMean)).reduce(0., (i, j) -> i+j) / (surplus.size() - 1) );
+		double welfareMean = welfare.stream().reduce(0., (i, j) -> i+j) / welfare.size();
+		double welfareStd = Math.sqrt( welfare.stream().map(x -> (x - welfareMean)*(x - welfareMean)).reduce(0., (i, j) -> i+j) / (welfare.size() - 1) );
+		
+		System.out.println("mean(price) = " + pMean + " (" + pStd/Math.sqrt(p.size()) + ")");
+		System.out.println("mean(Surplus) = " + surplusMean + " (" + surplusStd/Math.sqrt(surplus.size()) + ")");
+		System.out.println("mean(SW) = " + welfareMean + " (" + welfareStd/Math.sqrt(welfare.size()) + ")");
 	}
 
 }
