@@ -1,5 +1,7 @@
 package ch.uzh.ifi.Mechanisms;
 
+import ilog.cplex.IloCplex;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -43,22 +45,22 @@ public class MarketPlatform
 		_buyers  = buyers;
 		_sellers = sellers;
 		_numberOfThreads = 1;
-		
+		_cplexSolver = new IloCplex();
 		
 		ProbabilisticAllocation probAllocation = new ProbabilisticAllocation();		//Allocation of DBs
 		List<Integer> bidders = new LinkedList<Integer>();
 		List<Integer> bundles = new LinkedList<Integer>();
-		_allocationProbabilities = new LinkedList<Double>();						//Allocation probabilities of sellers
+		List<Double> allocationProbabilities = new LinkedList<Double>();						//Allocation probabilities of sellers
 		
 		//Initial conditions: every seller produces her database with Prob = 1.
 		for(int j = 0; j < _sellers.size(); ++j)
 		{
 			bidders.add(_sellers.get(j).getAgentId());
 			bundles.add(_sellers.get(j).getAtom(0).getInterestingSet().get(0));
-			_allocationProbabilities.add(1.0);
+			allocationProbabilities.add(1.0);
 		}		
 			
-		probAllocation.addAllocatedAuctioneer(0, bidders, bundles, _allocationProbabilities);
+		probAllocation.addAllocatedAuctioneer(0, bidders, bundles, allocationProbabilities);
 		probAllocation.normalize();													// ????????????????????????
 	
 		// Initialization
@@ -88,7 +90,7 @@ public class MarketPlatform
 			
 			diff = Math.pow(excessDemandMoney, 2);
 						
-			System.out.println("New price: " + price + " z="+ Math.sqrt(diff /*/ (_sellers.size() + 1)*/) + " " + (Math.signum(excessDemandMoney)>0?"Increased":"Decreased"));
+//			System.out.println("New price: " + price + " z="+ excessDemandMoney + " " + (Math.signum(excessDemandMoney)>0?"Increased":"Decreased"));
 //			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
 //			String s = bufferRead.readLine();
 			
@@ -117,30 +119,14 @@ public class MarketPlatform
 		double excessDemand = 0.;
 		
 		// First, compute the induced values DBs for different deterministic allocations of DBs given the current posted price
-		List< List<Double> > inducedValues = new ArrayList<List<Double> >();
-		for(int k = 0; k < _numberOfDBs; ++k)
-		{
-			int dbId = k + 1;
-			
-			_logger.debug("Compute induced values for DB_" + dbId + " for different det. allocations...");
-			List<Double> inducedValuesK = new ArrayList<Double>();
-			
-			int numberOfDeterministicAllocations = (int)Math.pow(2, _numberOfDBs);
-			for( int j = 0; j < numberOfDeterministicAllocations; ++j )
-			{
-				// Here, j represent the binary encoding of a deterministic allocation of DBs
-				double dbValue = computeValueOfDB(dbId, price, j);
-				inducedValuesK.add(dbValue);
-				_logger.debug("V_" + dbId + " for det. allocation " + j + " is " + dbValue);
-			}
-			
-			inducedValues.add(inducedValuesK);
-		}
+		List< List<Double> > inducedValues = computeValuesOfDBs(price);
 		
 		//Now, solve the BORA auction with the induced values of DBs and compute the total payment to be accrued to sellers
 		_logger.debug("Instantiate BORA...");
 		SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(_sellers, inducedValues);
+		auction.setSolver(_cplexSolver);
 		auction.solveIt();
+		
 		allocation = auction.getAllocation();
 		double totalPayment = 0.;
 		for(int i = 0; i < auction.getPayments().length; ++i)
@@ -153,7 +139,7 @@ public class MarketPlatform
 			int dbBit = 1 << (allocation.getAllocatedBundlesOfTrade(0).get(i) - 1);
 			detAllocDBs = detAllocDBs | dbBit;
 		}
-		System.out.println("Solution to BORA: " + allocation.getNumberOfAllocatedAuctioneers() + ", " + allocation.getBiddersInvolved(0).size() + "; detAlloc=" + detAllocDBs);
+		//System.out.println("Solution to BORA: " + allocation.getNumberOfAllocatedAuctioneers() + ", " + allocation.getBiddersInvolved(0).size() + "; detAlloc=" + detAllocDBs);
 		
 		double totalPaid = computeMarketDemand(price, detAllocDBs).get(1) * price;
 		
@@ -350,6 +336,8 @@ public class MarketPlatform
 		return value;
 	}
 	
+	
+	// TODO: this method is not used anymore. It's functionality is hidden under the hood of the computeExcessDemand()
 	/**
 	 * The method computes the value of the specified database that is proportional to the positive externality the DB imposes
 	 * on buyers given current market prices and allocation of other DBs.
@@ -359,12 +347,11 @@ public class MarketPlatform
 	 * @return the value of the specified DB.
 	 * @throws Exception 
 	 */
-	public double computeValueOfDB(int dbId, double price, int alloc) throws Exception
+	public List< List<Double> > computeValuesOfDBs(double price) throws Exception
 	{
-		_logger.debug("computeValueOfDB(" + dbId + ", " + price + ", " + alloc +")");
+		_logger.debug("computeValueOfDB(" + price +")");
 		
-		double marketDemandForRows = computeMarketDemand(price, alloc).get(1);
-
+		//double marketDemandForRows = computeMarketDemand(price, alloc).get(1);
 // For plotting the demand curve		
 //		List<Double> quantity = new ArrayList<Double>();
 //		for(int p = 0; p < 100; p++)
@@ -376,28 +363,54 @@ public class MarketPlatform
 //		BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
 //		String s = bufferRead.readLine();
 
-		List<Double> externalitiesOfDBs = new LinkedList<Double>();
-				
-		for(int i = 0; i < _numberOfDBs; ++i)
+		List< List<Double> > inducedValues = new ArrayList<List<Double> >();
+		for(int k = 0; k < _numberOfDBs; ++k)
 		{
-			double probAllocation = 0.;
-			int bit = 1 << i;
-			if( (alloc & bit) > 0)
-				probAllocation = 1;
-			
-			int dbIdI = i + 1;
-			
-			externalitiesOfDBs.add( computeExternalityOfDB(dbIdI, price, marketDemandForRows, alloc) * probAllocation );
-			if( dbIdI == dbId && Math.abs(externalitiesOfDBs.get(dbId-1)) < 1e-6 )
-			{
-				_logger.debug("Computed Value of dbID = " + dbId + " is 0 (zero externality).");
-				return 0.;
-			}
+			List<Double> inducedValuesK = new ArrayList<Double>();
+			inducedValues.add(inducedValuesK);
 		}
 		
-		double valueOfDB = externalitiesOfDBs.get(dbId-1) / externalitiesOfDBs.stream().reduce(0., (i, j) -> i+j) * computeAggregateValue(price, marketDemandForRows, alloc);
-		_logger.debug("Computed Value of dbID = " + dbId + " is " + valueOfDB);
-		return valueOfDB;
+		int numberOfDeterministicAllocations = (int)Math.pow(2, _numberOfDBs);
+		for(int j = 0; j < numberOfDeterministicAllocations; ++j)
+		{
+			// Here, j represent the binary encoding of a deterministic allocation of DBs
+			double marketDemandForRows = computeMarketDemand(price, j).get(1);
+			
+			// Compute externalities of DBs
+			List<Double> externalitiesOfDBs = new LinkedList<Double>();
+			for(int k = 0; k < _numberOfDBs; ++k)
+			{
+				int dbIdK = k + 1;
+				
+				double probAllocation = 0.;
+				int bit = 1 << k;
+				if( (j & bit) > 0)
+				{
+					probAllocation = 1;
+					externalitiesOfDBs.add( computeExternalityOfDB(dbIdK, price, marketDemandForRows, j) * probAllocation );
+				}
+				else
+				{
+					externalitiesOfDBs.add( 0. );
+				}
+			}
+			
+			// Compute values of DBs
+			for(int k = 0; k < _numberOfDBs; ++k)
+			{
+				int dbId = k + 1;
+				_logger.debug("Compute induced values for DB_" + dbId + " for different det. allocations...");
+				//System.out.println("Compute value for DB_" + dbId + "; detAlloc=" + j);
+				
+				double valueOfDB = 0.;
+				if( externalitiesOfDBs.get(dbId-1) > 0)
+					valueOfDB = externalitiesOfDBs.get(dbId-1) / externalitiesOfDBs.stream().reduce(0., (i, q) -> i+q) * computeAggregateValue(price, marketDemandForRows, j);
+				
+				inducedValues.get(k).add(valueOfDB);
+				_logger.debug("V_" + dbId + " for det. allocation " + j + " is " + valueOfDB + "="+ externalitiesOfDBs.get(dbId-1) + "/...");
+			}
+		}
+		return inducedValues;
 	}
 	
 	/**
@@ -595,9 +608,9 @@ public class MarketPlatform
 		_numberOfThreads = nThreads;
 	}
 	
-	public List<Double> getAllocationProbabilities()
+	public IloCplex getSolver()
 	{
-		return _allocationProbabilities;
+		return _cplexSolver;
 	}
 	
 	private List<ParametrizedQuasiLinearAgent> _buyers;				// Buyers
@@ -608,5 +621,6 @@ public class MarketPlatform
 	private double _TOL = 1e-7;										// Tolerance of the gradient descent
 	private int _numberOfThreads;									// Number of threads
 	private double[] _vals;
-	private List<Double> _allocationProbabilities;
+	
+	private IloCplex _cplexSolver;
 }
