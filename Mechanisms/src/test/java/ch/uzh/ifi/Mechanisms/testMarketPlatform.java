@@ -129,8 +129,10 @@ public class testMarketPlatform {
 		// ...
 		
 		//5. Test values of DBs
-		double W1_01 = mp.computeValueOfDB(dbID1, 1 - 1e-8, detAlloc);
-		double W2_01 = mp.computeValueOfDB(dbID2, 1 - 1e-8, detAlloc);
+		//double W1_01 = mp.computeValuesOfDBs(dbID1, 1 - 1e-8, detAlloc);
+		//double W2_01 = mp.computeValueOfDB(dbID2, 1 - 1e-8, detAlloc);
+		double W1_01 = mp.computeValuesOfDBs(1 - 1e-8).get(dbID1-1).get(detAlloc);
+		double W2_01 = mp.computeValuesOfDBs(1 - 1e-8).get(dbID2-1).get(detAlloc);
 		assertTrue(Math.abs( W1_01 - 0) < 1e-6);
 		assertTrue(Math.abs( W2_01 - 6) < 1e-6);
 		
@@ -139,8 +141,8 @@ public class testMarketPlatform {
 		System.out.println("The value of "+dbID2+" is " + W2_01);
 		
 		detAlloc = 0;
-		double W1_00 = mp.computeValueOfDB(dbID1, 1 - 1e-8, detAlloc);
-		double W2_00 = mp.computeValueOfDB(dbID2, 1 - 1e-8, detAlloc);
+		double W1_00 = mp.computeValuesOfDBs(1 - 1e-8).get(dbID1-1).get(detAlloc);
+		double W2_00 = mp.computeValuesOfDBs(1 - 1e-8).get(dbID2-1).get(detAlloc);
 		assertTrue(Math.abs( W1_00 - 0) < 1e-6);
 		assertTrue(Math.abs( W2_00 - 0) < 1e-6);
 		
@@ -149,8 +151,8 @@ public class testMarketPlatform {
 		System.out.println("The value of "+dbID2+" is " + W2_00);
 		
 		detAlloc = 3;
-		double W1_11 = mp.computeValueOfDB(dbID1, 1 - 1e-8, detAlloc);
-		double W2_11 = mp.computeValueOfDB(dbID2, 1 - 1e-8, detAlloc);
+		double W1_11 = mp.computeValuesOfDBs(1 - 1e-8).get(dbID1-1).get(detAlloc);
+		double W2_11 = mp.computeValuesOfDBs(1 - 1e-8).get(dbID2-1).get(detAlloc);
 		
 		assertTrue(Math.abs( W1_11 - 5) < 1e-6);
 		assertTrue(Math.abs( W2_11 - 5) < 1e-6);
@@ -160,14 +162,14 @@ public class testMarketPlatform {
 		System.out.println("The value of "+dbID2+" is " + W2_11);
 		
 		detAlloc = 1;
-		double W1_10 = mp.computeValueOfDB(dbID1, 1 - 1e-8, detAlloc);
-		double W2_10 = mp.computeValueOfDB(dbID2, 1 - 1e-8, detAlloc);
+		double W1_10 = mp.computeValuesOfDBs(1 - 1e-8).get(dbID1-1).get(detAlloc);
+		double W2_10 = mp.computeValuesOfDBs(1 - 1e-8).get(dbID2-1).get(detAlloc);
 		assertTrue(Math.abs( W1_10 - 6) < 1e-6);
 		assertTrue(Math.abs( W2_10 - 0) < 1e-6);
 		
 		System.out.println("Given allocation " + detAlloc+":");
-		System.out.println("The value of "+dbID1+" is " + mp.computeValueOfDB(dbID1, 1 - 1e-8, detAlloc));
-		System.out.println("The value of "+dbID2+" is " + mp.computeValueOfDB(dbID2, 1 - 1e-8, detAlloc));
+		System.out.println("The value of "+dbID1+" is " + mp.computeValuesOfDBs(1 - 1e-8).get(dbID1-1).get(detAlloc));
+		System.out.println("The value of "+dbID2+" is " + mp.computeValuesOfDBs(1 - 1e-8).get(dbID2-1).get(detAlloc));
 		
 		//allocationProbabilities = Arrays.asList(1., 0.5);
 		//allocation.resetAllocationProbabilities(allocationProbabilities);
