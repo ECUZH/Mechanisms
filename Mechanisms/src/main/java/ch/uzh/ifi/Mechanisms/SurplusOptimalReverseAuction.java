@@ -203,6 +203,7 @@ public class SurplusOptimalReverseAuction implements Auction
 			
 			// 1.3 Solve the reduced auction
 			SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(reducedBids, _inducedValues);
+			auction.setSolver(_cplexSolver);
 			auction.computeWinnerDetermination();
 			
 			double reducedTotalInducedValue = auction.getAllocation().getAuctioneersAllocatedValue(0);
@@ -291,6 +292,15 @@ public class SurplusOptimalReverseAuction implements Auction
 		return "BORA";
 	}
 
+	/**
+	 * The method sets up a CPLEX solver for WDP.
+	 * @param solver CPLEX solver
+	 */
+	public void setSolver(IloCplex solver)
+	{
+		_cplexSolver = solver;
+	}
+	
 	private int _numberOfBidders;								// Number of bidders (sellers) in the auction
 	private int _numberOfDBs;
 	private List<SellerType> _bids;								// Bids of the sellers
