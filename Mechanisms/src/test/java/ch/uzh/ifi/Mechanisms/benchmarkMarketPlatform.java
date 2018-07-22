@@ -254,14 +254,36 @@ public class benchmarkMarketPlatform {
 			double profitMean = 0.;
 			for(int j = 0; j < nSamples; ++j)
 				profitMean += profits[j][i];
+	
+			profitMean = profitMean/p.size();
 			
 			double profitStderr = 0.;
 			for(int j = 0; j < nSamples; ++j)
 				profitStderr += (profits[j][i] - profitMean) * (profits[j][i] - profitMean);
 			
-			profitStderr = Math.sqrt( profitStderr/ (p.size() - 1) / p.size());
-			System.out.println("Av. profit of seller i=" + i + " in a non-trivial equilibrium is " + profitMean/p.size() + " (" + profitStderr +")");
+			profitStderr = Math.sqrt( profitStderr/ (p.size() - 1) / p.size() );
+			System.out.println("Av. profit of seller i=" + i + " in a non-trivial equilibrium is " + profitMean + " (" + profitStderr +")");
 		}
+		
+		//for t-test for the surplus of competing sellers (useful for the small scenario)
+		double[] diff = new double[nSamples];
+		for(int j = 0; j < nSamples; ++j)
+			diff[j] = profits[j][0] - profits[j][1];
+		
+		double diffMean = 0.;
+		for(int j = 0; j < nSamples; ++j)
+			diffMean += diff[j];
+
+		diffMean = diffMean/p.size();
+		
+		double diffStderr = 0.;
+		for(int j = 0; j < nSamples; ++j)
+			diffStderr += (diff[j] - diffMean) * (diff[j] - diffMean);
+		
+		diffStderr = Math.sqrt( diffStderr/ (p.size() - 1) / p.size() );
+		System.out.println("Av. diff in a non-trivial equilibrium is " + diffMean + " (" + diffStderr +")");
+
+
 		System.out.println("Allocations: ");
 		for(Allocation allocation : allocations)
 			System.out.println(allocation.getBiddersInvolved(0).toString());
