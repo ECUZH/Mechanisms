@@ -61,7 +61,7 @@ public class benchmarkMarketPlatform {
 		if( numberOfDBs == 2 )
 		{
 			TOL = 1e-6;
-			step = 1e-2;
+			step = 1e-3;
 		}
 		else if ( numberOfDBs == 3 || numberOfDBs == 4 || numberOfDBs == 5  || numberOfDBs == 6  || numberOfDBs == 7)
 		{
@@ -252,7 +252,11 @@ public class benchmarkMarketPlatform {
 		{
 			double profit = 0.;
 			for(int j = 0; j < nSamples; ++j)
+			{
 				profit += profits[j][i];
+				System.out.print(profits[j][i] + " ");
+			}
+			System.out.println();
 			System.out.println("Av. profit of seller i="+i+ " is " + profit/nSamples);
 		}
 		System.out.println("Allocations: ");
