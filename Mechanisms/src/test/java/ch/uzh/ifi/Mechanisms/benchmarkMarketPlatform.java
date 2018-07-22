@@ -248,16 +248,25 @@ public class benchmarkMarketPlatform {
 		System.out.println("(Non-trivial) Equilibrium Prices: " + p.toString());
 		System.out.println("Surplus: " + surplus.toString());
 		System.out.println("Welfare: " + welfare.toString());
+		
 		for(int i = 0; i < numberOfSellers; ++i)
 		{
-			double profit = 0.;
+			double profitMean = 0.;
 			for(int j = 0; j < nSamples; ++j)
 			{
-				profit += profits[j][i];
-				System.out.print(profits[j][i] + " ");
+				profitMean += profits[j][i];
+				//System.out.print(profits[j][i] + " ");
 			}
-			System.out.println();
-			System.out.println("Av. profit of seller i="+i+ " is " + profit/nSamples);
+			
+			double profitStderr = 0.;
+			for(int j = 0; j < nSamples; ++j)
+			{
+				profitStderr += (profits[j][i] - profitMean) * (profits[j][i] - profitMean) / (p.size() - 1);
+			}
+			
+			profitStderr = Math.sqrt( profitStderr / p.size());
+			//System.out.println();
+			System.out.println("Av. profit of seller i="+i+ " in a non-trivial equilibrium is " + profitMean/p.size() + " (" + profitStderr +")");
 		}
 		System.out.println("Allocations: ");
 		for(Allocation allocation : allocations)
