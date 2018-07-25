@@ -172,7 +172,7 @@ public class SurplusOptimalReverseAuction implements Auction
 		
 		double virtualSurplus = totalInducedValue - totalVirtualCost;
 		
-		// 1. Compute payments for every allocated bidders
+		// 1. Compute payments for every allocated bidder
 		for(int i = 0; i < _allocation.getBiddersInvolved(0).size(); ++i)
 		{
 			// 1.1 Remove bidder i
@@ -218,6 +218,16 @@ public class SurplusOptimalReverseAuction implements Auction
 			SellerType allocatedBidder = (SellerType)_bids.get(_allocation.getBiddersInvolved(0).get(i)-1); 
 			double p = allocatedBidder.computeInverseVirtualCost( allocatedBidder.getItsVirtualCost() + virtualSurplus - reducedVirtualSurplus );
 			_logger.debug("p=phi^{-1} (" + allocatedBidder.getItsVirtualCost() + " + " + virtualSurplus + " - " + reducedVirtualSurplus + ")=" + p);
+			
+			if( allocatedBidder.getDistribution() == Distribution.UNIFORM )
+			{
+				if( p > allocatedBidder.getMean() * 2)
+				{
+					p = 2 * allocatedBidder.getMean();
+					_logger.debug("The payment must be within the support of the costs distribution.");
+				}
+			}
+			else throw new RuntimeException("Not implemented for other distributions: " + allocatedBidder.getDistribution());
 			
 			payment.add(p);
 		}
