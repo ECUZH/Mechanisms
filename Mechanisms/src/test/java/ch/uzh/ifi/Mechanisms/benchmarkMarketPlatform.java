@@ -85,7 +85,7 @@ public class benchmarkMarketPlatform {
 			startPrice = 0.5;
 		else if(numberOfDBs == 10 && numberOfSellers <= 20)
 		{
-			step = 1e-2;
+			step = 1e-3;
 			startPrice = 0.;//0.004;
 		}
 		System.out.println("step="+step);
