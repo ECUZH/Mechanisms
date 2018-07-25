@@ -90,7 +90,7 @@ public class MarketPlatform
 			
 			diff = Math.pow(excessDemandMoney, 2);
 						
-//			System.out.println("New price: " + price + " z="+ excessDemandMoney + " " + (Math.signum(excessDemandMoney)>0?"Increased":"Decreased"));
+			System.out.println("New price: " + price + " z="+ excessDemandMoney + " " + (Math.signum(excessDemandMoney)>0?"Increased":"Decreased"));
 //			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
 //			String s = bufferRead.readLine();
 			
