@@ -117,6 +117,9 @@ public class MarketPlatform
 	{
 		_logger.debug("computeExcessDemand(allocation, " + " price=" + price + ")");
 		double excessDemand = 0.;
+		_marketDemandMoney = new HashMap<Integer, Double>();
+		_marketDemandRows = new HashMap<Integer, Double>();
+		_aggregateValue = new HashMap<Integer, Double>();
 		
 		// First, compute the induced values DBs for different deterministic allocations of DBs given the current posted price
 		List< List<Double> > inducedValues = computeValuesOfDBs(price);
@@ -160,6 +163,13 @@ public class MarketPlatform
 	public List<Double> computeMarketDemand(double price, int detAllocDBs)
 	{
 		_logger.debug("computeMarketDemand("+price + ", " + detAllocDBs + ")");
+		
+		if(_marketDemandMoney.containsKey(detAllocDBs))
+		{
+			_logger.debug("cashed");
+			return Arrays.asList(_marketDemandMoney.get(detAllocDBs), _marketDemandRows.get(detAllocDBs));
+		}
+		
 		double[] marketDemandMoney = new double[_numberOfThreads];
 		double[] marketDemandRows  = new double[_numberOfThreads];
 		
@@ -198,6 +208,8 @@ public class MarketPlatform
 			totalMarketDemandMoney += marketDemandMoney[i];
 			totalMarketDemandRows += marketDemandRows[i];
 		}
+		_marketDemandMoney.put(detAllocDBs, totalMarketDemandMoney);
+		_marketDemandRows.put(detAllocDBs, totalMarketDemandRows);
 
 		_logger.debug("Market demand: " + totalMarketDemandMoney + " " + totalMarketDemandRows);
 		return Arrays.asList(totalMarketDemandMoney, totalMarketDemandRows);
@@ -212,6 +224,11 @@ public class MarketPlatform
 	public double computeAggregateValue(double price, double totalQuantityDemanded, int detAlloc)
 	{
 		_logger.debug("computeAggregateValue( "+price+", "+totalQuantityDemanded +", " + detAlloc+ ")");
+		if(_aggregateValue.containsKey(detAlloc))
+		{
+			_logger.debug("cashed");
+			return _aggregateValue.get(detAlloc);
+		}
 		double value = 0.;
 		
 		//To analyze the maximal inverse demand, first one need to compute the maximal prices
@@ -333,6 +350,7 @@ public class MarketPlatform
 		value += price * totalQuantityDemanded;
 		_logger.debug("Computed Aggregate value is  " + value);
 		
+		_aggregateValue.put(detAlloc, value);
 		return value;
 	}
 	
@@ -369,13 +387,18 @@ public class MarketPlatform
 			List<Double> inducedValuesK = new ArrayList<Double>();
 			inducedValues.add(inducedValuesK);
 		}
-		
+
+
 		int numberOfDeterministicAllocations = (int)Math.pow(2, _numberOfDBs);
 		for(int j = 0; j < numberOfDeterministicAllocations; ++j)
 		{
 			// Here, j represent the binary encoding of a deterministic allocation of DBs
+			System.out.println(j);
+			//long startTime = System.nanoTime();
 			double marketDemandForRows = computeMarketDemand(price, j).get(1);
-			
+			//long stopTime = System.nanoTime();
+			//System.out.println((stopTime - startTime) / Math.pow(10, 9));
+
 			// Compute externalities of DBs
 			List<Double> externalitiesOfDBs = new LinkedList<Double>();
 			for(int k = 0; k < _numberOfDBs; ++k)
@@ -409,7 +432,11 @@ public class MarketPlatform
 				inducedValues.get(k).add(valueOfDB);
 				_logger.debug("V_" + dbId + " for det. allocation " + j + " is " + valueOfDB + "="+ externalitiesOfDBs.get(dbId-1) + "/...");
 			}
+			
 		}
+		long stopTime = System.nanoTime();
+//		System.out.println("Time=" + (stopTime - startTime) / Math.pow(10, 9));
+
 		return inducedValues;
 	}
 	
@@ -621,6 +648,9 @@ public class MarketPlatform
 	private double _TOL = 1e-7;										// Tolerance of the gradient descent
 	private int _numberOfThreads;									// Number of threads
 	private double[] _vals;
+	private Map<Integer, Double> _marketDemandMoney;				// CASH
+	private Map<Integer, Double> _marketDemandRows;					// CASH
+	private Map<Integer, Double> _aggregateValue;					// CASH
 	
 	private IloCplex _cplexSolver;
 }
