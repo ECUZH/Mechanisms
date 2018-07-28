@@ -237,7 +237,6 @@ public class MarketPlatform
 		_buyers.get(0).setNumberOfThreads(_numberOfThreads);
 		for(int i = 0; i < _buyers.size(); ++i)
 			_buyers.get(i).updateAllocProbabilityDistribution(detAlloc, _numberOfDBs);
-		//_buyers.get(0).updateAllocProbabilityDistribution(allocation);
 		
 		/*try
 		{
@@ -388,16 +387,11 @@ public class MarketPlatform
 			inducedValues.add(inducedValuesK);
 		}
 
-
 		int numberOfDeterministicAllocations = (int)Math.pow(2, _numberOfDBs);
 		for(int j = 0; j < numberOfDeterministicAllocations; ++j)
 		{
 			// Here, j represent the binary encoding of a deterministic allocation of DBs
-			//System.out.println(j);
-			//long startTime = System.nanoTime();
 			double marketDemandForRows = computeMarketDemand(price, j).get(1);
-			//long stopTime = System.nanoTime();
-			//System.out.println((stopTime - startTime) / Math.pow(10, 9));
 
 			// Compute externalities of DBs
 			List<Double> externalitiesOfDBs = new LinkedList<Double>();
@@ -423,7 +417,6 @@ public class MarketPlatform
 			{
 				int dbId = k + 1;
 				_logger.debug("Compute induced values for DB_" + dbId + " for different det. allocations...");
-				//System.out.println("Compute value for DB_" + dbId + "; detAlloc=" + j);
 				
 				double valueOfDB = 0.;
 				if( externalitiesOfDBs.get(dbId-1) > 0)
@@ -434,8 +427,6 @@ public class MarketPlatform
 			}
 			
 		}
-		long stopTime = System.nanoTime();
-//		System.out.println("Time=" + (stopTime - startTime) / Math.pow(10, 9));
 
 		return inducedValues;
 	}
@@ -545,43 +536,6 @@ public class MarketPlatform
 	 * 
 	 * @author Dmitry Moor
 	 */
-/*	private class ExpectationsUpdateWorker implements Runnable
-	{
-		private Thread _thread;										// A thread object
-		private String _threadName;									// The thread's name
-		private int _threadId;										// A thread id
-		private int _idxLow;										// Lower index of the buyer for the thread
-		private int _idxHigh;										// Upper index of the buyer for the thread
-		
-		public ExpectationsUpdateWorker(String name, int threadId)
-		{
-			_threadName = name + threadId;
-			_threadId = threadId;			
-			_idxLow = _threadId * _buyers.size() / _numberOfThreads;
-			_idxHigh = (_threadId + 1) * _buyers.size() / _numberOfThreads - 1;
-		}
-		
-		@Override
-		public void run() 
-		{
-			for( int i = _idxLow; i <= _idxHigh; ++i )
-				_buyers.get(i).setAllocProbabilityDistribution( _buyers.get(0).getAllocProbabilityDistribution());				
-		}
-		
-		public void start()
-		{
-			if(_thread == null)
-			{
-				_thread = new Thread(this, _threadName);
-				_thread.start();
-			}
-		}
-	}*/
-	
-	/**
-	 * 
-	 * @author Dmitry Moor
-	 */
 	private class DemandWorker implements Runnable
 	{
 		private Thread _thread;										// A thread object
@@ -648,9 +602,9 @@ public class MarketPlatform
 	private double _TOL = 1e-7;										// Tolerance of the gradient descent
 	private int _numberOfThreads;									// Number of threads
 	private double[] _vals;
-	private Map<Integer, Double> _marketDemandMoney;				// CASH
-	private Map<Integer, Double> _marketDemandRows;					// CASH
-	private Map<Integer, Double> _aggregateValue;					// CASH
+	private Map<Integer, Double> _marketDemandMoney;				// CACHE
+	private Map<Integer, Double> _marketDemandRows;					// CACHE
+	private Map<Integer, Double> _aggregateValue;					// CACHE
 	
 	private IloCplex _cplexSolver;
 }
