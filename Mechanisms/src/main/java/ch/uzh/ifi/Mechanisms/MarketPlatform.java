@@ -91,8 +91,8 @@ public class MarketPlatform
 			diff = Math.pow(excessDemandMoney, 2);
 						
 			System.out.println("New price: " + price + " z="+ excessDemandMoney + " " + (Math.signum(excessDemandMoney)>0?"Increased":"Decreased"));
-//			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
-//			String s = bufferRead.readLine();
+			//BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
+			//String s = bufferRead.readLine();
 			
 			if ( Math.sqrt(diff /*/ (_sellers.size() + 1)*/) < _TOL)
 			{
@@ -142,7 +142,7 @@ public class MarketPlatform
 			int dbBit = 1 << (allocation.getAllocatedBundlesOfTrade(0).get(i) - 1);
 			detAllocDBs = detAllocDBs | dbBit;
 		}
-		//System.out.println("Solution to BORA: " + allocation.getNumberOfAllocatedAuctioneers() + ", " + allocation.getBiddersInvolved(0).size() + "; detAlloc=" + detAllocDBs);
+		_logger.debug("Solution to BORA: " + allocation.getNumberOfAllocatedAuctioneers() + ", " + allocation.getBiddersInvolved(0).size() + "; detAlloc=" + detAllocDBs);
 		
 		double totalPaid = computeMarketDemand(price, detAllocDBs).get(1) * price;
 		
@@ -393,7 +393,7 @@ public class MarketPlatform
 		for(int j = 0; j < numberOfDeterministicAllocations; ++j)
 		{
 			// Here, j represent the binary encoding of a deterministic allocation of DBs
-			System.out.println(j);
+			//System.out.println(j);
 			//long startTime = System.nanoTime();
 			double marketDemandForRows = computeMarketDemand(price, j).get(1);
 			//long stopTime = System.nanoTime();
@@ -545,7 +545,7 @@ public class MarketPlatform
 	 * 
 	 * @author Dmitry Moor
 	 */
-	private class ExpectationsUpdateWorker implements Runnable
+/*	private class ExpectationsUpdateWorker implements Runnable
 	{
 		private Thread _thread;										// A thread object
 		private String _threadName;									// The thread's name
@@ -576,7 +576,7 @@ public class MarketPlatform
 				_thread.start();
 			}
 		}
-	}
+	}*/
 	
 	/**
 	 * 
