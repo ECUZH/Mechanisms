@@ -127,8 +127,11 @@ public class testSurplusOptimalReverseAuction
 		
 		List<Double> payments = auction.computePayments();
 		assertTrue( payments.size() == 2);
-		assertTrue( payments.get(0) == 2.1);
-		assertTrue( payments.get(1) == 0.5);
+		System.out.println(">> " + payments.get(0));
+		System.out.println(">> " + payments.get(1));
+		//assertTrue( payments.get(0) == 2.1);				//This is how it would have been if the support of the cost distribuution was
+		assertTrue( payments.get(1) == 0.5);				//... larger than [0,2]. With this distribution, the maximum payment is 2.
+		assertTrue( payments.get(0) == 2.0);
 	}
 
 	/**
@@ -256,7 +259,8 @@ public class testSurplusOptimalReverseAuction
 		
 		List<Double> payments = auction.computePayments();
 		assertTrue( payments.size() == 2);
-		assertTrue( payments.get(0) == 2.125);
+		assertTrue( payments.get(0) == 2);
+		//assertTrue( payments.get(0) == 2.125);
 		assertTrue( Math.abs(payments.get(1) - 0.525) < 1e-6);
 	}
 	
