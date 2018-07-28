@@ -103,24 +103,28 @@ public class testMarketPlatform {
 		biddersValues.add(seller1.getAtom(0).getValue());
 		biddersValues.add(seller2.getAtom(0).getValue());
 		
-		int detAlloc = 2;																// Allocate only the 2nd DB with p=1
+		int detAlloc = 2;																// Allocate only the 2nd DB with Pr[alloc]=1
 		List<Double> marketDemand = mp.computeMarketDemand(0., detAlloc);
 		
 		assertTrue(Math.abs( marketDemand.get(1) - 3. ) < 1e-6);
 		assertTrue(Math.abs( marketDemand.get(0) - 20. ) < 1e-6);
 		
+		mp.resetCache();
 		marketDemand = mp.computeMarketDemand(1. - 1e-8, detAlloc);
 		assertTrue(Math.abs( marketDemand.get(1) - 3. ) < 1e-6);
 		assertTrue(Math.abs( marketDemand.get(0) - 17. ) < 1e-6);
 		
+		mp.resetCache();
 		marketDemand = mp.computeMarketDemand(1. + 1e-8, detAlloc);
 		assertTrue(Math.abs( marketDemand.get(1) - 1. ) < 1e-6);
 		assertTrue(Math.abs( marketDemand.get(0) - 19. ) < 1e-6);
 		
+		mp.resetCache();
 		marketDemand = mp.computeMarketDemand(4. - 1e-8, detAlloc);
 		assertTrue(Math.abs( marketDemand.get(1) - 1. ) < 1e-6);
 		assertTrue(Math.abs( marketDemand.get(0) - 16. ) < 1e-6);
 		
+		mp.resetCache();
 		marketDemand = mp.computeMarketDemand(4. + 1e-8, detAlloc);
 		assertTrue(Math.abs( marketDemand.get(1) - 0. ) < 1e-6);
 		assertTrue(Math.abs( marketDemand.get(0) - 20. ) < 1e-6);
@@ -131,7 +135,9 @@ public class testMarketPlatform {
 		//5. Test values of DBs
 		//double W1_01 = mp.computeValuesOfDBs(dbID1, 1 - 1e-8, detAlloc);
 		//double W2_01 = mp.computeValueOfDB(dbID2, 1 - 1e-8, detAlloc);
+		mp.resetCache();
 		double W1_01 = mp.computeValuesOfDBs(1 - 1e-8).get(dbID1-1).get(detAlloc);
+		mp.resetCache();
 		double W2_01 = mp.computeValuesOfDBs(1 - 1e-8).get(dbID2-1).get(detAlloc);
 		assertTrue(Math.abs( W1_01 - 0) < 1e-6);
 		assertTrue(Math.abs( W2_01 - 6) < 1e-6);
