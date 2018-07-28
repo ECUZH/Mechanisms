@@ -231,96 +231,9 @@ public class MarketPlatform
 		}
 		double value = 0.;
 		
-		//To analyze the maximal inverse demand, first one need to compute the maximal prices
-		//List<Double> marginalValues = new CopyOnWriteArrayList<Double>();
-		
 		_buyers.get(0).setNumberOfThreads(_numberOfThreads);
 		for(int i = 0; i < _buyers.size(); ++i)
-			_buyers.get(i).updateAllocProbabilityDistribution(detAlloc, _numberOfDBs);
-		
-		/*try
-		{
-			List<Thread> threads = new LinkedList<Thread>();
-			for(int i = 0; i < _numberOfThreads; ++i)
-			{
-				Thread thread = new Thread(new ExpectationsUpdateWorker("Thread", i) );
-				threads.add(thread);
-			}
-			
-			for(int i = 0; i < _numberOfThreads; ++i)
-				threads.get(i).start();
-			
-			for(int i = 0; i < _numberOfThreads; ++i)
-				threads.get(i).join(0);
-		}
-		catch(InterruptedException e)
-		{
-		    e.printStackTrace();
-		}	*/	
-/*		for(ParametrizedQuasiLinearAgent buyer: _buyers)
-		{
-			marginalValues.add(buyer.computeExpectedMarginalValue(allocation));
-		}
-		
-		Collections.sort(marginalValues);
-		Collections.reverse(marginalValues);
-		
-		for(int i = 1; i < marginalValues.size(); ++i)						// Remove duplicates
-			if( Math.abs(marginalValues.get(i) - marginalValues.get(i-1)) < 1e-6)
-			{
-				marginalValues.remove(i);
-				i -= 1;
-			}*/
-		
-		//Now integrate the maximal inverse demand
-		/*for(int i = 0 ; i < _buyers.size(); ++i)
-		{
-			List<Double> optBundle = _buyers.get(i).solveConsumptionProblem(Arrays.asList(1., price), allocation);
-			value += _buyers.get(i).computeUtility(allocation, optBundle) - _buyers.get(i).getEndowment();
-		}
-		value += price * totalQuantityDemanded;
-		_logger.debug("Computed Aggregate value is  " + value);*/
-		
-		
-		
-		//double price = 0.;
-		////double marketDemandHigh = 0.;
-		//double marketDemandHigh = computeMarketDemand(marginalValues.get(0), allocation, false).get(1);
-		//value += marketDemandHigh * marginalValues.get(0);
-		//_logger.debug("Init value: " + value);
-		//_logger.debug("The number of integration steps: " + marginalValues.size());
-		//for( int i = 1/* 0 */; i < marginalValues.size(); ++i )
-		//{
-		//	price = marginalValues.get(i);
-		//	//double marketDemandLow = marketDemandHigh;          //computeMarketDemand(price + 1e-8, allocation).get(1);
-		//	
-		//	//List<Double> marketDemandHighList = computeMarketDemand(price, allocation, false);
-		//	//marketDemandHigh = marketDemandHighList.get(1);
-
-			
-		//	double marketDemandLow = marketDemandHigh;
-		//	marketDemandHigh = computeMarketDemand(price, allocation, false).get(1);
-		//	
-		//	if( marketDemandHigh < totalQuantityDemanded )
-		//	{
-		//		double dV = 0.5 * (price + marginalValues.get(i-1)) * (marketDemandHigh - marketDemandLow);
-		//		value += dV;
-		//		//value += _buyers.get(0).getEndowment()*_buyers.size() - marketDemandMoney;
-		//		//value += marketDemandMoneyLow - marketDemandMoneyHigh;
-		//		_logger.debug("Given price p="+price+" the marketDemandLow="+marketDemandLow+", marketDemandHigh="+marketDemandHigh + 
-		//				      ", dV=" + dV + " value="+value + "(q= "+totalQuantityDemanded+ ")" + " m*="+marketDemandHigh);
-		//	}
-		//	else
-		//	{
-		//		//value += price * (totalQuantityDemanded - marketDemandLow);
-		//		double dV = 0.5* (marginalValues.get(i-1) + marginalValues.get(i-1)*(marketDemandHigh-totalQuantityDemanded)/(marketDemandHigh-marketDemandLow) ) * (totalQuantityDemanded - marketDemandLow);
-		//		value += dV;
-		//		//value += price * totalQuantityDemanded - _buyers.get(0).getEndowment()*_buyers.size() +  marketDemandMoneyLow;
-		//		_logger.debug("Given price p="+price+" the marketDemandLow="+marketDemandLow+", marketDemandHigh="+marketDemandHigh + 
-		//			      ", dV=" + dV + " value="+value + "(q= "+totalQuantityDemanded+ ")");
-		//		break;
-		//	}	
-		//}
+			_buyers.get(i).updateAllocProbabilityDistribution(detAlloc, _numberOfDBs);		
 		
 		_vals = new double[_numberOfThreads];
 		
