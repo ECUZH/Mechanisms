@@ -65,6 +65,18 @@ public class MarketPlatform
 	
 		// Initialization
 		_numberOfDBs = probAllocation.getNumberOfGoods();
+		
+		_marketDemandMoney = new HashMap<Integer, Double>();
+		_marketDemandRows = new HashMap<Integer, Double>();
+		_aggregateValue = new HashMap<Integer, Double>();
+		
+	}
+	
+	public void resetCache()
+	{
+		_marketDemandMoney = new HashMap<Integer, Double>();
+		_marketDemandRows = new HashMap<Integer, Double>();
+		_aggregateValue = new HashMap<Integer, Double>();	
 	}
 	
 	/**
@@ -143,11 +155,12 @@ public class MarketPlatform
 			detAllocDBs = detAllocDBs | dbBit;
 		}
 		_logger.debug("Solution to BORA: " + allocation.getNumberOfAllocatedAuctioneers() + ", " + allocation.getBiddersInvolved(0).size() + "; detAlloc=" + detAllocDBs);
-		
+		System.out.println("Solution to BORA: " + allocation.getNumberOfAllocatedAuctioneers() + ", " + allocation.getBiddersInvolved(0).size() + "; detAlloc=" + detAllocDBs);
 		double totalPaid = computeMarketDemand(price, detAllocDBs).get(1) * price;
 		
 		excessDemand = totalPayment - totalPaid; 
 		_logger.debug("Total payment to sellers: " + totalPayment + "; Total received from buyers: " + totalPaid + ". Excess Demand: " + excessDemand);
+		System.out.println("Total payment to sellers: " + totalPayment + "; Total received from buyers: " + totalPaid + ". Excess Demand: " + excessDemand);
 		
 		return excessDemand;
 	}
@@ -164,6 +177,7 @@ public class MarketPlatform
 	{
 		_logger.debug("computeMarketDemand("+price + ", " + detAllocDBs + ")");
 		
+		// Use cached values for runtime optimization (must be handled in unit tests manually)
 		if(_marketDemandMoney.containsKey(detAllocDBs))
 		{
 			_logger.debug("cashed");
