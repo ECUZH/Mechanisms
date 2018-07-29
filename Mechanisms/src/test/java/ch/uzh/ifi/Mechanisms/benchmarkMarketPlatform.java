@@ -24,7 +24,7 @@ public class benchmarkMarketPlatform {
 	
 	public static void main(String[] args) throws Exception 
 	{	
-		int numberOfArguments = 10;
+		int numberOfArguments = 11;
 		int offset = 0;
 		if( args.length == numberOfArguments)
 			offset = 0;
@@ -42,11 +42,12 @@ public class benchmarkMarketPlatform {
 		String costDistribution = args[5 + offset];						if( !(costDistribution.toUpperCase().equals("UNIFORM") || costDistribution.toUpperCase().equals("NORMAL"))) throw new RuntimeException("Wrong costs distribution specified.");
 		int numberOfBuyers = Integer.parseInt( args[6 + offset] );		if( numberOfBuyers <= 0 )	throw new RuntimeException("The number of sellers should be positive.");
 		double endowment = Double.parseDouble( args[7 + offset] );		if( endowment < 0 )			throw new RuntimeException("Negative endowments.");
-		int nSamples = Integer.parseInt( args[8 + offset] );			if( nSamples <= 0 )			throw new RuntimeException("Negative number of samples.");		
-		int nThreads = Integer.parseInt( args[9 + offset] );  
+		double stepSize = Double.parseDouble( args[8 + offset] );
+		int nSamples = Integer.parseInt( args[9 + offset] );			if( nSamples <= 0 )			throw new RuntimeException("Negative number of samples.");		
+		int nThreads = Integer.parseInt( args[10 + offset] );  
 		
 		System.out.println("BENCHMARK START: " + numberOfDBs + ", " + numberOfSellers + ", " + competition + ", [" + costMin + ", " +
-							costMax + "], " + costDistribution + ", " + numberOfBuyers + ", " + endowment + ", " + nSamples + ", " + nThreads);
+							costMax + "], " + costDistribution + ", " + numberOfBuyers + ", " + endowment + ", " + stepSize + ", "+ nSamples + ", " + nThreads);
 		
 		//0. Define DBs
 		int[] dbIDs = new int[numberOfDBs];
@@ -71,7 +72,7 @@ public class benchmarkMarketPlatform {
 		else if (numberOfDBs == 8 || numberOfDBs == 9 || numberOfDBs == 10)
 		{
 			TOL = 0.1;
-			step = numberOfBuyers >= 512 ? 1e-2 : 1e-2;
+			step = (numberOfBuyers >= 512) ? 1e-2 : 1e-2;
 		}
 		else throw new RuntimeException("Unspecified TOL.");
 		
@@ -88,6 +89,13 @@ public class benchmarkMarketPlatform {
 			step = 1e-3;
 			startPrice = 0.;//0.004;
 		}
+		else if(numberOfDBs == 10 && numberOfSellers > 20)
+		{
+			step = 1e-2;
+			startPrice = 0.;//0.004;
+		}
+		step = stepSize;
+		
 		System.out.println("step="+step);
 
 		//1. Create sellers
@@ -163,6 +171,7 @@ public class benchmarkMarketPlatform {
 			}
 			
 			//3.2. Generate buyers
+			_logger.debug("Generate  buyers...");
 			BuyersGenerator buyersGenerator = new BuyersGenerator(numberOfDBs, endowment, s);
 			List<ParametrizedQuasiLinearAgent> buyers = new CopyOnWriteArrayList<ParametrizedQuasiLinearAgent>();
 			
@@ -176,7 +185,9 @@ public class benchmarkMarketPlatform {
 			mp.setNumberOfThreads(nThreads);
 					
 			//3.3. Compute the equilibrium price
-			double price  = mp.tatonementPriceSearch(startPrice);
+			double price  =  mp.tatonementPriceSearch(startPrice);
+			//mp.resetCache();
+			
 			p.add(price);
 			_logger.debug("Price = " + price);
 			
@@ -185,9 +196,11 @@ public class benchmarkMarketPlatform {
 			//3.4. Measure the efficiency, surplus, etc.
 			//
 			//---------------------------------------------------
+			_logger.debug("Start benchmarking with the equilibrium price p="+price);
 			
 			//3.4.1.
 			List< List<Double> > inducedValues = mp.computeValuesOfDBs(price);
+			System.out.println(">>" + inducedValues.get(0).toString());
 			
 			//Now, solve the BORA auction with the induced values of DBs and compute the total payment to be accrued to sellers
 			_logger.debug("Instantiate BORA...");
@@ -237,7 +250,7 @@ public class benchmarkMarketPlatform {
 			System.out.println("Total welfare: " + (totalValue - totalCost) );
 			surplus.add( totalUtility );
 			welfare.add( totalValue - totalCost );
-			
+//welfare.add(totalUtility);//!!!!!!!!!!!!!!!!!!!
 			if(alloc == 0) 								//trivial equilibrium
 			{
 				surplus.remove(surplus.size()-1);		//remove the last element
@@ -249,12 +262,13 @@ public class benchmarkMarketPlatform {
 		System.out.println("Surplus: " + surplus.toString());
 		System.out.println("Welfare: " + welfare.toString());
 		
+		List<Double> profitsMean = new ArrayList<Double>();
 		for(int i = 0; i < numberOfSellers; ++i)
 		{
 			double profitMean = 0.;
 			for(int j = 0; j < nSamples; ++j)
 				profitMean += profits[j][i];
-	
+
 			profitMean = profitMean/p.size();
 			
 			double profitStderr = 0.;
@@ -263,6 +277,7 @@ public class benchmarkMarketPlatform {
 			
 			profitStderr = Math.sqrt( profitStderr/ (p.size() - 1) / p.size() );
 			System.out.println("Av. profit of seller i=" + i + " in a non-trivial equilibrium is " + profitMean + " (" + profitStderr +")");
+			profitsMean.add(profitMean);
 		}
 		
 		//for t-test for the surplus of competing sellers (useful for the small scenario)
@@ -293,6 +308,7 @@ public class benchmarkMarketPlatform {
 		double surplusMean = surplus.stream().reduce(0., (i, j) -> i+j) / surplus.size();
 		double surplusStd = Math.sqrt( surplus.stream().map(x -> (x - surplusMean)*(x - surplusMean)).reduce(0., (i, j) -> i+j) / (surplus.size() - 1) );
 		double welfareMean = welfare.stream().reduce(0., (i, j) -> i+j) / welfare.size();
+		//double welfareMean = welfare.stream().reduce(0., (i, j) -> i+j) / welfare.size() + profitsMean.stream().reduce(0., (i, j) -> i+j);//!!!!
 		double welfareStd = Math.sqrt( welfare.stream().map(x -> (x - welfareMean)*(x - welfareMean)).reduce(0., (i, j) -> i+j) / (welfare.size() - 1) );
 		
 		System.out.println("mean(price) = " + pMean + " (" + pStd/Math.sqrt(p.size()) + ")");
