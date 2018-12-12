@@ -1,9 +1,10 @@
 package ch.uzh.ifi.Mechanisms;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import ch.uzh.ifi.GraphAlgorithms.Graph;
 import ch.uzh.ifi.GraphAlgorithms.Vertex;
@@ -17,6 +18,8 @@ import ch.uzh.ifi.GraphAlgorithms.VertexMDP;
  */
 public class MDP 
 {
+
+	private static final Logger _logger = LogManager.getLogger(MDP.class);
 
 	/**
 	 * Constructor
@@ -48,7 +51,7 @@ public class MDP
 		int vertexId = 1;
 		
 		// 1.1. Create vertices
-		System.out.println("Create vertices.");
+		_logger.debug("Create vertices.");
 		for(int t = 0; t <= _T; ++t)
 		{
 			for(int j = 0; j < numberOfStatesByT.get(t); ++j)
@@ -61,7 +64,7 @@ public class MDP
 		}
 		
 		// 1.2. Create edges
-		System.out.println("Create edges.");
+		_logger.debug("Create edges.");
 		int numberOfSublings = numberOfStatesByT.get(1);
 		List< List<VertexCell> > adjLists = new ArrayList<List<VertexCell> >(vertices.size());
 		for(Vertex v: vertices)
@@ -93,7 +96,7 @@ public class MDP
 		}
 		
 		// 1.3. Create the graph
-		System.out.println("Create the graph.");
+		_logger.debug("Create the graph.");
 		_mdpGraph = new Graph(vertices, adjLists);
 	}
 	
