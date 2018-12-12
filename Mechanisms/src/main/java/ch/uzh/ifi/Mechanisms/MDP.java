@@ -79,7 +79,16 @@ public class MDP
 		
 		//1.3. Create the graph
 		_mdpGraph = new Graph(vertices, adjLists);
-		System.out.println(_mdpGraph.toString());
+	}
+	
+	/**
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString()
+	{
+		return _mdpGraph.toString();
 	}
 	
 	/**
