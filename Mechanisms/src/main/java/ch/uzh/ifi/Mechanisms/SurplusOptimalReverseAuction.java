@@ -2,7 +2,9 @@ package ch.uzh.ifi.Mechanisms;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,6 +38,12 @@ public class SurplusOptimalReverseAuction implements Auction
 	 */
 	public SurplusOptimalReverseAuction(List<SellerType> bids, List< List<Double> > inducedValues)
 	{
+		List<Integer> dbIDs = new ArrayList<Integer>();
+		
+		//for(SellerType s : bids)
+		//	if( ! dbIDs.contains(s.getAtom(0).getInterestingSet().get(0)))
+		//		dbIDs.add( s.getAtom(0).getInterestingSet().get(0) );
+			
 		_numberOfDBs = inducedValues.size();
 		if( inducedValues.get(0).size() < Math.pow(2, _numberOfDBs) ) throw new RuntimeException("Not all induced values available: " + inducedValues.get(0).size() + "/"+_numberOfDBs);
 		if( inducedValues.get(0).size() > Math.pow(2, _numberOfDBs) ) throw new RuntimeException("Too many induced values specified.");
@@ -180,29 +188,55 @@ public class SurplusOptimalReverseAuction implements Auction
 			_logger.debug("Remove bidder id = " + _allocation.getBiddersInvolved(0).get(i));
 			for(int j = 0; j < _bids.size(); ++j)
 				if( _bids.get(j).getAgentId() != _allocation.getBiddersInvolved(0).get(i) )
-					reducedBids.add(_bids.get(j));
-					
+				{
+					SellerType s = _bids.get(j);
+					List<Integer> bundle = Arrays.asList(s.getAtom(0).getInterestingSet(0).get(0));
+					AtomicBid atom = new AtomicBid(s.getAgentId(), bundle, s.getAtom(0).getValue());
+					SellerType seller = new SellerType(atom, s.getDistribution(), s.getMean(), s.getVariance());
+					//reducedBids.add(new SellerType(_bids.get(j)));
+					reducedBids.add(seller);
+				}	
 			// 1.2 Collect induced values of all DBs
 			List< List<Double> > inducedValues = new ArrayList<List<Double> >();
-			int dbIdToRemove = _bids.get( _allocation.getBiddersInvolved(0).get(i) - 1 ).getInterestingSet(0).get(0);
 
-			for(int k = 0; k < _inducedValues.size(); ++k) 						// (For all DBs)
-			{	
-				if( dbIdToRemove - 1 == k )
-					continue;
-				int numberOfDeterministicAllocationsDBs = (int)Math.pow(2, _numberOfDBs);
-				List<Double> inducedValuesK = new ArrayList<Double>();
-				for(int j = 0; j < numberOfDeterministicAllocationsDBs; ++j)
+			// Check if there is only a single seller producing the DB
+			boolean isMonopolist = true;
+			int dbIdToRemove = _bids.get( _allocation.getBiddersInvolved(0).get(i) - 1 ).getInterestingSet(0).get(0);
+			for(SellerType s: reducedBids)
+				if( s.getAtom(0).getInterestingSet(0).get(0) == dbIdToRemove)
 				{
-					if( Math.floor( j/Math.pow(2, dbIdToRemove-1) ) % 2 == 0 )
-						inducedValuesK.add(_inducedValues.get(k).get(j));
+					isMonopolist = false;
+					break;
 				}
-				_logger.debug("Induced values of DB_"+k+" for different det. allocations: " + inducedValuesK.toString());
-				inducedValues.add(inducedValuesK);
+			
+			SurplusOptimalReverseAuction auction;
+			if( isMonopolist )						//If there's a single seller producing the DB, then removal of the seller leads to the removal of the DB
+			{
+				for(SellerType s: reducedBids)		//Removal of the DB creates a gap in the enumeration of other DBs. This gap must be closed
+					if( s.getAtom(0).getInterestingSet(0).get(0) > dbIdToRemove )
+						s.getAtom(0).getInterestingSet(0).set(0, s.getAtom(0).getInterestingSet(0).get(0) - 1);
+					
+				for(int k = 0; k < _inducedValues.size(); ++k) 						// (For all DBs)
+				{
+					if( dbIdToRemove - 1 == k )
+						continue;
+					int numberOfDeterministicAllocationsDBs = (int)Math.pow(2, _numberOfDBs);
+					List<Double> inducedValuesK = new ArrayList<Double>();
+					for(int j = 0; j < numberOfDeterministicAllocationsDBs; ++j)
+					{
+						if( Math.floor( j/Math.pow(2, dbIdToRemove-1) ) % 2 == 0 )
+							inducedValuesK.add(_inducedValues.get(k).get(j));
+					}
+					_logger.debug("Induced values of DB_"+k+" for different det. allocations: " + inducedValuesK.toString());
+					inducedValues.add(inducedValuesK);
+				}
+				auction = new SurplusOptimalReverseAuction(reducedBids, inducedValues);
 			}
+			else			//If the seller is a not unique producer, then the induced values of DBs do not change
+				auction = new SurplusOptimalReverseAuction(reducedBids, _inducedValues);
 			
 			// 1.3 Solve the reduced auction
-			SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(reducedBids, _inducedValues);
+			//SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(reducedBids, _inducedValues);
 			auction.setSolver(_cplexSolver);
 			auction.computeWinnerDetermination();
 			
