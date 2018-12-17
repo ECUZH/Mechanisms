@@ -210,6 +210,7 @@ public class testMarketPlatform {
 		List<Integer> bundle2 = Arrays.asList(dbID2);
 		
 		int numberOfSamples = 100;
+		int numberOfBuyers = 1;
 		double[] surplus = new double[numberOfSamples];
 		
 		for(int j = 0; j < numberOfSamples; ++j)
@@ -227,7 +228,6 @@ public class testMarketPlatform {
 			List<SellerType> sellers = Arrays.asList(seller1, seller2);
 			
 			//2. Create 2 buyers
-			int numberOfBuyers = 2;
 			double endowment = 10;
 			
 			// 4 possible deterministic allocations, {0b00, 0b01, 0b10, 0b11}
@@ -249,12 +249,9 @@ public class testMarketPlatform {
 			valueFunctions1.put(2, v13);
 			valueFunctions1.put(3, v14);
 	
-			ParametrizedQuasiLinearAgent buyer1 = new ParametrizedQuasiLinearAgent(1, endowment, valueFunctions1);
-			ParametrizedQuasiLinearAgent buyer2 = new ParametrizedQuasiLinearAgent(2, endowment, valueFunctions1);
-			
 			List<ParametrizedQuasiLinearAgent> buyers = new LinkedList<ParametrizedQuasiLinearAgent>();
-			buyers.add(buyer1);
-			buyers.add(buyer2);
+			for(int i = 0; i < numberOfBuyers; ++i)
+				buyers.add( new ParametrizedQuasiLinearAgent(i+1, endowment, valueFunctions1));
 			
 			//3. Create market platform and evaluate the market demand
 			MarketPlatform mp = new MarketPlatform(buyers, sellers);
