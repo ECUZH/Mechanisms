@@ -201,13 +201,13 @@ public class testMarketPlatform {
 	public void testMarketDemandDynamicBenchmark() throws Exception 
 	{
 		//0. Define DBs
-		int numberOfDBs = 2;
+		int numberOfDBs = 1;
 		int dbID1 = 1;
-		int dbID2 = 2;
+		//int dbID2 = 2;
 		
 		//1. Create 2 sellers
 		List<Integer> bundle1 = Arrays.asList(dbID1);
-		List<Integer> bundle2 = Arrays.asList(dbID2);
+		//List<Integer> bundle2 = Arrays.asList(dbID2);
 		
 		int numberOfSamples = 100;
 		int numberOfBuyers = 1;
@@ -215,11 +215,12 @@ public class testMarketPlatform {
 		
 		for(int j = 0; j < numberOfSamples; ++j)
 		{
+			System.out.println("Iteration = " + j);
 			double cost1 = Math.random();
 			double cost2 = Math.random();
 			
 			AtomicBid sellerBid1 = new AtomicBid(1, bundle1, cost1);
-			AtomicBid sellerBid2 = new AtomicBid(2, bundle2, cost2);
+			AtomicBid sellerBid2 = new AtomicBid(2, bundle1, cost2);
 			
 			double mean = 0.5;//2.;
 			double var  = (1.-0) * (1.-0) / 12.;
@@ -241,7 +242,7 @@ public class testMarketPlatform {
 			LinearThresholdValueFunction v13 = new LinearThresholdValueFunction(1, 1, alloc3);
 			
 			List<Double> alloc4 = Arrays.asList(1., 1.);
-			LinearThresholdValueFunction v14 = new LinearThresholdValueFunction(Math.sqrt(2), 1, alloc4);
+			LinearThresholdValueFunction v14 = new LinearThresholdValueFunction(1/*Math.sqrt(2)*/, 1, alloc4);
 			
 			Map<Integer, LinearThresholdValueFunction> valueFunctions1 = new HashMap<Integer, LinearThresholdValueFunction>();
 			valueFunctions1.put(0, v11);
@@ -260,9 +261,9 @@ public class testMarketPlatform {
 			bidders.add(seller1.getAgentId());
 			bidders.add(seller2.getAgentId());
 			
-			List<Integer> bundles = new LinkedList<Integer>();
-			bundles.add(dbID1);																//Id of the bundle allocated to the 1st bidder
-			bundles.add(dbID2);																//Id of the bundle allocated to the 2nd bidder
+			//List<Integer> bundles = new LinkedList<Integer>();
+			//bundles.add(dbID1);																//Id of the bundle allocated to the 1st bidder
+			//bundles.add(dbID2);																//Id of the bundle allocated to the 2nd bidder
 			
 			List<Double> biddersValues = new LinkedList<Double>();
 			biddersValues.add(seller1.getAtom(0).getValue());
@@ -270,10 +271,11 @@ public class testMarketPlatform {
 			
 			mp.setToleranceLvl(1e-4);
 			double price  =  mp.tatonementPriceSearch(0.);
+			System.out.println("Equilibrium price = " + price);
 			
 			List< List<Double> > inducedValues = mp.computeValuesOfDBs(price);
-			System.out.println(">>" + inducedValues.get(0).toString());
-			System.out.println(">>" + inducedValues.get(1).toString());
+			//System.out.println(">>" + inducedValues.get(0).toString());
+			//System.out.println(">>" + inducedValues.get(1).toString());
 			
 			SurplusOptimalReverseAuction auction = new SurplusOptimalReverseAuction(sellers, inducedValues);
 			auction.setSolver(mp.getSolver());
@@ -296,7 +298,9 @@ public class testMarketPlatform {
 			double totalUtility = 0.;
 			for(int i = 0; i < numberOfBuyers; ++i)
 			{
+				buyers.get(i).updateAllocProbabilityDistribution(alloc, 1);//!!!!!!!!!
 				List<Double> consumptionBundle = buyers.get(i).solveConsumptionProblem(price);
+				//System.out.println("Buyer " + i + " consumes  " + consumptionBundle.toString());
 				totalUtility += buyers.get(i).computeUtility(alloc, numberOfDBs, consumptionBundle) - buyers.get(i).getEndowment();
 			}
 			System.out.println("Total surplus of buyers: " + totalUtility );
