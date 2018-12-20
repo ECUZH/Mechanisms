@@ -102,7 +102,7 @@ public class MarketPlatform
 			
 			diff = Math.pow(excessDemandMoney, 2);
 						
-			System.out.println("New price: " + price + " z="+ excessDemandMoney + " " + (Math.signum(excessDemandMoney)>0?"Increased":"Decreased"));
+			//System.out.println("New price: " + price + " z="+ excessDemandMoney + " " + (Math.signum(excessDemandMoney)>0?"Increased":"Decreased"));
 			//BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
 			//String s = bufferRead.readLine();
 			
@@ -155,12 +155,12 @@ public class MarketPlatform
 			detAllocDBs = detAllocDBs | dbBit;
 		}
 		_logger.debug("Solution to BORA: " + allocation.getNumberOfAllocatedAuctioneers() + ", " + allocation.getBiddersInvolved(0).size() + "; detAlloc=" + detAllocDBs);
-		System.out.println("Solution to BORA: " + allocation.getNumberOfAllocatedAuctioneers() + ", " + allocation.getBiddersInvolved(0).size() + "; detAlloc=" + detAllocDBs);
+		//System.out.println("Solution to BORA: " + allocation.getNumberOfAllocatedAuctioneers() + ", " + allocation.getBiddersInvolved(0).size() + "; detAlloc=" + detAllocDBs);
 		double totalPaid = computeMarketDemand(price, detAllocDBs).get(1) * price;
 		
 		excessDemand = totalPayment - totalPaid; 
 		_logger.debug("Total payment to sellers: " + totalPayment + "; Total received from buyers: " + totalPaid + ". Excess Demand: " + excessDemand);
-		System.out.println("Total payment to sellers: " + totalPayment + "; Total received from buyers: " + totalPaid + ". Excess Demand: " + excessDemand);
+		//System.out.println("Total payment to sellers: " + totalPayment + "; Total received from buyers: " + totalPaid + ". Excess Demand: " + excessDemand);
 		
 		return excessDemand;
 	}
